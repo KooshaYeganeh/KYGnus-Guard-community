@@ -1,0 +1,255 @@
+#!/usr/bin/bash
+
+red=$'\e[1;31m' # red colour 
+green=$'\e[1;32m' # green color
+blue=$'\e[1;34m' # blue color
+orange=$'\e[1;33m' # orange color
+
+
+
+printf "Enter Directory: " 
+read dir
+
+
+Q=/tmp/Quarantine
+if [ -d "$Q" ];then
+	true
+else
+	mkdir /tmp/Quarantine
+fi
+
+
+
+check_extension(){
+	
+	exefiles=`find $dir -type f -iname "*.exe"`
+	if [ "$exefiles" ];then
+		echo "$red find file with .exe Extension [ ERROR ]"
+		printf "Dou You want to Quarantine This Files?(y/n)"
+		read res
+		if [ "$res" == y ];then
+			mv $dir/*.exe $Q
+			echo "$green all Files with .exe Extensions Quarantend [ OK ]"
+		elif [ "$res" == n ];then
+			echo "$orange You pass to Quarantine .exe Files"
+		else
+			echo "!!! Enter valid Answer(Yes or No)"
+		fi
+	else
+		echo "$orange No File Detected with .exe Extensions"
+	fi
+
+	docxfile1=`find . -type f -iname '*.docx' -exec hexdump {} \; | awk '{print $2}' | grep 5a4d`
+	docxfile2=`find . -type f -iname '*.docx' -exec hexdump {} \; | awk '{print $2}' | grep 4d5a`
+	if [ "$docxfile1" ] || [ "$docxfile2" ];then
+		echo "$red find file with .docx Malicious File [ ERROR ]  "
+		printf "Dou You want to Quarantine This Files?(y/n)"
+		read res
+		if [ "$res" == y ];then
+			mv $dir/*.docx $Q
+			echo "$green all Malicious Files with .doc Extensions Quarantend [ OK ]"
+		elif [ "$res" == n ];then
+			echo "$orange You pass to Quarantine .doc Files"
+		else
+			echo "!!! Enter valid Answer(Yes or No)"
+		fi
+	else
+		echo "$orange No File Detected with .exe Extensions"
+	fi
+
+	docfile1=`find . -type f -iname '*.doc' -exec hexdump {} \; | awk '{print $2}' | grep 5a4d`
+	docfile2=`find . -type f -iname '*.doc' -exec hexdump {} \; | awk '{print $2}' | grep 4d5a`
+	if [ "$docfile1" ] || [ "$docfile2" ];then
+		echo "$red find file with .doc Malicious File [ ERROR ]  "
+		printf "Dou You want to Quarantine This Files?(y/n)"
+		read res
+		if [ "$res" == y ];then
+			mv $dir/*.doc $Q
+			echo "$green all Malicious Files with .doc Extensions Quarantend [ OK ]"
+		elif [ "$res" == n ];then
+			echo "$orange You pass to Quarantine .doc Files"
+		else
+			echo "!!! Enter valid Answer(Yes or No)"
+		fi
+	else
+		echo "$orange No File Detected with .exe Extensions"
+	fi
+
+
+	docmfile1=`find . -type f -iname '*.docm' -exec hexdump {} \; | awk '{print $2}' | grep 5a4d`
+	docmfile2=`find . -type f -iname '*.docm' -exec hexdump {} \; | awk '{print $2}' | grep 4d5a`
+	if [ "$docmfile1" ] || [ "$docmfile2" ];then
+		echo "$red find file with .docm Malicious File [ ERROR ]  "
+		printf "Dou You want to Quarantine This Files?(y/n)"
+		read res
+		if [ "$res" == y ];then
+			mv $dir/*.docm $Q
+			echo "$green all Malicious Files with .doc Extensions Quarantend [ OK ]"
+		elif [ "$res" == n ];then
+			echo "$orange You pass to Quarantine .doc Files"
+		else
+			echo "!!! Enter valid Answer(Yes or No)"
+		fi
+	else
+		echo "$orange No File Detected with .exe Extensions"
+	fi
+
+	htmlfile1=`find . -type f -iname '*.html' -exec hexdump {} \; | awk '{print $2}' | grep 5a4d`
+	htmlfile2=`find . -type f -iname '*.html' -exec hexdump {} \; | awk '{print $2}' | grep 4d5a`
+	if [ "$htmlfile1" ] || [ "$htmlfile2" ];then
+		echo "$red find file with .html Malicious File [ ERROR ]  "
+		printf "Dou You want to Quarantine This Files?(y/n)"
+		read res
+		if [ "$res" == y ];then
+			mv $dir/*.html $Q
+			echo "$green all Malicious Files with .doc Extensions Quarantend [ OK ]"
+		elif [ "$res" == n ];then
+			echo "$orange You pass to Quarantine .doc Files"
+		else
+			echo "!!! Enter valid Answer(Yes or No)"
+		fi
+	else
+		echo "$orange No File Detected with .exe Extensions"
+	fi
+
+	htmfile1=`find . -type f -iname '*.htm' -exec hexdump {} \; | awk '{print $2}' | grep 5a4d`
+	htmfile2=`find . -type f -iname '*.htm' -exec hexdump {} \; | awk '{print $2}' | grep 4d5a`
+	if [ "$htmfile1" ] || [ "$htmfile2" ];then
+		echo "$red find file with .htm Malicious File [ ERROR ]  "
+		printf "Dou You want to Quarantine This Files?(y/n)"
+		read res
+		if [ "$res" == y ];then
+			mv $dir/*.htm $Q
+			echo "$green all Malicious Files with .doc Extensions Quarantend [ OK ]"
+		elif [ "$res" == n ];then
+			echo "$orange You pass to Quarantine .doc Files"
+		else
+			echo "!!! Enter valid Answer(Yes or No)"
+		fi
+	else
+		echo "$orange No File Detected with .exe Extensions"
+	fi
+
+
+	htmafile1=`find . -type f -iname '*.htma' -exec hexdump {} \; | awk '{print $2}' | grep 5a4d`
+	htmafile2=`find . -type f -iname '*.htma' -exec hexdump {} \; | awk '{print $2}' | grep 4d5a`
+	if [ "$htmafile1" ] || [ "$htmafile2" ];then
+		echo "$red find file with .htma Malicious File [ ERROR ]  "
+		printf "Dou You want to Quarantine This Files?(y/n)"
+		read res
+		if [ "$res" == y ];then
+			mv $dir/*.htma $Q
+			echo "$green all Malicious Files with .doc Extensions Quarantend [ OK ]"
+		elif [ "$res" == n ];then
+			echo "$orange You pass to Quarantine .doc Files"
+		else
+			echo "!!! Enter valid Answer(Yes or No)"
+		fi
+	else
+		echo "$orange No File Detected with .exe Extensions"
+	fi
+
+
+
+
+	pdffile1=`find . -type f -iname '*.pdf' -exec hexdump {} \; | awk '{print $2}' | grep 5a4d`
+	pdffile2=`find . -type f -iname '*.pdf' -exec hexdump {} \; | awk '{print $2}' | grep 4d5a`
+	if [ "$pdffile1" ] || [ "$pdffile2" ];then
+		echo "$red find file with .pdf Malicious File [ ERROR ]  "
+		printf "Dou You want to Quarantine This Files?(y/n)"
+		read res
+		if [ "$res" == y ];then
+			mv $dir/*.pdf $Q
+			echo "$green all Malicious Files with .doc Extensions Quarantend [ OK ]"
+		elif [ "$res" == n ];then
+			echo "$orange You pass to Quarantine .doc Files"
+		else
+			echo "!!! Enter valid Answer(Yes or No)"
+		fi
+	else
+		echo "$orange No File Detected with .exe Extensions"
+	fi
+
+
+
+
+
+}
+			
+
+
+check_signature(){
+	exe1=`find $dir -type f -exec hexdump {} \; | awk '{print $2}' | grep -w 4d5a`
+	exe2=`find $dir -type f -exec hexdump {} \; | awk '{print $2}' | grep -w 5a4d`
+
+	if [ "$exe1" ] || [ "$exe2" ];then
+		echo "check signatures and Find Executable File"
+	fi
+
+
+}
+
+
+
+file_type(){
+
+	notpy=`find $dir -type f -exec file {} \; | grep executable | grep -v python `
+	notpl=`find $dir -type f -exec file {} \; | grep executable | grep -v perl `
+	executable=`find $dir -type f -exec file {} \; | grep executable `
+
+	if [ "notpy" ] || [ "notpl" ] || [ "executable" ];then
+		echo "$red probably system have malicious executable File"
+	fi
+
+}
+
+
+sha(){
+	shafile=`$dir/sha256sum_files.txt`
+	if [ -f "$shafile" ];then
+		echo "shafile Exists"
+		find $dir -type f -exe sha256sum {} \; > $dir/sha256sum_files_new.txt
+		shanew=`sha256sum $dir/sha256sum_files_new.txt`
+		shaold=`sha256sum $dir/sha256sum_files.txt`
+		if [ "$shanew" == "$shaold" ];then
+			echo "$green No File changing Detected [ OK ] "
+		else
+			echo "$red File changing Detected [ ERROR ]"
+		fi
+	else
+		echo "system Start Calculate sha256sum of Files ..."
+		hashcal=`find $dir -type f -exe sha256sum {} \; > $dir/sha256sum_files.txt`
+	fi
+}
+
+
+perm(){
+	find $dir -type f -exec ls -l {} \; | awk '{print $1}' | cut -d "." -f1 > $dir/perm.txt
+
+}
+
+
+webserver(){
+	webdir=`find /var type d -inem 'www'`
+	if [ "$webdir" ];then
+		pythonscript=`find /var/wwww -type f -exec file {} \; | grep 'Python script'`
+		perlscript=`find /var/www -type f -exec file {} \; | grep 'Perl script'`
+		if [ "$pythonscript" ] || [ "$perlscript" ];then
+			echo "$red find Perl or Python Script in WebServer Directory [ ERROR ]"
+			echo "#orange check files it might be safe "
+		fi
+	fi
+}
+			
+
+
+
+
+
+check_extension
+check_signature
+file_type
+sha
+perm
+webserver
+
