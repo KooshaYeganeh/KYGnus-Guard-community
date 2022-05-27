@@ -10,7 +10,7 @@ Note : if You install sshfs you can mount other system Devices to You system and
 
 for install sshfs
 
-Redhat base systems:	
+Redhat base systems: 
 $ sudo dnf install sshfs
 
 Debian base systems:
