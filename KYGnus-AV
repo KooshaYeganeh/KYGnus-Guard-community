@@ -6,6 +6,12 @@ blue=$'\e[1;34m' # blue color
 orange=$'\e[1;33m' # orange color
 white=$'\e[0;37m'
 
+
+
+
+
+
+
 echo "$white =============================================="
 printf "Enter Directory: " 
 read dir
@@ -18,8 +24,12 @@ else
 	mkdir /tmp/Quarantine
 fi
 
-
 	
+
+
+	 
+
+
 
 check_extension(){
 	
@@ -213,65 +223,56 @@ file_type(){
 
 
 sha(){
-	echo "$white KYGnus-AV start to Calculate sha256sum of Files.please wait"
-	shafile=$dir/sha256sum_files.txt
-	if [ -f "$shafile" ];then
-		echo "shafile Exists"
-		find $dir -type f -exec sha256sum {} \; > $dir/sha256sum_files_new.txt
-		shanew=`sha256sum $dir/sha256sum_files_new.txt`
-		shaold=`sha256sum $dir/sha256sum_files.txt`
-		if [ "$shanew" == "$shaold" ];then
-			echo "$green No File changing Detected [ OK ] "
-		else
-			echo "$red File changing Detected [ ERROR ]"
-		fi
-	else
-		echo "system Start Calculate sha256sum of Files ..."
-		hashcal=`find $dir -type f -exe sha256sum {} \; > $dir/sha256sum_files.txt`
-	fi
+	echo "$white KYGnus-AV start to Calculate sha256sum of Files.Do You want to Create File?(y/n)"
+	read sha_res
+	if [ "$sha_res" == y ];then
 
-	echo "$green Note : Results saved in $dir [ OK ]"
+		shafile=$dir/sha256sum_files.txt
+		if [ -f "$shafile" ];then
+			echo "shafile Exists"
+			find $dir -type f -exec sha256sum {} \; > $dir/sha256sum_files_new.txt
+			shanew=`sha256sum $dir/sha256sum_files_new.txt`
+			shaold=`sha256sum $dir/sha256sum_files.txt`
+			if [ "$shanew" == "$shaold" ];then
+				echo "$green No File changing Detected [ OK ] "
+			else
+				echo "$red File changing Detected [ ERROR ]"
+			fi
+		else
+			echo "system Start Calculate sha256sum of Files ..."
+			hashcal=`find $dir -type f -exe sha256sum {} \; > $dir/sha256sum_files.txt`
+		fi
+
+		echo "$green Note : Results saved in $dir [ OK ]"
+	elif [ "$sha_res" == n ];then
+		echo "$white You pass to create sha256sum Files"
+	fi
 }
 
 
 
 
 perm(){
-	echo "$white KYGnus-AV Start to Create File from Permissions.please wait ..."
-	find $dir -type f -exec ls -l {} \; | awk '{print $1}' | cut -d "." -f1 > $dir/perm.txt
-	
-	echo "$green Note: File Created in same Directory [ OK ]"
-
-}
-
-
-
-
-webserver(){
-
-	echo "$white KYGnus-AV Start check Web Directory for Malicious Files."
-	webdir=`find /var -type d -iname 'www'`
-	if [ "$webdir" ];then
-		pythonscript=`find /var/www -type f -exec file {} \; | grep 'Python script'`
-		perlscript=`find /var/www -type f -exec file {} \; | grep 'Perl script'`
-		if [ "$pythonscript" ] || [ "$perlscript" ];then
-			echo "$red find Perl or Python Script in WebServer Directory [ ERROR ]"
-			echo "$green check Files it Might be Safe [ OK ]"
-		fi
-	else
-		"No Directory Detected"
+	echo "$white KYGnus-AV Start to Create File from Permissions.Do You want to create permissions File(y/n)"
+	read perm_res
+	if [ "$prem_res" == y ];then
+		find $dir -type f -exec ls -l {} \; | awk '{print $1}' | cut -d "." -f1 > $dir/perm.txt
+		echo "$green Note: File Created in same Directory [ OK ]"
+	elif [ "$perm_res" == n ];then
+		echo "$white You pass to create permissions File"
 	fi
+
 }
+
+
+
+
 			
-
-
-
-
 
 check_extension
 check_signature
 file_type
 sha
 perm
-webserver
+
 
