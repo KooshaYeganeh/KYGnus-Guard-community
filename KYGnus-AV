@@ -205,6 +205,24 @@ check_signature(){
 
 
 
+anomality(){
+	python=`sudo find /proc -type f -iname "*.py" -exec ls -ltrha  {} \; | cut -d"." -f1`
+	perl=`sudo find /proc -type f -iname "*.pl" -exec ls -ltrha  {} \; | cut -d"." -f1`
+	ruby=`sudo find /proc -type f -iname "*.rb" -exec ls -ltrha  {} \; | cut -d"." -f1`
+	js=`sudo find /proc -type f -iname "*.js" -exec ls -ltrha  {} \; | cut -d"." -f1`
+
+	if [ "$python" ] || [ "$perl" ] || [ "$ruby" ] || [ "$js" ];then
+		echo "$red [ERROR] Find Script in /proc Directory"
+	else
+		echo "$green No anomality Detected"
+	fi
+
+}
+
+
+
+
+
 file_type(){
 
 	echo "$white KYGnus-AV Start to check Files might be Malicious in $dir .Please wait..."
@@ -272,6 +290,7 @@ perm(){
 check_extension
 check_signature
 file_type
+anomality
 sha
 perm
 
