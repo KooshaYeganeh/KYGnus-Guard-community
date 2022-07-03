@@ -13,9 +13,9 @@ cd KYGnus-AV-main/
 
 sudo cp KYGnusAV /usr/bin
 
-sudo rm -rf KYGnus-AV-main
+sudo rm -rf /tmp/KYGnus-AV-main
 
-sudo rm main.zip
+sudo rm /tmp/main.zip
 
 cd 
 
