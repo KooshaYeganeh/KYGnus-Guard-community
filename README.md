@@ -20,7 +20,7 @@ $ sudo apt update && sudo apt install sshfs
 
 # Install
 
-Run KYGnus-AV_installer
+Run KYGnus-AV_installer 
 $ sudo ./KYGnusAV
 
 # Run
@@ -30,4 +30,4 @@ KYGnus-AV
 
 # remove
 
-sudo rm -rf /opt/KYGnus-AV-main && sudo rm main.zip && sudo rm /usr/bin/KYGnus-AV
+sudo rm /usr/bin/KYGnusAV
