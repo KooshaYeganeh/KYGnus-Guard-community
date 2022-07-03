@@ -1,0 +1,14 @@
+#!/usr/bin/bash
+
+
+cd /tmp
+
+wget https://github.com/KooshaYeganeh/KYGnus-AV/archive/refs/heads/main.zip
+
+unzip main.zip
+
+cd KYGnus-AV-main/
+
+sudo cp KYGnusAV /usr/bin
+
+cd 

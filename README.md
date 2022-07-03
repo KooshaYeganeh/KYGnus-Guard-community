@@ -20,13 +20,8 @@ $ sudo apt update && sudo apt install sshfs
 
 # Install
 
-1 - be root
-$ sudo su - 
-
-2 - run This command
-$ cd /opt && wget https://github.com/KooshaYeganeh/KYGnus-AV/archive/refs/heads/main.zip && unzip main.zip && cd KYGnus-AV-main && cp KYGnus-AV /usr/bin && cd 
-
-
+Run KYGnus-AV_installer
+$ sudo ./KYGnusAV
 
 # Run
 
