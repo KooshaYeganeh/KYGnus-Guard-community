@@ -1,5 +1,7 @@
 #!/usr/bin/bash
 
+green=$'\e[1;32m' # green color
+
 
 cd /tmp
 
@@ -11,4 +13,10 @@ cd KYGnus-AV-main/
 
 sudo cp KYGnusAV /usr/bin
 
+sudo rm -rf KYGnus-AV-main
+
+sudo rm main.zip
+
 cd 
+
+echo "$green => KYGnusAV Installed Successfully <="
