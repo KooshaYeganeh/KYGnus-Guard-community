@@ -21,7 +21,7 @@ $ sudo apt update && sudo apt install sshfs
 # Install
 
 1. Run KYGnus-AV_installer  
-sudo ./KYGnusAV
+**sudo ./KYGnusAV**
 
 # Run
 
