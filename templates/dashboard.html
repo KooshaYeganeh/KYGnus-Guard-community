@@ -18,10 +18,14 @@
 	<!-- CSS Files -->
 	<link href="../static/assets/css/material-dashboard.css?v=2.1.0" rel="stylesheet" />
 	<!-- CSS Just for demo purpose, don't include it in your project -->
+	<link href='https://fonts.googleapis.com/css?family=Roboto:400,500,300,100,700,900' rel='stylesheet'
+		type='text/css'>
+	<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 	<link href="../static/assets/demo/demo.css" rel="stylesheet" />
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.9.1/font/bootstrap-icons.css">
 	<link rel="stylesheet" href="../static/assets/icons.css">
-	<script src="../static/angular.min.js"></script>
+	<script src="../static/lib/chart-master/Chart.js"></script>
+
 
 </head>
 
@@ -45,13 +49,13 @@
 						</a>
 					</li>
 					<li class="nav-item ">
-						<a class="nav-link" href="/antivirus">
+						<a class="nav-link" href="/av">
 							<i class="material-icons">shield</i>
 							<p>Antivirus</p>
 						</a>
 					</li>
 					<li class="nav-item ">
-						<a class="nav-link" href="/firewall">
+						<a class="nav-link" href="/fw">
 							<i class="bi bi-fire"></i>
 							<p>firewall</p>
 
@@ -69,12 +73,7 @@
 							<p>check Vulnerabilty</p>
 						</a>
 					</li>
-					<li class="nav-item ">
-						<a class="nav-link" href="/system_info">
-							<i class="bi bi-info-circle-fill"></i>
-							<p>System INFO</p>
-						</a>
-					</li>
+
 					</li>
 					<li class="nav-item ">
 						<a class="nav-link" href="/Downloads">
@@ -82,7 +81,12 @@
 							<p>Downloads</p>
 						</a>
 					</li>
-
+					<li class="nav-item ">
+						<a class="nav-link" href="/support">
+							<i class="bi bi-info-circle-fill"></i>
+							<p>Support</p>
+						</a>
+					</li>
 				</ul>
 			</div>
 		</div>
@@ -101,7 +105,7 @@
 						<span class="navbar-toggler-icon icon-bar"></span>
 					</button>
 					<div class="collapse navbar-collapse justify-content-end">
-						<form class="navbar-form" action="/search" method="post">
+						<form class="navbar-form" action="/search/all" method="post">
 							<div class="input-group no-border">
 								<input type="text" name="search" value="" class="form-control"
 									placeholder="Search in system">
@@ -125,7 +129,7 @@
 
 							<li class="nav-item">
 								<a class="nav-link" href="javascript:void(0)">
-									<i class="material-icons">person</i>
+									<i class="material-icons">Gnu</i>
 									<p class="d-lg-none d-md-block">
 										Account
 									</p>
@@ -207,546 +211,308 @@
 							</div>
 						</div>
 					</div>
-					<div class="row">
-						<div class="col-lg-6 col-md-12">
-							<div class="card">
-								<div class="card-header card-header-primary">
-									<h4 class="card-title" style="color: black;">Supported OS</h4>
-									<p class="card-category" style="color: black;">we Test This app at this Linux
-										systems</p>
+
+					<div class="row" style="text-align:center">
+						<div class="col-md-4 col-sm-4 mb">
+							<div class="grey-panel pn donut-chart">
+								<div class="grey-header">
+									<h5 style="color:bisque">Database Recorded Malicious Url</h5>
 								</div>
-								<div class="card-body table-responsive">
-									<table class="table table-hover">
-										<thead class="text-warning">
-											<th>row</th>
-											<th>Name</th>
-											<th>Base</th>
-											<th>Company</th>
-										</thead>
-										<tbody>
-											<tr>
-												<td>1</td>
-												<td>Rocky</td>
-												<td>RedHat</td>
-												<td>Rocky Enterprise Software Foundation</td>
-											</tr>
-											<tr>
-												<td>2</td>
-												<td>AlmaLinux</td>
-												<td>RedHat</td>
-												<td>CloudLinux</td>
-											</tr>
-											<tr>
-												<td>3</td>
-												<td>Fedora</td>
-												<td>RedHat</td>
-												<td>IBM</td>
-											</tr>
-										</tbody>
-									</table>
-								</div>
-							</div>
-						</div>
-						<div class="col-lg-6 col-md-12">
-							<div class="card">
-								<div class="card-header card-header-tabs card-header-warning">
-									<div class="nav-tabs-navigation">
-										<div class="nav-tabs-wrapper">
-											<span class="nav-tabs-title">Tasks:</span>
-											<ul class="nav nav-tabs" data-tabs="tabs">
-												<li class="nav-item">
-													<a class="nav-link active" href="#profile" data-toggle="tab">
-														<i class="material-icons">bug_report</i> Antivirus
-														<div class="ripple-container"></div>
-													</a>
-												</li>
-												<li class="nav-item">
-													<a class="nav-link" href="#messages" data-toggle="tab">
-														<i class="material-icons">code</i> Disks
-														<div class="ripple-container"></div>
-													</a>
-												</li>
-												<li class="nav-item">
-													<a class="nav-link" href="#settings" data-toggle="tab">
-														<i class="material-icons">cloud</i> Network
-														<div class="ripple-container"></div>
-													</a>
-												</li>
-											</ul>
-										</div>
+								<canvas id="serverstatus01" height="120" width="200"></canvas>
+								<script>
+									var doughnutData = [{
+										value: 70,
+										color: "#FF6B6B"
+									},
+									{
+										value: 30,
+										color: "#fdfdfd"
+									}
+									];
+									var myDoughnut = new Chart(document.getElementById("serverstatus01").getContext("2d")).Doughnut(doughnutData);
+								</script>
+								<div class="row">
+									<div class="col-sm-6 col-xs-6 goleft">
+										<p style="color:bisque">Url Rows</p>
 									</div>
-								</div>
-								<div class="card-body">
-									<div class="tab-content">
-										<div class="tab-pane active" id="profile">
-											<table class="table">
-												<tbody>
-													<tr>
-														<td>
-															<div class="form-check">
-																<label class="form-check-label">
-																	<input class="form-check-input" type="checkbox"
-																		value="" checked>
-																	<span class="form-check-sign">
-																		<span class="check"></span>
-																	</span>
-																</label>
-															</div>
-														</td>
-														<td>clamAV </td>
-														<td class="td-actions text-right">
-														</td>
-													</tr>
-													<tr>
-														<td>
-															<div class="form-check">
-																<label class="form-check-label">
-																	<input class="form-check-input" type="checkbox"
-																		value="">
-																	<span class="form-check-sign">
-																		<span class="check"></span>
-																	</span>
-																</label>
-															</div>
-														</td>
-														<td>Kyguard</td>
-														<td class="td-actions text-right">
-														</td>
-													</tr>
-													<tr>
-														<td>
-															<div class="form-check">
-																<label class="form-check-label">
-																	<input class="form-check-input" type="checkbox"
-																		value="">
-																	<span class="form-check-sign">
-																		<span class="check"></span>
-																	</span>
-																</label>
-															</div>
-														</td>
-														<td>MalwareDetect
-
-														</td>
-														<td class="td-actions text-right">
-															<button type="button" rel="tooltip" title="Edit Task"
-																class="btn btn-white btn-link btn-sm">
-
-															</button>
-															<button type="button" rel="tooltip" title="Remove"
-																class="btn btn-white btn-link btn-sm">
-
-															</button>
-														</td>
-													</tr>
-													<tr>
-														<td>
-															<div class="form-check">
-																<label class="form-check-label">
-																	<input class="form-check-input" type="checkbox"
-																		value="" checked>
-																	<span class="form-check-sign">
-																		<span class="check"></span>
-																	</span>
-																</label>
-															</div>
-														</td>
-														<td>RKHunter
-														</td>
-														<td class="td-actions text-right">
-															<button type="button" rel="tooltip" title="Edit Task"
-																class="btn btn-white btn-link btn-sm">
-
-															</button>
-															<button type="button" rel="tooltip" title="Remove"
-																class="btn btn-white btn-link btn-sm">
-
-															</button>
-														</td>
-													</tr>
-												</tbody>
-											</table>
-										</div>
-										<div class="tab-pane" id="messages">
-											<table class="table">
-												<tbody>
-													<tr>
-														<td>
-															<div class="form-check">
-																<label class="form-check-label">
-																	<input class="form-check-input" type="checkbox"
-																		value="" checked>
-																	<span class="form-check-sign">
-																		<span class="check"></span>
-																	</span>
-																</label>
-															</div>
-														</td>
-														<td>TcpDump
-
-														</td>
-														<td class="td-actions text-right">
-															<button type="button" rel="tooltip" title="Edit Task"
-																class="btn btn-white btn-link btn-sm">
-
-															</button>
-															<button type="button" rel="tooltip" title="Remove"
-																class="btn btn-white btn-link btn-sm">
-
-															</button>
-														</td>
-													</tr>
-													<tr>
-														<td>
-															<div class="form-check">
-																<label class="form-check-label">
-																	<input class="form-check-input" type="checkbox"
-																		value="">
-																	<span class="form-check-sign">
-																		<span class="check"></span>
-																	</span>
-																</label>
-															</div>
-														</td>
-														<td>DiskEncryptor</td>
-														<td class="td-actions text-right">
-															<button type="button" rel="tooltip" title="Edit Task"
-																class="btn btn-white btn-link btn-sm">
-
-															</button>
-															<button type="button" rel="tooltip" title="Remove"
-																class="btn btn-white btn-link btn-sm">
-
-															</button>
-														</td>
-													</tr>
-													<tr>
-														<td>
-															<div class="form-check">
-																<label class="form-check-label">
-																	<input class="form-check-input" type="checkbox"
-																		value="">
-																	<span class="form-check-sign">
-																		<span class="check"></span>
-																	</span>
-																</label>
-															</div>
-														</td>
-														<td>BadSectore Resolver</td>
-														<td class="td-actions text-right">
-															<button type="button" rel="tooltip" title="Edit Task"
-																class="btn btn-white btn-link btn-sm">
-
-															</button>
-															<button type="button" rel="tooltip" title="Remove"
-																class="btn btn-white btn-link btn-sm">
-
-															</button>
-														</td>
-													</tr>
-												</tbody>
-											</table>
-										</div>
-										<div class="tab-pane" id="settings">
-											<table class="table">
-												<tbody>
-													<tr>
-														<td>
-															<div class="form-check">
-																<label class="form-check-label">
-																	<input class="form-check-input" type="checkbox"
-																		value="">
-																	<span class="form-check-sign">
-																		<span class="check"></span>
-																	</span>
-																</label>
-															</div>
-														</td>
-														<td>TcpDump
-														</td>
-														<td class="td-actions text-right">
-															<button type="button" rel="tooltip" title="Edit Task"
-																class="btn btn-white btn-link btn-sm">
-
-															</button>
-															<button type="button" rel="tooltip" title="Remove"
-																class="btn btn-white btn-link btn-sm">
-
-															</button>
-														</td>
-													</tr>
-													<tr>
-														<td>
-															<div class="form-check">
-																<label class="form-check-label">
-																	<input class="form-check-input" type="checkbox"
-																		value="" checked>
-																	<span class="form-check-sign">
-																		<span class="check"></span>
-																	</span>
-																</label>
-															</div>
-														</td>
-														<td>iptraf-ng
-
-														</td>
-														<td class="td-actions text-right">
-															<button type="button" rel="tooltip" title="Edit Task"
-																class="btn btn-white btn-link btn-sm">
-
-															</button>
-															<button type="button" rel="tooltip" title="Remove"
-																class="btn btn-white btn-link btn-sm">
-
-															</button>
-														</td>
-													</tr>
-													<tr>
-														<td>
-															<div class="form-check">
-																<label class="form-check-label">
-																	<input class="form-check-input" type="checkbox"
-																		value="" checked>
-																	<span class="form-check-sign">
-																		<span class="check"></span>
-																	</span>
-																</label>
-															</div>
-														</td>
-														<td>DLP
-															"</td>
-														<td class="td-actions text-right">
-															<button type="button" rel="tooltip" title="Edit Task"
-																class="btn btn-white btn-link btn-sm">
-																<i class="material-icons">edit</i>
-															</button>
-															<button type="button" rel="tooltip" title="Remove"
-																class="btn btn-white btn-link btn-sm">
-																<i class="material-icons">close</i>
-															</button>
-														</td>
-													</tr>
-												</tbody>
-											</table>
-										</div>
+									<div class="col-sm-6 col-xs-6">
+										<h5 style="color:bisque">{{malware_url}}</h5>
 									</div>
 								</div>
 							</div>
+							<!-- /grey-panel -->
 						</div>
+						<!-- /col-md-4-->
+						<div class="col-md-4 col-sm-4 mb">
+							<div class="darkblue-panel pn">
+								<div class="darkblue-header">
+									<h5 style="color:bisque">App Disk Usage</h5>
+								</div>
+								<canvas id="serverstatus02" height="120" width="120"></canvas>
+								<script>
+									var doughnutData = [{
+										value: 60,
+										color: "#1c9ca7"
+									},
+									{
+										value: 40,
+										color: "#f68275"
+									}
+									];
+									var myDoughnut = new Chart(document.getElementById("serverstatus02").getContext("2d")).Doughnut(doughnutData);
+								</script>
+								<footer>
+									<div class="pull-left">
+										<h5 style="color:bisque">Usage:</h5>
+									</div>
+									<div class="pull-right">
+										<h5 style="color:bisque">{{app_usage}}</h5>
+									</div>
+								</footer>
+							</div>
+							<!--  /darkblue panel -->
+						</div>
+						<!-- /col-md-4 -->
+						<div class="col-md-4 col-sm-4 mb">
+							<div class="green-panel pn">
+								<div class="green-header">
+									<h5 style="color:bisque">Quarantine Files</h5>
+								</div>
+								<canvas id="serverstatus03" height="120" width="120"></canvas>
+								<script>
+									var doughnutData = [{
+										value: 60,
+										color: "#2b2b2b"
+									},
+									{
+										value: 40,
+										color: "#fffffd"
+									}
+									];
+									var myDoughnut = new Chart(document.getElementById("serverstatus03").getContext("2d")).Doughnut(doughnutData);
+								</script>
+								<h3 style="color:bisque">{{num_quarantine}}</h3>
+							</div>
+						</div>
+						<!-- /col-md-4 -->
 					</div>
+					<footer class="site-footer">
+						<div class="text-center">
+
+							<div class="credits">
+								App Developed By : <span style="color:aqua">Koosha Yeganeh -> <span> <a
+											href="https://github.com/KooshaYeganeh">Github</a>
+							</div>
+						</div>
+					</footer>
+					<script>
+						const x = new Date().getFullYear();
+						let date = document.getElementById('date');
+						date.innerHTML = '&copy; ' + x + date.innerHTML;
+					</script>
 				</div>
 			</div>
-			<footer class="footer">
-				<div class="container-fluid">
-					<nav class="float-left">
-						<ul>
-							<li>
-								<a href="http://www.github.com/kooshakoosha">
-									Developer
-								</a>
-							</li>
-							<li>
-								<a href="/about"> About KYGnus</a>
-							</li>
-						</ul>
-					</nav>
-				</div>
-			</footer>
+
+			<!--   Core JS Files   -->
+			<script src="../static/assets/js/core/jquery.min.js"></script>
+			<script src="../static/assets/js/core/popper.min.js"></script>
+			<script src="../static/assets/js/core/bootstrap-material-design.min.js"></script>
+			<script src="https://unpkg.com/default-passive-events"></script>
+			<script src="../static/assets/js/plugins/perfect-scrollbar.jquery.min.js"></script>
+			<!-- Place this tag in your head or just before your close body tag. -->
+			<script async defer src="https://buttons.github.io/buttons.js"></script>
+			<!--  Google Maps Plugin    -->
+			<script src="https://maps.googleapis.com/maps/api/js?key=YOUR_KEY_HERE"></script>
+			<!-- Chartist JS -->
+			<script src="../static/assets/js/plugins/chartist.min.js"></script>
+			<!--  Notifications Plugin    -->
+			<script src="../static/assets/js/plugins/bootstrap-notify.js"></script>
+			<!-- Control Center for Material Dashboard: parallax effects, scripts for the example pages etc -->
+			<script src="../static/assets/js/material-dashboard.js?v=2.1.0"></script>
+			<!-- Material Dashboard DEMO methods, don't include it in your project! -->
+			<script src="../static/assets/demo/demo.js"></script>
+			<script src="../static/angular.min.js"></script>
+			<script src="http://nvd3.org/assets/js/data/stream_layers.js"></script>
 			<script>
-				const x = new Date().getFullYear();
-				let date = document.getElementById('date');
-				date.innerHTML = '&copy; ' + x + date.innerHTML;
+				$(document).ready(function () {
+					$().ready(function () {
+						$sidebar = $('.sidebar');
+
+						$sidebar_img_container = $sidebar.find('.sidebar-background');
+
+						$full_page = $('.full-page');
+
+						$sidebar_responsive = $('body > .navbar-collapse');
+
+						window_width = $(window).width();
+
+						$('.fixed-plugin a').click(function (event) {
+							// Alex if we click on switch, stop propagation of the event, so the dropdown will not be hide, otherwise we set the  section active
+							if ($(this).hasClass('switch-trigger')) {
+								if (event.stopPropagation) {
+									event.stopPropagation();
+								} else if (window.event) {
+									window.event.cancelBubble = true;
+								}
+							}
+						});
+
+						$('.fixed-plugin .active-color span').click(function () {
+							$full_page_background = $('.full-page-background');
+
+							$(this).siblings().removeClass('active');
+							$(this).addClass('active');
+
+							var new_color = $(this).data('color');
+
+							if ($sidebar.length != 0) {
+								$sidebar.attr('data-color', new_color);
+							}
+
+							if ($full_page.length != 0) {
+								$full_page.attr('filter-color', new_color);
+							}
+
+							if ($sidebar_responsive.length != 0) {
+								$sidebar_responsive.attr('data-color', new_color);
+							}
+						});
+
+						$('.fixed-plugin .background-color .badge').click(function () {
+							$(this).siblings().removeClass('active');
+							$(this).addClass('active');
+
+							var new_color = $(this).data('background-color');
+
+							if ($sidebar.length != 0) {
+								$sidebar.attr('data-background-color', new_color);
+							}
+						});
+
+						$('.fixed-plugin .img-holder').click(function () {
+							$full_page_background = $('.full-page-background');
+
+							$(this).parent('li').siblings().removeClass('active');
+							$(this).parent('li').addClass('active');
+
+
+							var new_image = $(this).find("img").attr('src');
+
+							if ($sidebar_img_container.length != 0 && $('.switch-sidebar-image input:checked').length != 0) {
+								$sidebar_img_container.fadeOut('fast', function () {
+									$sidebar_img_container.css('background-image', 'url("' + new_image + '")');
+									$sidebar_img_container.fadeIn('fast');
+								});
+							}
+
+							if ($full_page_background.length != 0 && $('.switch-sidebar-image input:checked').length != 0) {
+								var new_image_full_page = $('.fixed-plugin li.active .img-holder').find('img').data('src');
+
+								$full_page_background.fadeOut('fast', function () {
+									$full_page_background.css('background-image', 'url("' + new_image_full_page + '")');
+									$full_page_background.fadeIn('fast');
+								});
+							}
+
+							if ($('.switch-sidebar-image input:checked').length == 0) {
+								var new_image = $('.fixed-plugin li.active .img-holder').find("img").attr('src');
+								var new_image_full_page = $('.fixed-plugin li.active .img-holder').find('img').data('src');
+
+								$sidebar_img_container.css('background-image', 'url("' + new_image + '")');
+								$full_page_background.css('background-image', 'url("' + new_image_full_page + '")');
+							}
+
+							if ($sidebar_responsive.length != 0) {
+								$sidebar_responsive.css('background-image', 'url("' + new_image + '")');
+							}
+						});
+
+						$('.switch-sidebar-image input').change(function () {
+							$full_page_background = $('.full-page-background');
+
+							$input = $(this);
+
+							if ($input.is(':checked')) {
+								if ($sidebar_img_container.length != 0) {
+									$sidebar_img_container.fadeIn('fast');
+									$sidebar.attr('data-image', '#');
+								}
+
+								if ($full_page_background.length != 0) {
+									$full_page_background.fadeIn('fast');
+									$full_page.attr('data-image', '#');
+								}
+
+								background_image = true;
+							} else {
+								if ($sidebar_img_container.length != 0) {
+									$sidebar.removeAttr('data-image');
+									$sidebar_img_container.fadeOut('fast');
+								}
+
+								if ($full_page_background.length != 0) {
+									$full_page.removeAttr('data-image', '#');
+									$full_page_background.fadeOut('fast');
+								}
+
+								background_image = false;
+							}
+						});
+
+						$('.switch-sidebar-mini input').change(function () {
+							$body = $('body');
+
+							$input = $(this);
+
+							if (md.misc.sidebar_mini_active == true) {
+								$('body').removeClass('sidebar-mini');
+								md.misc.sidebar_mini_active = false;
+
+								$('.sidebar .sidebar-wrapper, .main-panel').perfectScrollbar();
+
+							} else {
+
+								$('.sidebar .sidebar-wrapper, .main-panel').perfectScrollbar('destroy');
+
+								setTimeout(function () {
+									$('body').addClass('sidebar-mini');
+
+									md.misc.sidebar_mini_active = true;
+								}, 300);
+							}
+
+							// we simulate the window Resize so the charts will get updated in realtime.
+							var simulateWindowResize = setInterval(function () {
+								window.dispatchEvent(new Event('resize'));
+							}, 180);
+
+							// we stop the simulation of Window Resize after the animations are completed
+							setTimeout(function () {
+								clearInterval(simulateWindowResize);
+							}, 1000);
+
+						});
+					});
+				});
 			</script>
-		</div>
-	</div>
-
-	<!--   Core JS Files   -->
-	<script src="../static/assets/js/core/jquery.min.js"></script>
-	<script src="../static/assets/js/core/popper.min.js"></script>
-	<script src="../static/assets/js/core/bootstrap-material-design.min.js"></script>
-	<script src="https://unpkg.com/default-passive-events"></script>
-	<script src="../static/assets/js/plugins/perfect-scrollbar.jquery.min.js"></script>
-	<!-- Place this tag in your head or just before your close body tag. -->
-	<script async defer src="https://buttons.github.io/buttons.js"></script>
-	<!--  Google Maps Plugin    -->
-	<script src="https://maps.googleapis.com/maps/api/js?key=YOUR_KEY_HERE"></script>
-	<!-- Chartist JS -->
-	<script src="../static/assets/js/plugins/chartist.min.js"></script>
-	<!--  Notifications Plugin    -->
-	<script src="../static/assets/js/plugins/bootstrap-notify.js"></script>
-	<!-- Control Center for Material Dashboard: parallax effects, scripts for the example pages etc -->
-	<script src="../static/assets/js/material-dashboard.js?v=2.1.0"></script>
-	<!-- Material Dashboard DEMO methods, don't include it in your project! -->
-	<script src="../static/assets/demo/demo.js"></script>
-	<script>
-		$(document).ready(function () {
-			$().ready(function () {
-				$sidebar = $('.sidebar');
-
-				$sidebar_img_container = $sidebar.find('.sidebar-background');
-
-				$full_page = $('.full-page');
-
-				$sidebar_responsive = $('body > .navbar-collapse');
-
-				window_width = $(window).width();
-
-				$('.fixed-plugin a').click(function (event) {
-					// Alex if we click on switch, stop propagation of the event, so the dropdown will not be hide, otherwise we set the  section active
-					if ($(this).hasClass('switch-trigger')) {
-						if (event.stopPropagation) {
-							event.stopPropagation();
-						} else if (window.event) {
-							window.event.cancelBubble = true;
-						}
-					}
-				});
-
-				$('.fixed-plugin .active-color span').click(function () {
-					$full_page_background = $('.full-page-background');
-
-					$(this).siblings().removeClass('active');
-					$(this).addClass('active');
-
-					var new_color = $(this).data('color');
-
-					if ($sidebar.length != 0) {
-						$sidebar.attr('data-color', new_color);
-					}
-
-					if ($full_page.length != 0) {
-						$full_page.attr('filter-color', new_color);
-					}
-
-					if ($sidebar_responsive.length != 0) {
-						$sidebar_responsive.attr('data-color', new_color);
-					}
-				});
-
-				$('.fixed-plugin .background-color .badge').click(function () {
-					$(this).siblings().removeClass('active');
-					$(this).addClass('active');
-
-					var new_color = $(this).data('background-color');
-
-					if ($sidebar.length != 0) {
-						$sidebar.attr('data-background-color', new_color);
-					}
-				});
-
-				$('.fixed-plugin .img-holder').click(function () {
-					$full_page_background = $('.full-page-background');
-
-					$(this).parent('li').siblings().removeClass('active');
-					$(this).parent('li').addClass('active');
-
-
-					var new_image = $(this).find("img").attr('src');
-
-					if ($sidebar_img_container.length != 0 && $('.switch-sidebar-image input:checked').length != 0) {
-						$sidebar_img_container.fadeOut('fast', function () {
-							$sidebar_img_container.css('background-image', 'url("' + new_image + '")');
-							$sidebar_img_container.fadeIn('fast');
-						});
-					}
-
-					if ($full_page_background.length != 0 && $('.switch-sidebar-image input:checked').length != 0) {
-						var new_image_full_page = $('.fixed-plugin li.active .img-holder').find('img').data('src');
-
-						$full_page_background.fadeOut('fast', function () {
-							$full_page_background.css('background-image', 'url("' + new_image_full_page + '")');
-							$full_page_background.fadeIn('fast');
-						});
-					}
-
-					if ($('.switch-sidebar-image input:checked').length == 0) {
-						var new_image = $('.fixed-plugin li.active .img-holder').find("img").attr('src');
-						var new_image_full_page = $('.fixed-plugin li.active .img-holder').find('img').data('src');
-
-						$sidebar_img_container.css('background-image', 'url("' + new_image + '")');
-						$full_page_background.css('background-image', 'url("' + new_image_full_page + '")');
-					}
-
-					if ($sidebar_responsive.length != 0) {
-						$sidebar_responsive.css('background-image', 'url("' + new_image + '")');
-					}
-				});
-
-				$('.switch-sidebar-image input').change(function () {
-					$full_page_background = $('.full-page-background');
-
-					$input = $(this);
-
-					if ($input.is(':checked')) {
-						if ($sidebar_img_container.length != 0) {
-							$sidebar_img_container.fadeIn('fast');
-							$sidebar.attr('data-image', '#');
-						}
-
-						if ($full_page_background.length != 0) {
-							$full_page_background.fadeIn('fast');
-							$full_page.attr('data-image', '#');
-						}
-
-						background_image = true;
-					} else {
-						if ($sidebar_img_container.length != 0) {
-							$sidebar.removeAttr('data-image');
-							$sidebar_img_container.fadeOut('fast');
-						}
-
-						if ($full_page_background.length != 0) {
-							$full_page.removeAttr('data-image', '#');
-							$full_page_background.fadeOut('fast');
-						}
-
-						background_image = false;
-					}
-				});
-
-				$('.switch-sidebar-mini input').change(function () {
-					$body = $('body');
-
-					$input = $(this);
-
-					if (md.misc.sidebar_mini_active == true) {
-						$('body').removeClass('sidebar-mini');
-						md.misc.sidebar_mini_active = false;
-
-						$('.sidebar .sidebar-wrapper, .main-panel').perfectScrollbar();
-
-					} else {
-
-						$('.sidebar .sidebar-wrapper, .main-panel').perfectScrollbar('destroy');
-
-						setTimeout(function () {
-							$('body').addClass('sidebar-mini');
-
-							md.misc.sidebar_mini_active = true;
-						}, 300);
-					}
-
-					// we simulate the window Resize so the charts will get updated in realtime.
-					var simulateWindowResize = setInterval(function () {
-						window.dispatchEvent(new Event('resize'));
-					}, 180);
-
-					// we stop the simulation of Window Resize after the animations are completed
-					setTimeout(function () {
-						clearInterval(simulateWindowResize);
-					}, 1000);
+			<script>
+				$(document).ready(function () {
+					// Javascript method's body can be found in assets/js/demos.js
+					md.initDashboardPageCharts();
 
 				});
-			});
-		});
-	</script>
-	<script>
-		$(document).ready(function () {
-			// Javascript method's body can be found in assets/js/demos.js
-			md.initDashboardPageCharts();
+			</script>
+			<script src="../static/lib/jquery/jquery.min.js"></script>
+			<script src="../static/lib/lib/bootstrap/js/bootstrap.min.js"></script>
+			<script class="include" type="text/javascript" src="../static/lib/lib/jquery.dcjqaccordion.2.7.js"></script>
+			<script src="../static/lib/lib/jquery.scrollTo.min.js"></script>
+			<script src="../static/lib/lib/jquery.nicescroll.js" type="text/javascript"></script>
+			<script src="../static/lib/lib/jquery.sparkline.js"></script>
+			<!--common script for all pages-->
+			<script src="../static/lib/lib/common-scripts.js"></script>
+			<!--script for this page-->
+			<script src="../static/lib/lib/sparkline-chart.js"></script>
 
-		});
-	</script>
 </body>
 
 </html>
