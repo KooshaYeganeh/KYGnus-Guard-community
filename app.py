@@ -1,3 +1,4 @@
+from crypt import methods
 from urllib import response
 from flask import Flask, Response, redirect, render_template_string, session, abort,render_template
 from flask import request, url_for,flash
@@ -23,6 +24,7 @@ from datetime import datetime
 from colorama import init, Fore, Back, Style
 import config
 from socket import *
+import paramiko
 
 
 
@@ -49,7 +51,18 @@ logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
 
-
+logger.info(Fore.LIGHTRED_EX + """
+            
+██╗  ██╗██╗   ██╗ ██████╗ ███╗   ██╗██╗   ██╗███████╗       ██████╗ ██╗   ██╗ █████╗ ██████╗ ██████╗ 
+██║ ██╔╝╚██╗ ██╔╝██╔════╝ ████╗  ██║██║   ██║██╔════╝      ██╔════╝ ██║   ██║██╔══██╗██╔══██╗██╔══██╗
+█████╔╝  ╚████╔╝ ██║  ███╗██╔██╗ ██║██║   ██║███████╗█████╗██║  ███╗██║   ██║███████║██████╔╝██║  ██║
+██╔═██╗   ╚██╔╝  ██║   ██║██║╚██╗██║██║   ██║╚════██║╚════╝██║   ██║██║   ██║██╔══██║██╔══██╗██║  ██║
+██║  ██╗   ██║   ╚██████╔╝██║ ╚████║╚██████╔╝███████║      ╚██████╔╝╚██████╔╝██║  ██║██║  ██║██████╔╝
+╚═╝  ╚═╝   ╚═╝    ╚═════╝ ╚═╝  ╚═══╝ ╚═════╝ ╚══════╝       ╚═════╝  ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝ 
+                                                                                                     
+            
+            
+            """)
 
 
 
@@ -101,8 +114,35 @@ def ldap():
 
 
 
+def clam_status():
+    clamav = "systemctl | grep clamav | awk {'print $4'}"
+    status  = os.popen(clamav).read()
+    if status:
+        return status
+    else:
+        return "Not Found"
 
 
+def mariadb_malware_url():
+    db = connect_db()
+    cur = db.cursor()
+    query = "SELECT * FROM malware_url"
+    data = cur.execute(query)
+    number = int(data)
+    return number
+
+
+
+def app_disk_usage():
+    usage = os.popen(f"du -h {appdir} | tail -1").read()
+    filter = usage.split()
+    return filter[0]
+
+
+def num_quarantine():
+    files = glob.glob("/home/koosha/Desktop/**/*.*" , recursive=True)
+    num = len(files)
+    return num
 
 app.config.update(SECRET_KEY=config.SECRET_KEY) # Set Secret Key For Web app
 
@@ -141,7 +181,8 @@ def loggin():
     password = request.form["password"]
     if username == config.USERNAME and password == config.PASSWORD:
         return render_template("dashboard.html", sestatus=se_status() ,\
-            firewalld=firewall_status() , maria = maria_status())
+            firewalld=firewall_status() , maria = maria_status() , malware_url=mariadb_malware_url(),\
+                app_usage = app_disk_usage())
     else:
         return redirect("/login")
 
@@ -174,15 +215,17 @@ def load_user(userid):
 
 @app.route("/")
 def main_page():
-    logging.info("Main Page Loading")
-    return render_template("dashboard.html", sestatus=se_status() , firewalld=firewall_status() ,\
-        maria = maria_status())
+    logger.info("Main Page Loading")
+    return render_template("dashboard.html", clamav=clam_status(), sestatus=se_status() , firewalld=firewall_status() ,\
+        maria = maria_status(),num_quarantine = num_quarantine())
+
+        
 
 
 
 
 
-@app.route("/search" , methods=["POST"])
+@app.route("/search/all" , methods=["POST"])
 def search_all():
     search = request.form["serach_all"]
     cur = connect_db()
@@ -194,155 +237,236 @@ def search_all():
     
 
 
-@app.route("/av")
+# Antivirus
+
+@app.route("/kyguard")
 def antivirus():
-    return render_template("av.html")
+    return render_template("Antivirus.html", clamav=clam_status(), sestatus=se_status() , firewalld=firewall_status() ,\
+        maria = maria_status(),num_quarantine = num_quarantine())
 
 
-@app.route("/av/file" , methods=["POST"])
+
+
+@app.route("/kyguard" , methods=["POST"])
 def antivirus_post():
-    dir  = request.form["directory"]
-    startTime = time.time()
-    files = glob.glob(f"{dir}/**/*.*", recursive=True)
-    for file in files:
-        with open(file, 'rb') as f:
-            header = f.read(32)  # check header
-            main_header = str(header.hex())
-            if (main_header[0:4] == "4d5a") or (main_header[0:4] == "5a4d"):
-                logging.warning("An executable file has been found in system which is potentially infected")
-                shutil.move(file, Quarantine)
-                t =time.time()
-                return Response(f"""<body style='background-color: #2F4F4F;'>
-                        <center><h1 style='color:white;'> File Scanning</h1>
-                        <h2 style='color:black;'> 'Time taken:', {t} - {startTime}</h2>
-                        <h4 style='color:#808080;'> Do you want to Scan with ClamAV?</h4>
-                        <a href='/av/clamav'>
-                        <button style='background-color: #778899;  border: none;
-								color: white;
-								padding: 15px 32px;
-								text-align: center;
-								text-decoration: none;
-								display: inline-block;
-								font-size: 16px;'>
-								Yes											
-						</button></a>
-      					 <a href='/av/file'>
-                              <button style='background-color: #778899;  border: none;
-								color: white;
-								padding: 15px 32px;
-								text-align: center;
-								text-decoration: none;
-								display: inline-block;
-								font-size: 16px;'>
-								No											
-						</button></a>
-						</center>
-						</body>""") 
-            else:
-                return Response(f"""<body style='background-color: #2F4F4F;'>
-                        <center><h1 style='color:white;'> Port Scanning</h1>
-                        <h2 style='color:black;'> 'Time taken:', {t} - {startTime}</h2>
-                        <h4 style='color:#808080;'> Note:Please check ports with netstat for more Details</h4>
-                        <a href='/user'>
-                        <button style='background-color: #778899;  border: none;
-								color: white;
-								padding: 15px 32px;
-								text-align: center;
-								text-decoration: none;
-								display: inline-block;
-								font-size: 16px;'>
-								Home											
-						</button></a>
-						</center>
-						</body>""") 
+    try:
+        dir = input("Enter Directory: ")
+        files = glob.glob(f"{dir}/**/*.*", recursive=True)
+        for file in files:
+            with open(file, 'rb') as f:
+                header = f.read(32)  # check header
+                main_header = str(header.hex())
+                if (main_header[0:4] == "4d5a") or (main_header[0:4] == "5a4d"):
+                    logger.warning(Fore.RED + "An executable file has been found in system which is potentially infected")
+                    shutil.move(file, Quarantine)
+        files = glob.glob(f"{dir}/**/*.txt", recursive=True)
+        for txtfile in files:
+            with open(txtfile,"r") as text:
+                r = text.read()
+                if (re.search("hack" , r)) or (re.search("encrypt" , r)):
+                    shutil.move(txtfile,Quarantine)
+                    logger.warning(Fore.RED + "Malicious Files Detected and Quarantined")
+        return Response(f"""<!DOCTYPE html>
+								<html lang="en">
+
+								<head>
+									<meta charset="UTF-8">
+									<meta http-equiv="X-UA-Compatible" content="IE=edge">
+									<meta name="viewport" content="width=device-width, initial-scale=1.0">
+									<link rel="stylesheet" href="./static/bootstrap.min.css">
+									<script src="./static/bootstrap.min.js"></script>
+									<title>KYGnus Guard Response</title>
+								</head>
+
+								<body style="margin-top: 50px;">
+
+									<div class="containter">
+										<div class="row">
+											<div class="col-md-12" style="text-align: center;">
+												<h1>KYGnus Guard</h1>
+									<h2 style="color: black;">Directory Scaned Successfully</h2>
+									<p> Details will be in Log Files and Quarantine Files are in {appdir}/Quarantine Folder</p>
+								<img src='./static/KYguard.png' alt='Github' width="250" height="250">
+        						<h3 style="color: black;"> Do You want to Scan With clamAV?</h3>
+								<div>
+								<a href='/av/clamav'>
+												<button style='background-color: #778899;  border: none;
+													color: black;
+													padding: 10px 40px;
+													margin: 40px;
+													text-align: center;
+													text-decoration: none;
+													display: inline-block;
+													font-size: 16px;'>
+																								
+											yes</button></a>
+											</form>
+									<a href='/av'>
+												<button style='background-color: #778899;  border: none;
+													color: black;
+													padding: 10px 40px;
+													margin: 40px;
+													text-align: center;
+													text-decoration: none;
+													display: inline-block;
+													font-size: 16px;'>
+																								
+											No</button></a>
+											</form>
+
+								</div>
+							</div>
+						</div>
+
+					</body>
+
+					</html>""")
+
+    except:
+        return render_template("Error.html")
+
+
+
 
 
 @app.route("/av/port_scan" , methods=["POST"])
 def port_scanner():
-    portlist = [20, 21, 22, 23, 25, 53, 80, 110,
-                119, 123, 143, 161, 194, 443, 3306, 3389]
-    startTime = time.time()
-    target = 'localhost'
-    t_IP = gethostbyname(target)
-    logger.info(Fore.LIGHTYELLOW_EX + "Starting Scan to host;", t_IP)
-    logger.info(Fore.LIGHTYELLOW_EX + "scaning for poorts")
-    for i in range(1, 65535):
-        s = socket(AF_INET, SOCK_STREAM)
-        conn = s.connect_ex((t_IP, i))
-        if(conn == 0):
-            logger.info(Fore.YELLOW+'Port %d: OPEN' % (i,))
-            if i in portlist:
-                pass
-            else:
-                logger.warning(Fore.RED+"find Some unusual port")
-                logger.warning(Fore.LIGHTYELLOW_EX +
-                      "Please check ports with netstat for more details")
-                return Response(f"""<body style='background-color: #2F4F4F;'>
-                        <center><h1 style='color:white;'> Port Scannong</h1>
-                        <h2 style='color:black;'> find Some unusual port {i}</h2>
-                        <h4 style='color:#808080;'> Note:Please check ports with netstat for more Details</h4>
-                        <a href='/user'>
-                        <button style='background-color: #778899;  border: none;
-								color: white;
-								padding: 15px 32px;
-								text-align: center;
-								text-decoration: none;
-								display: inline-block;
-								font-size: 16px;'>
-								Home											
-						</button></a>
-						</center>
-						</body>""") 
-            s.close()
-    t = time.time()
-    return Response(f"""<body style='background-color: #2F4F4F;'>
-                        <center><h1 style='color:white;'> Port Scanning</h1>
-                        <h2 style='color:black;'> 'Time taken:', {t} - {startTime}</h2>
-                        <h4 style='color:#808080;'> Note:Please check ports with netstat for more Details</h4>
-                        <a href='/user'>
-                        <button style='background-color: #778899;  border: none;
-								color: white;
-								padding: 15px 32px;
-								text-align: center;
-								text-decoration: none;
-								display: inline-block;
-								font-size: 16px;'>
-								Home											
-						</button></a>
-						</center>
-						</body>""")  
+	try:
+		portlist = [20, 21, 22, 23, 25, 53, 80, 110,
+					119, 123, 143, 161, 194, 443, 3306, 3389]
+		startTime = time.time()
+		target = 'localhost'
+		t_IP = gethostbyname(target)
+		logger.info(Fore.LIGHTYELLOW_EX + "Starting Scan to host;", t_IP)
+		logger.info(Fore.LIGHTYELLOW_EX + "scaning for poorts")
+		for i in range(1, 65535):
+			s = socket(AF_INET, SOCK_STREAM)
+			conn = s.connect_ex((t_IP, i))
+			if(conn == 0):
+				logger.info(Fore.YELLOW+'Port %d: OPEN' % (i,))
+				if i in portlist:
+					pass
+				else:
+					logger.warning(Fore.RED+"find Some unusual port")
+					logger.warning(Fore.LIGHTYELLOW_EX +
+						"Please check ports with netstat for more details")
+					return Response(f"""<body style='background-color: #2F4F4F;'>
+							<center><h1 style='color:white;'> Port Scannong</h1>
+							<h2 style='color:black;'> find Some unusual port {i}</h2>
+							<h4 style='color:#808080;'> Note:Please check ports with netstat for more Details</h4>
+							<a href='/user'>
+							<button style='background-color: #778899;  border: none;
+									color: white;
+									padding: 15px 32px;
+									text-align: center;
+									text-decoration: none;
+									display: inline-block;
+									font-size: 16px;'>
+									Home											
+							</button></a>
+							</center>
+							</body>""") 
+				s.close()
+		t = time.time()
+		return Response(f"""<body style='background-color: #2F4F4F;'>
+							<center><h1 style='color:white;'> Port Scanning</h1>
+							<h2 style='color:black;'> 'Time taken:', {t} - {startTime}</h2>
+							<h4 style='color:#808080;'> Note:Please check ports with netstat for more Details</h4>
+							<a href='/user'>
+							<button style='background-color: #778899;  border: none;
+									color: white;
+									padding: 15px 32px;
+									text-align: center;
+									text-decoration: none;
+									display: inline-block;
+									font-size: 16px;'>
+									Home											
+							</button></a>
+							</center>
+							</body>""")
+
+	except:
+		return render_template("Error.html")
 
 
-@app.route("/av/system" , methods=["POST"])
-def scan_system():
-    files = glob.glob(f"{dir}/**/*.*", recursive=True)
-    files = glob.glob("/tmp/av/**/*.*" , recursive=True)
-    for file in files:
-        with open(file,"r") as text:
-           r = text.read()
-           if (re.search("hack" , r)) or (re.search("encrypt" , r)):
-               return Response(f"""<body style='background-color: #2F4F4F;'>
-                        <center><h1 style='color:white;'> Port Scanning</h1>
-                        <h2 style='color:black;'> 'Time taken:', {t} - {startTime}</h2>
-                        <h4 style='color:#808080;'> Note:Please check ports with netstat for more Details</h4>
-                        <a href='/user'>
-                        <button style='background-color: #778899;  border: none;
-								color: white;
-								padding: 15px 32px;
-								text-align: center;
-								text-decoration: none;
-								display: inline-block;
-								font-size: 16px;'>
-								Home											
-						</button></a>
-						</center>
-						</body>""") 
-               
+
+
+
+@app.route("/av/clamav")
+def clamav():
+    return render_template("clamAV.html")
+
+
+@app.route("/av/clamav" , methods=["POST"])
+def port_clamav():
+    logger.warning(Fore.RED + "User Start to Scan system with clamAV")
+    clamdir = request.form["clamdir"]
+    clamav = f"clamscan --infected --recursive --remove {clamdir}"
+    ssh = paramiko.SSHClient()
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    ssh.connect(config.ssh_host,config.ssh_port,config.ssh_username,config.ssh_password)
+    stdin,stdout,stderr = ssh.exec_command(clamav)
+    stdin.close()
+    lines = stdout.readlines()
+    seresp = ''.join(lines).split()
+    for sres in seresp:
+        logger.log(Fore.RED + f"{sres}")
+    return Response(f"""<html style='background-color:black;'><body>
+                    <center>
+                    <h3 style='color: #B22222;'> ClamAV </h3>
+                    <h1 style='color: #B22222 ; '> Successfull Scan Scan with clamAV </h1>
+                    <p style='color: #B22222 ; '> Note:check Results in Log File in {appdir}</p>
+                    <p style='color: #B22222 ; '> Note: This app Scan Directory with clamAV <code> Remote System</code> so clamAV should be Install on Remote system</p>
+					 <img src='./static/clamav.png' alt='Github' width="250" height="250">
+					<div style='margin-top:20px;'>
+					<a href='/av/clamav'><button class='return' style='background-color:red;
+						border: none;
+						color: white;
+						padding: 10px 32px;
+						text-align: center;
+						text-decoration: none;
+						display: inline-block;
+						font-size: 16px;
+						margin: 4px 2px;
+						transition-duration: 0.4s;
+						cursor: pointer;'>
+					return</button></a>
+
+    		 </div>
+     		</center>
+     	</body>
+      </html>
+    """)        
+
+
+    
+
+@app.route("/network/search/url" , methods=["POST"])
+def search_url():
+    search = request.form["serach_url"]
+    cur = connect_db()
+    query1 = f"SELECT * FROM malware_url WHERE url LIKE '%{search}%'"
+    cur.execute(query1)
+    data1 = cur.fetchall()
+    cur.close()
+    return render_template("search_url_table.html" , data = data1)
+
+
+
 @app.route("/home")
 def home():
     return render_template("dashboard.html")
 
 
+
+@app.route("/Downloads")
+def downloads():
+    return render_template("Downloads.html")
+
+
+@app.route("/support")
+def support():
+    return render_template("support.html")
 
 if __name__ == "__main__":
     app.run(port=8080,debug=True)
