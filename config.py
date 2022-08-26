@@ -7,4 +7,11 @@ DB_USER = "root"
 DB_PASSWORD = "Koosha_102030"
 DB = "malware"
 DB_PORT=3360
-SECRET_KEY = "Yoosha Yeganeh Gnu Linux Softwares"
+SECRET_KEY = "Koosha Yeganeh Gnu Linux Softwares"
+
+
+
+ssh_port= "22"
+ssh_host= "192.168.1.101"
+ssh_username= "hamed"
+ssh_password = "H102030h"
