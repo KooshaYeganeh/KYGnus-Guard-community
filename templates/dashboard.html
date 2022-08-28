@@ -37,7 +37,7 @@
 
         Tip 2: you can also add an image using data-image tag
     -->
-			<div class="logo"><a href="/" class="simple-text logo-normal">
+			<div class="logo"><a href="/home" class="simple-text logo-normal">
 					KYGnus
 				</a></div>
 			<div class="sidebar-wrapper">
@@ -49,7 +49,7 @@
 						</a>
 					</li>
 					<li class="nav-item ">
-						<a class="nav-link" href="/Kyguard">
+						<a class="nav-link" href="/av">
 							<i class="material-icons">shield</i>
 							<p>Antivirus</p>
 						</a>
@@ -62,7 +62,7 @@
 						</a>
 					</li>
 					<li class="nav-item ">
-						<a class="nav-link" href="//network/search/url">
+						<a class="nav-link" href="/network">
 							<i class="bi bi-globe"></i>
 							<p>Network</p>
 						</a>
@@ -147,7 +147,7 @@
 							<div class="card card-stats">
 								<div class="card-header card-header-warning card-header-icon">
 									<div class="card-icon">
-										<i class="material-icons">content_copy</i>
+										<i class="fa fa-linux"></i>
 									</div>
 									<p class="card-category">clamav</p>
 									<h3 class="card-title">{{clamav}}
@@ -166,7 +166,7 @@
 							<div class="card card-stats">
 								<div class="card-header card-header-success card-header-icon">
 									<div class="card-icon">
-										<i class="material-icons">store</i>
+										<i class="material-icons">shield</i>
 									</div>
 									<p class="card-category">Selinux</p>
 									<h3 class="card-title">{{sestatus}}</h3>
@@ -182,7 +182,7 @@
 							<div class="card card-stats">
 								<div class="card-header card-header-danger card-header-icon">
 									<div class="card-icon">
-										<i class="material-icons">info_outline</i>
+										<i class="material-icons">shield</i>
 									</div>
 									<p class="card-category">Firewalld</p>
 									<h3 class="card-title">{{firewalld}}</h3>
@@ -198,7 +198,7 @@
 							<div class="card card-stats">
 								<div class="card-header card-header-info card-header-icon">
 									<div class="card-icon">
-										<i class="fa fa-twitter"></i>
+										<i class="fa fa-database"></i>
 									</div>
 									<p class="card-category">MariaDB</p>
 									<h3 class="card-title">{{maria}}</h3>
@@ -233,7 +233,7 @@
 								</script>
 								<div class="row">
 									<div class="col-sm-6 col-xs-6 goleft">
-										<p style="color:bisque">Url Rows</p>
+										<p style="color:bisque">Malicious URLs</p>
 									</div>
 									<div class="col-sm-6 col-xs-6">
 										<h5 style="color:bisque">{{malware_url}}</h5>
@@ -296,7 +296,7 @@
 						</div>
 						<!-- /col-md-4 -->
 					</div>
-					<footer class="site-footer" style="margin-top: 50px;">
+					<footer class="site-footer" style="margin-top: 80px;">
 						<div class="text-left">
 
 							<div class="credits">
@@ -333,6 +333,7 @@
 			<script src="../static/assets/demo/demo.js"></script>
 			<script src="../static/angular.min.js"></script>
 			<script src="http://nvd3.org/assets/js/data/stream_layers.js"></script>
+			<script src="../static/fa.js"></script>
 			<script>
 				$(document).ready(function () {
 					$().ready(function () {
