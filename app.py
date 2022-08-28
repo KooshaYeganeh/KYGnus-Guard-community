@@ -114,6 +114,11 @@ def ldap():
 
 
 
+def netwok_manager():
+    net = "systemctl | grep NetworkManager | awk '{print $4}' | tail -1"
+    status = os.popen(net).read()
+    return status
+
 def clam_status():
     clamav = "systemctl | grep clamav | awk {'print $4'}"
     status  = os.popen(clamav).read()
@@ -239,7 +244,7 @@ def search_all():
 
 # Antivirus
 
-@app.route("/kyguard")
+@app.route("/av")
 def antivirus():
     return render_template("Antivirus.html", clamav=clam_status(), sestatus=se_status() , firewalld=firewall_status() ,\
         maria = maria_status(),num_quarantine = num_quarantine())
@@ -247,7 +252,7 @@ def antivirus():
 
 
 
-@app.route("/kyguard" , methods=["POST"])
+@app.route("/av/kyguard" , methods=["POST"])
 def antivirus_post():
     try:
         dir = input("Enter Directory: ")
@@ -439,9 +444,20 @@ def port_clamav():
     """)        
 
 
-    
+@app.route("/network")
+def network():
+    return render_template("network.html", sestatus=se_status() ,\
+            firewalld=firewall_status() ,network = netwok_manager(),ldap = ldap())
 
-@app.route("/network/search/url" , methods=["POST"])
+
+
+@app.route("/network/url")
+def network_search_url():
+    return render_template("search_url.html", sestatus=se_status() ,\
+            firewalld=firewall_status() ,network = netwok_manager(),ldap = ldap())
+
+
+@app.route("/network/url" , methods=["POST"])
 def search_url():
     search = request.form["serach_url"]
     cur = connect_db()
@@ -450,6 +466,82 @@ def search_url():
     data1 = cur.fetchall()
     cur.close()
     return render_template("search_url_table.html" , data = data1)
+
+
+
+
+@app.route("/system")
+def system():
+    return render_template("systemfile.html")
+
+
+@app.route("/system/permcheck" , methods=["POST"])
+def system_permissions():
+    thistime = time.ctime()
+    usr_bin = os.popen("sudo find /usr/sbin -type f -exec sha256sum {} \; > /tmp/perm/usr_bin.txt").read()
+    usr_sbin = os.popen("sudo find /usr/bin -type f -exec sha256sum {} \; > /tmp/perm/usr_sbin.txt").read()
+    etc = os.popen("sudo find /etc -type f -exec sha256sum {} \; > /tmp/perm/etc.txt").read()
+    sha = os.popen("sha256sum /tmp/perm/*").read()
+    with open ("/tmp/hash.txt" , "w") as h:
+        h.write("=================================<< KYGnus >>===================================\n\n")
+        h.write(f"----------------- sha256sum Time of Calculation:{thistime}  ------------------\n")
+        h.write(f"{sha}")
+        h.close()
+    return Response(f"""<!DOCTYPE html>
+								<html lang="en">
+
+								<head>
+									<meta charset="UTF-8">
+									<meta http-equiv="X-UA-Compatible" content="IE=edge">
+									<meta name="viewport" content="width=device-width, initial-scale=1.0">
+									<link rel="stylesheet" href="./static/bootstrap.min.css">
+									<script src="./static/bootstrap.min.js"></script>
+									<title>KYGnus Guard Response</title>
+								</head>
+
+								<body style="margin-top: 50px;">
+
+									<div class="containter">
+										<div class="row">
+											<div class="col-md-12" style="text-align: center;">
+												<h1>KYGnus Guard</h1>
+									<h2 style="color: black;">Directory Scaned Successfully</h2>
+                 						<p > The permissions of /usr/bin and /usr/sbin and /etc Directories calculated and save in /tmp/perm Directorie's.</p>
+								<p >if You Want to save This Files Move Them From /tmp Directory</p>
+								<img src='./static/KYguard.png' alt='KYguard' width="250" height="250">
+
+								<div>
+								<a href='/av/clamav'>
+												<button style='background-color: #778899;  border: none;
+													color: black;
+													padding: 10px 40px;
+													margin: 40px;
+													text-align: center;
+													text-decoration: none;
+													display: inline-block;
+													font-size: 16px;'>
+																								
+											Return</button></a>
+											</form>
+
+								</div>
+							</div>
+						</div>
+
+					</body>
+
+					</html>""")
+
+
+
+@app.route("/vulnerability")
+def vul():
+    maria = os.popen("cat /etc/my.cnf.d/mariadb-server.cnf").read()
+    data = maria.split("\n")
+    for d in data:
+        if re.search("^port" , d):
+            
+
 
 
 
