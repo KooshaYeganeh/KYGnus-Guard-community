@@ -25,7 +25,7 @@ KYGnus Antivirus For Linux Systems
 
  - [*] Scan system For Maliciuos Files
  - [*] Scan Remote System with ClamAV
- - [*] Easy GUI For Iptables
+ - [] Easy GUI For Iptables
  - [*] Search In  Malicious URL's 
  - [*] Check Permissions
  - [*] check MariaDB configs 
