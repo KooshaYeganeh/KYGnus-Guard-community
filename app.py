@@ -26,6 +26,8 @@ import config
 from socket import *
 import paramiko
 
+from test import mariadb_usage
+
 
 
 username = getpass.getuser()
@@ -536,11 +538,94 @@ def system_permissions():
 
 @app.route("/vulnerability")
 def vul():
-    maria = os.popen("cat /etc/my.cnf.d/mariadb-server.cnf").read()
-    data = maria.split("\n")
-    for d in data:
-        if re.search("^port" , d):
+    with open ("/tmp/vulcheck.txt" , "w") as vul:
+        """ This Scope of code check mariaDB configs for Security Reasons"""
+        vul.write("================================== MariaDB =================================\n\n")
+        mariadb_port_ok = os.popen("cat /etc/my.cnf.d/mariadb-server.cnf | egrep '^port' ").read()
+        mariadb_port_false = os.popen("cat /etc/my.cnf.d/mariadb-server.cnf | egrep '^#port' ").read()
+        mariadb_bind_ok = os.popen("cat /etc/my.cnf.d/mariadb-server.cnf | egrep '^bind'").read()
+        mariadb_bind_false = os.popen("cat /etc/my.cnf.d/mariadb-server.cnf | egrep '^#bind' ").read()
+        mariadb_username = os.popen("cat /etc/my.cnf | grep user").read()
+        mariadb_password = os.popen("cat /etc/my.cnf | grep password").read()
+        mariadb_max_allowed_packet = os.popen("cat /etc/my.cnf.d/mariadb-server.cnf | grep 'max_allowed_packet'").read()
+        mariadb_max_connections = os.popen("cat /etc/my.cnf.d/mariadb-server.cnf | grep 'max_connections'").read()
+        mariadb_max_user_connections = os.popen("cat /etc/my.cnf.d/mariadb-server.cnf | grep 'max_user_connections'").read()
+        if (mariadb_port_ok):
+            vul.write("port config of /etc/my.cnf.d/mariadb-server.cnf is [ OK ]\n")
+        elif (mariadb_port_false):
+            vul.write("check port config But this Line is commented and port is Default [ DANGER ]\n")
+        else:
+                vul.write("No port config Detected\n")
+        if (mariadb_bind_ok):
+            vul.write("bind Address config [ OK ]\n")
+        elif (mariadb_bind_false):
+            vul.write("check bind config But this Line is commented and bind is Default [ DANGER ]\n")
+        if (mariadb_username) or (mariadb_password):
+            vul.write("You set username or password on config File.This is out of Security Rules[ DANGER ]\n")
+        else:
+            vul.write("No Username and Password Detected [ OK ]\n")
+        if (mariadb_max_allowed_packet):
+            vul.write("max_allowed packet config is [ OK ]\n")
+        else:
+            vul.write("No max_allowed_packet Address config Detected [ DANGER ]\n")
+        if (mariadb_max_allowed_packet):
+            vul.write("max_allowed packet config is [ OK ]\n")
+        else:
+            vul.write("No max_allowed_packet Address config Detected [ DANGER ]\n")
+        if (mariadb_max_connections):
+            vul.write("MariaDB Max connections Set in config File [ OK ]\n")
+        else:
+            vul.write("MariaDB Max connections Not Set in config File [ DANGER ]\n")
+        if (mariadb_max_user_connections):
+            vul.write(" MariaDB Max user Connection set in config File [ OK ]\n")
+        else:
+            vul.write("MariaDB Max user Connection Not set in config File [ DANGER ]\n")
+        
             
+        return Response(f"""<!DOCTYPE html>
+								<html lang="en">
+
+								<head>
+									<meta charset="UTF-8">
+									<meta http-equiv="X-UA-Compatible" content="IE=edge">
+									<meta name="viewport" content="width=device-width, initial-scale=1.0">
+									<link rel="stylesheet" href="./static/bootstrap.min.css">
+									<script src="./static/bootstrap.min.js"></script>
+									<title>KYGnus Guard Response</title>
+								</head>
+
+								<body style="margin-top: 50px;">
+
+									<div class="containter">
+										<div class="row">
+											<div class="col-md-12" style="text-align: center;">
+												<h1>KYGnus Guard</h1>
+									<h2 style="color: black;">system Scaned Successfully</h2>
+                 						<p > Vulnerability checked and results Saved in Text File in /tmp</p>
+								<p >if You Want to save The File Move it From /tmp Directory</p>
+								<img src='./static/KYguard.png' alt='KYguard' width="250" height="250">
+
+								<div>
+								<a href='/av/clamav'>
+												<button style='background-color: #778899;  border: none;
+													color: black;
+													padding: 10px 40px;
+													margin: 40px;
+													text-align: center;
+													text-decoration: none;
+													display: inline-block;
+													font-size: 16px;'>
+																								
+											Return</button></a>
+											</form>
+
+								</div>
+							</div>
+						</div>
+
+					</body>
+
+					</html>""")
 
 
 
