@@ -45,8 +45,8 @@
 						</a>
 					</li>
 					<li class="nav-item ">
-						<a class="nav-link" href="/">
-							<i class="material-icons">dashboard</i>
+						<a class="nav-link" href="/home">
+							<i class="material-icons">home</i>
 							<p>Home</p>
 						</a>
 					</li>
@@ -114,33 +114,44 @@
 									<div class="card-icon">
 										<i class="material-icons">info_outline</i>
 									</div>
-									<h3 class="card-title" style="text-align: left;">SystemFile</h3>
-									<p class="card-category" style="text-align: left;">
-										this part check all system Files of linux and
-										if Get Error it can be Reslove it
-									</p>
-
+									<form action="" method="post" enctype="multipart/form-data">
+										<h3 class="card-title" style="text-align: left;">SystemFile</h3>
+										<p class="card-category" style="text-align: left;">
+											Press Start check Button to Calculate sha256sum critical Files in Ciritical
+											Directories
+										</p>
+										<button type="submit" class="btn btn-primary"
+											style="background-color: deepskyblue; color:black">Start Calculate</button>
 								</div>
 								<div class="card-footer">
 									<div class="stats">
-										{{repair_error}}
+										<a href="/lynis">
+											<p>Download Lynis For Scan with More Details</p>
+											<p>Download TripWire For Scan with More Details</p>
+										</a>
+									</div>
+									<div class="card-footer">
+										<div class="stats">
+											<a href="/tripwire">
+											</a>
+										</div>
 									</div>
 								</div>
 							</div>
 						</div>
 					</div>
-
+					</form>
 
 
 
 
 				</div>
-				<footer class="footer">
+				<footer class="footer" style="margin-top:150px ;">
 					<div class="container-fluid">
 						<nav class="float-left">
 							<ul>
 								<li>
-									<a href="http://www.github.com/kooshakoosha">
+									<a href="http://www.github.com/KooshaYeganeh">
 										Developer
 									</a>
 								</li>
