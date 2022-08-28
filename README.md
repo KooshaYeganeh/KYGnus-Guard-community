@@ -28,3 +28,4 @@ KYGnus Antivirus For Linux Systems
  - [*] Easy GUI For Iptables
  - [*] Search In  Malicious URL's 
  - [*] Check Permissions
+ - [*] check MariaDB configs 
