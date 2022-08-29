@@ -7,22 +7,21 @@
 	<link rel="icon" type="image/png" href="../static/assets/img/favicon.png">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
 	<title>
-		Antivirus - calmAV
+		KYGnus
 	</title>
 	<meta content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, shrink-to-fit=no'
 		name='viewport' />
 	<!--     Fonts and icons     -->
-	<link rel="stylesheet" type="text/css"
-		href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700|Roboto+Slab:400,700|Material+Icons" />
-	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/latest/css/font-awesome.min.css">
+	<link rel="stylesheet" type="text/css" href="../static/google_fonts.css" />
+	<link rel="stylesheet" href="../static/font-awesome.min_bootstrap.css">
 	<!-- CSS Files -->
 	<link href="../static/assets/css/material-dashboard.css?v=2.1.0" rel="stylesheet" />
 	<!-- CSS Just for demo purpose, don't include it in your project -->
 	<link href='https://fonts.googleapis.com/css?family=Roboto:400,500,300,100,700,900' rel='stylesheet'
 		type='text/css'>
-	<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+	<link href="../static/icons.css" rel="stylesheet">
 	<link href="../static/assets/demo/demo.css" rel="stylesheet" />
-	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.9.1/font/bootstrap-icons.css">
+	<link rel="stylesheet" href="../static/bootstrap-icons.css">
 	<link rel="stylesheet" href="../static/assets/icons.css">
 	<script src="../static/lib/chart-master/Chart.js"></script>
 
@@ -43,47 +42,31 @@
 				<ul class="nav">
 					<li class="nav-item active">
 						<a class="nav-link" href="#">
-							<i class=" material-icons">dashboard</i>
-							<p>Dashboard</p>
+							<i class=" material-icons">security</i>
+							<p>clamAV</p>
 						</a>
 					</li>
 					<li class="nav-item ">
-						<a class="nav-link" href="/Kyguard">
+						<a class="nav-link" href="/av">
 							<i class="material-icons">shield</i>
-							<p>Antivirus</p>
+							<p>KYGnus Guard</p>
 						</a>
-					</li>
-					<li class="nav-item ">
-						<a class="nav-link" href="/fw">
-							<i class="bi bi-fire"></i>
-							<p>firewall</p>
-
-						</a>
-					</li>
-					<li class="nav-item ">
-						<a class="nav-link" href="/network">
-							<i class="bi bi-globe"></i>
-							<p>Network</p>
-						</a>
-					</li>
-					<li class="nav-item ">
-						<a class="nav-link" href="/vulnerability">
-							<i class="bi bi-card-checklist"></i>
-							<p>check Vulnerabilty</p>
-						</a>
-					</li>
-
-					</li>
 					<li class="nav-item ">
 						<a class="nav-link" href="/Downloads">
-							<i class="bi bi-download"></i>
+							<i class="material-icons">download</i>
 							<p>Downloads</p>
 						</a>
 					</li>
 					<li class="nav-item ">
 						<a class="nav-link" href="/support">
-							<i class="bi bi-info-circle-fill"></i>
+							<i class="material-icons">info</i>
 							<p>Support</p>
+						</a>
+					</li>
+					<li class="nav-item ">
+						<a class="nav-link" href="/home">
+							<i class="material-icons">home</i>
+							<p>Home</p>
 						</a>
 					</li>
 				</ul>
@@ -134,7 +117,7 @@
 							<div class="card card-stats">
 								<div class="card-header card-header-warning card-header-icon">
 									<div class="card-icon">
-										<i class="material-icons">content_copy</i>
+										<i class="fa fa-linux"></i>
 									</div>
 									<p class="card-category">clamav</p>
 									<h3 class="card-title">{{clamav}}
@@ -153,7 +136,7 @@
 							<div class="card card-stats">
 								<div class="card-header card-header-success card-header-icon">
 									<div class="card-icon">
-										<i class="material-icons">store</i>
+										<i class="fa fa-shield"></i>
 									</div>
 									<p class="card-category">Selinux</p>
 									<h3 class="card-title">{{sestatus}}</h3>
@@ -169,7 +152,7 @@
 							<div class="card card-stats">
 								<div class="card-header card-header-danger card-header-icon">
 									<div class="card-icon">
-										<i class="material-icons">info_outline</i>
+										<i class="fa fa-shield"></i>
 									</div>
 									<p class="card-category">Firewalld</p>
 									<h3 class="card-title">{{firewalld}}</h3>
@@ -185,7 +168,7 @@
 							<div class="card card-stats">
 								<div class="card-header card-header-info card-header-icon">
 									<div class="card-icon">
-										<i class="fa fa-twitter"></i>
+										<i class="fa fa-server"></i>
 									</div>
 									<p class="card-category">MariaDB</p>
 									<h3 class="card-title">{{maria}}</h3>
@@ -305,7 +288,6 @@
 		<!-- Place this tag in your head or just before your close body tag. -->
 		<script async defer src="https://buttons.github.io/buttons.js"></script>
 		<!--  Google Maps Plugin    -->
-		<script src="https://maps.googleapis.com/maps/api/js?key=YOUR_KEY_HERE"></script>
 		<!-- Chartist JS -->
 		<script src="../static/assets/js/plugins/chartist.min.js"></script>
 		<!--  Notifications Plugin    -->
@@ -314,6 +296,9 @@
 		<script src="../static/assets/js/material-dashboard.js?v=2.1.0"></script>
 		<!-- Material Dashboard DEMO methods, don't include it in your project! -->
 		<script src="../static/assets/demo/demo.js"></script>
+		<script src="../static/angular.min.js"></script>
+		<script src="../static/stream_layers.js"></script>
+		<script src="../static/fa.js"></script>
 		<script>
 			$(document).ready(function () {
 				$().ready(function () {
