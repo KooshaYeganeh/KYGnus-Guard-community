@@ -234,12 +234,13 @@ def main_page():
 @app.route("/search/all" , methods=["POST"])
 def search_all():
     search = request.form["serach_all"]
-    cur = connect_db()
+    db = connect_db()
+    cur = db.cursor()
     query1 = f"SELECT * FROM malware_url WHERE url LIKE '%{search}%'"
     cur.execute(query1)
     data1 = cur.fetchall()
     cur.close()
-    return render_template("search_result.html" , data = data1)
+    return render_template("search_url_table.html" , data = data1)
     
 
 
@@ -256,7 +257,7 @@ def antivirus():
 @app.route("/av/kyguard" , methods=["POST"])
 def antivirus_post():
     try:
-        dir = input("Enter Directory: ")
+        dir = request.form["path"]
         files = glob.glob(f"{dir}/**/*.*", recursive=True)
         for file in files:
             with open(file, 'rb') as f:
@@ -265,8 +266,8 @@ def antivirus_post():
                 if (main_header[0:4] == "4d5a") or (main_header[0:4] == "5a4d"):
                     logger.warning(Fore.RED + "An executable file has been found in system which is potentially infected")
                     shutil.move(file, Quarantine)
-        files = glob.glob(f"{dir}/**/*.txt", recursive=True)
-        for txtfile in files:
+        allfiles = glob.glob(f"{dir}/**/*.txt", recursive=True)
+        for txtfile in allfiles:
             with open(txtfile,"r") as text:
                 r = text.read()
                 if (re.search("hack" , r)) or (re.search("encrypt" , r)):
@@ -292,7 +293,7 @@ def antivirus_post():
 												<h1>KYGnus Guard</h1>
 									<h2 style="color: black;">Directory Scaned Successfully</h2>
 									<p> Details will be in Log Files and Quarantine Files are in {appdir}/Quarantine Folder</p>
-								<img src='./static/KYguard.png' alt='Github' width="250" height="250">
+								<img src='./static/KYguard.png' alt='kyguard' width="250" height="250">
         						<h3 style="color: black;"> Do You want to Scan With clamAV?</h3>
 								<div>
 								<a href='/av/clamav'>
@@ -423,7 +424,7 @@ def port_clamav():
                     <h1 style='color: #B22222 ; '> Successfull Scan Scan with clamAV </h1>
                     <p style='color: #B22222 ; '> Note:check Results in Log File in {appdir}</p>
                     <p style='color: #B22222 ; '> Note: This app Scan Directory with clamAV <code> Remote System</code> so clamAV should be Install on Remote system</p>
-					 <img src='./static/clamav.png' alt='Github' width="250" height="250">
+					 <img src='./static/clamav.png' alt='clamAV' width="250" height="250">
 					<div style='margin-top:20px;'>
 					<a href='/av/clamav'><button class='return' style='background-color:red;
 						border: none;
