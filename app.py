@@ -26,7 +26,6 @@ import config
 from socket import *
 import paramiko
 
-from test import mariadb_usage
 
 
 
@@ -462,12 +461,18 @@ def network_search_url():
 @app.route("/network/url" , methods=["POST"])
 def search_url():
     search = request.form["serach_url"]
-    cur = connect_db()
+    info  = "Your Entered URL is Malicious [ DANGER ]"
+    db = connect_db()
+    cur = db.cursor()
     query1 = f"SELECT * FROM malware_url WHERE url LIKE '%{search}%'"
     cur.execute(query1)
     data1 = cur.fetchall()
     cur.close()
-    return render_template("search_url_table.html" , data = data1)
+    if data1:
+        return render_template("search_url_table.html" , data = data1 , info = info )
+    else:
+        return render_template("search_url_table.html" , data = data1 , info = "Nothing Found !!!" )
+        
 
 
 
@@ -615,7 +620,7 @@ def vul():
 								<img src='./static/KYguard.png' alt='KYguard' width="250" height="250">
 
 								<div>
-								<a href='/av/clamav'>
+								<a href='/vulnerability'>
 												<button style='background-color: #778899;  border: none;
 													color: black;
 													padding: 10px 40px;
