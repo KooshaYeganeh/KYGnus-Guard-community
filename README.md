@@ -1,4 +1,4 @@
-# KYGnus-AV
+# KYGnus Guard community
 KYGnus Antivirus For Linux Systems
 
 
@@ -25,7 +25,6 @@ KYGnus Antivirus For Linux Systems
 
  - [X] Scan system For Maliciuos Files
  - [X] Scan Remote System with ClamAV
- - [] Easy GUI For Iptables
  - [X] Search In  Malicious URL's 
  - [X] Check Permissions
  - [X] check MariaDB configs 
