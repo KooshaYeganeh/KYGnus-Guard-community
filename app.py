@@ -550,38 +550,47 @@ def vul():
         mariadb_max_allowed_packet = os.popen("cat /etc/my.cnf.d/mariadb-server.cnf | grep 'max_allowed_packet'").read()
         mariadb_max_connections = os.popen("cat /etc/my.cnf.d/mariadb-server.cnf | grep 'max_connections'").read()
         mariadb_max_user_connections = os.popen("cat /etc/my.cnf.d/mariadb-server.cnf | grep 'max_user_connections'").read()
+        ssh_service = os.popen("systemctl status sshd | grep running").read()
+        fail2ban = os.popen("find /usr/bin -type f -iname faul2ban").read()
+        apache = os.popen("systemctl status apache | grep running").read()
+        nginx = os.popen("systemctl status nginx | grep running").read()
         if (mariadb_port_ok):
-            vul.write("port config of /etc/my.cnf.d/mariadb-server.cnf is [ OK ]\n")
+            vul.write(Fore.CYAN + "port config of /etc/my.cnf.d/mariadb-server.cnf is [ OK ]\n")
         elif (mariadb_port_false):
-            vul.write("check port config But this Line is commented and port is Default [ DANGER ]\n")
+            vul.write(Fore.RED + "check port config But this Line is commented and port is Default [ DANGER ]\n")
         else:
-                vul.write("No port config Detected\n")
+                vul.write(Fore.YELLOW + "No port config Detected [ WARNING ]\n")
         if (mariadb_bind_ok):
-            vul.write("bind Address config [ OK ]\n")
+            vul.write(Fore.CYAN + "bind Address config [ OK ]\n")
         elif (mariadb_bind_false):
-            vul.write("check bind config But this Line is commented and bind is Default [ DANGER ]\n")
+            vul.write(Fore.RED + "check bind config But this Line is commented and bind is Default [ DANGER ]\n")
         if (mariadb_username) or (mariadb_password):
-            vul.write("You set username or password on config File.This is out of Security Rules[ DANGER ]\n")
+            vul.write(Fore.RED + "You set username or password on config File.This is out of Security Rules[ DANGER ]\n")
         else:
-            vul.write("No Username and Password Detected [ OK ]\n")
+            vul.write(Fore.CYAN + "No Username and Password Detected [ OK ]\n")
         if (mariadb_max_allowed_packet):
-            vul.write("max_allowed packet config is [ OK ]\n")
+            vul.write(Fore.CYAN + "max_allowed packet config is [ OK ]\n")
         else:
-            vul.write("No max_allowed_packet Address config Detected [ DANGER ]\n")
+            vul.write(Fore.RED + "No max_allowed_packet Address config Detected [ DANGER ]\n")
         if (mariadb_max_allowed_packet):
-            vul.write("max_allowed packet config is [ OK ]\n")
+            vul.write(Fore.CYAN + "max_allowed packet config is [ OK ]\n")
         else:
-            vul.write("No max_allowed_packet Address config Detected [ DANGER ]\n")
+            vul.write(Fore.RED + "No max_allowed_packet Address config Detected [ DANGER ]\n")
         if (mariadb_max_connections):
-            vul.write("MariaDB Max connections Set in config File [ OK ]\n")
+            vul.write(Fore.CYAN + "MariaDB Max connections Set in config File [ OK ]\n")
         else:
-            vul.write("MariaDB Max connections Not Set in config File [ DANGER ]\n")
+            vul.write(Fore.RED + "MariaDB Max connections Not Set in config File [ DANGER ]\n")
         if (mariadb_max_user_connections):
-            vul.write(" MariaDB Max user Connection set in config File [ OK ]\n")
+            vul.write(Fore.CYAN + " MariaDB Max user Connection set in config File [ OK ]\n")
         else:
-            vul.write("MariaDB Max user Connection Not set in config File [ DANGER ]\n")
-        
-            
+            vul.write(Fore.RED + "MariaDB Max user Connection Not set in config File [ DANGER ]\n")
+        if ssh_service:
+            if fail2ban_service:
+                vul.write(Fore.CYAN + "You Install Fail2ban 2 prevent ssh Bruteforce attack [ OK ]\n")
+            else:
+                vul.write(Fore.RED + "Fail2ban Service Not Install On Your system instead of ssh Service Active and Running on Your system [ Danger ]\n")
+        if apache or nginx:
+            vul.write(Fore.YELLOW  + "You should set Rule for iptables for 80 port [ WARNING ]\n")
         return Response(f"""<!DOCTYPE html>
 								<html lang="en">
 
@@ -615,7 +624,6 @@ def vul():
 													text-decoration: none;
 													display: inline-block;
 													font-size: 16px;'>
-																								
 											Return</button></a>
 											</form>
 
