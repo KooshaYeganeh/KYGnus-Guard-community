@@ -23,9 +23,9 @@ KYGnus Antivirus For Linux Systems
 
 ## TODO :
 
- - [*] Scan system For Maliciuos Files
- - [*] Scan Remote System with ClamAV
+ - [X] Scan system For Maliciuos Files
+ - [X] Scan Remote System with ClamAV
  - [] Easy GUI For Iptables
- - [*] Search In  Malicious URL's 
- - [*] Check Permissions
- - [*] check MariaDB configs 
+ - [X] Search In  Malicious URL's 
+ - [X] Check Permissions
+ - [X] check MariaDB configs 
