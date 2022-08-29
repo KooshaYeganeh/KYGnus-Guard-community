@@ -637,14 +637,6 @@ def vul():
 
 
 
-
-@app.route("/fw")
-def firewall():
-    return render_template("firewall.html")
-
-
-@app.route("/fw/setconfig" , methods=["POST"])
-def fw_post():
     
 
 @app.route("/home")
