@@ -585,7 +585,7 @@ def vul():
         else:
             vul.write(Fore.RED + "MariaDB Max user Connection Not set in config File [ DANGER ]\n")
         if ssh_service:
-            if fail2ban_service:
+            if fail2ban:
                 vul.write(Fore.CYAN + "You Install Fail2ban 2 prevent ssh Bruteforce attack [ OK ]\n")
             else:
                 vul.write(Fore.RED + "Fail2ban Service Not Install On Your system instead of ssh Service Active and Running on Your system [ Danger ]\n")
@@ -637,6 +637,15 @@ def vul():
 
 
 
+
+@app.route("/fw")
+def firewall():
+    return render_template("firewall.html")
+
+
+@app.route("/fw/setconfig" , methods=["POST"])
+def fw_post():
+    
 
 @app.route("/home")
 def home():
