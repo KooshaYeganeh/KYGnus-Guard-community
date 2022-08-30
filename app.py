@@ -25,6 +25,7 @@ from colorama import init, Fore, Back, Style
 import config
 from socket import *
 import paramiko
+import exifread
 
 
 
@@ -317,7 +318,16 @@ def antivirus_post():
                 logger.warning(Fore.RED + "Malicious Perl Script Detected and Quarantined")
             if ((re.search("\/usr" , w)) and ((re.search("ruby" , w)))) or (webfile.endswith(".rb")):
                 shutil.move(webfile,Quarantine)
-                logger.warning(Fore.RED + "Malicious Ruby Script Detected and Quarantined")  
+                logger.warning(Fore.RED + "Malicious Ruby Script Detected and Quarantined")
+        imgfiles = glob.glob("/home/koosha/Pictures/**/*.JPG",recursive=True)
+        for img in imgfiles:
+            with open(img, 'rb') as f:
+                tags = exifread.process_file(f)
+                if tags == "PNG file does not have exif data .":
+                    pass
+                else:
+                    shutil.move(img,Quarantine)
+                    logger.warning(Fore.RED + "Find Exif Data in images and Quarantine [ERROR]")    
         return Response(f"""<!DOCTYPE html>
 								<html lang="en">
 
