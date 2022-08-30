@@ -281,31 +281,43 @@ def antivirus_post():
         for pfiles in pythonfiles:
             with open(pfiles,"r") as python:
                  py = python.read()
-                 if (re.search("connect",py)) or (re.search("encrypt",py)):
+                 if (re.search("connect",py)) or (re.search("encrypt",py)) or (re.search("remote",py)) or (re.search("anonymous",py)):
                      shutil.move(py,Quarantine)
                      logger.warning(Fore.RED + "Malicious python Script Detected and Quarantined")
         rubyfiles = glob.glob(f"{dir}/**/*.rb" , recursive=True)
         for rubyfile in rubyfiles:
             with open(rubyfile,"r") as ruby:
                  rb = ruby.read()
-                 if (re.search("connect",rb)) or (re.search("encrypt",rb)):
+                 if (re.search("connect",rb)) or (re.search("encrypt",rb)) or (re.search("remote",rb)) or (re.search("anonymous",rb)):
                      shutil.move(rb,Quarantine)
                      logger.warning(Fore.RED + "Malicious Ruby Script Detected and Quarantined")
         perlfiles = glob.glob(f"{dir}/**/*.pl" , recursive=True)
         for perlscript in perlfiles:
             with open(perlscript,"r") as perl:
                 pl = perl.read()
-                if (re.search("connect",pl)) or (re.search("encrypt",pl)):
+                if (re.search("connect",pl)) or (re.search("encrypt",pl)) or (re.search("remote",pl)) or (re.search("anonymous",pl)):
                     shutil.move(pl,Quarantine)
                     logger.warning(Fore.RED + "Malicious Perl Script Detected and Quarantined")
         javascripts = glob.glob(f"{dir}/**/*.js" , recursive=True)
         for javascript in javascripts:
             with open(javascript,"r") as java:
                 js = java.read()
-                if (re.search("connect",js)) or (re.search("encrypt",js)):
+                if (re.search("connect",js)) or (re.search("encrypt",js)) or (re.search("remote",js)) or (re.search("anonymous",js)):
                     shutil.move(js,Quarantine)
                     logger.warning(Fore.RED + "Malicious javascript  Detected and Quarantined")
-        
+        webfiles = glob.glob("/var/www/**/*.*" , recursive=True)
+        for webfile in webfiles:
+            with open(webfile,"r") as web:
+                w = web.read()
+            if ((re.search("\/usr" , w)) and ((re.search("python" , w)))) or (webfile.endswith(".py")):
+                shutil.move(webfile,Quarantine)
+                logger.warning(Fore.RED + "Malicious python Script Detected and Quarantined")
+            if ((re.search("\/usr" , w)) and ((re.search("perl" , w)))) or (webfile.endswith(".pl")):
+                shutil.move(webfile,Quarantine)
+                logger.warning(Fore.RED + "Malicious Perl Script Detected and Quarantined")
+            if ((re.search("\/usr" , w)) and ((re.search("ruby" , w)))) or (webfile.endswith(".rb")):
+                shutil.move(webfile,Quarantine)
+                logger.warning(Fore.RED + "Malicious Ruby Script Detected and Quarantined")  
         return Response(f"""<!DOCTYPE html>
 								<html lang="en">
 
