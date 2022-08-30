@@ -35,6 +35,10 @@ username = getpass.getuser()
 appdir = os.path.join(f"/home/{username}/KYGnus_Guard_community")
 os.makedirs(appdir,exist_ok=True)
 
+Log = os.path.join(f"/home/{username}/KYGnus_Guard_community/Log")
+os.makedirs(Log,exist_ok=True)
+
+
 Quarantine = os.path.join(f"/home/{username}/KYGnus_Guard_community/Quarantine")
 os.makedirs(Quarantine,exist_ok=True)
 
@@ -44,7 +48,7 @@ app = Flask(__name__)
 
 
 
-logging.basicConfig(filename=f"{appdir}/KYGnus_Guard.log",
+logging.basicConfig(filename=f"{appdir}/Log/KYGnus_Guard.log",
                     format='%(asctime)s %(message)s',
                     filemode='w')
 
@@ -198,13 +202,13 @@ def loggin():
 @login_required
 def logout():
     logout_user()
-    logging.warning("user logout")
+    logger.warning("user logout")
     return redirect("/login")
 
 
 @app.errorhandler(401)
 def page_not_found(e):
-    logging.info("401 Error")
+    logger.info("401 Error")
     return Response("""
                     <html><center style='background-color:white;'>
                     <h2 style='color:red;'>Login failed</h2>
@@ -273,6 +277,35 @@ def antivirus_post():
                 if (re.search("hack" , r)) or (re.search("encrypt" , r)):
                     shutil.move(txtfile,Quarantine)
                     logger.warning(Fore.RED + "Malicious Files Detected and Quarantined")
+        pythonfiles = glob.glob(f"{dir}/**/*.py" , recursive=True)
+        for pfiles in pythonfiles:
+            with open(pfiles,"r") as python:
+                 py = python.read()
+                 if (re.search("connect",py)) or (re.search("encrypt",py)):
+                     shutil.move(py,Quarantine)
+                     logger.warning(Fore.RED + "Malicious python Script Detected and Quarantined")
+        rubyfiles = glob.glob(f"{dir}/**/*.rb" , recursive=True)
+        for rubyfile in rubyfiles:
+            with open(rubyfile,"r") as ruby:
+                 rb = ruby.read()
+                 if (re.search("connect",rb)) or (re.search("encrypt",rb)):
+                     shutil.move(rb,Quarantine)
+                     logger.warning(Fore.RED + "Malicious Ruby Script Detected and Quarantined")
+        perlfiles = glob.glob(f"{dir}/**/*.pl" , recursive=True)
+        for perlscript in perlfiles:
+            with open(perlscript,"r") as perl:
+                pl = perl.read()
+                if (re.search("connect",pl)) or (re.search("encrypt",pl)):
+                    shutil.move(pl,Quarantine)
+                    logger.warning(Fore.RED + "Malicious Perl Script Detected and Quarantined")
+        javascripts = glob.glob(f"{dir}/**/*.js" , recursive=True)
+        for javascript in javascripts:
+            with open(javascript,"r") as java:
+                js = java.read()
+                if (re.search("connect",js)) or (re.search("encrypt",js)):
+                    shutil.move(js,Quarantine)
+                    logger.warning(Fore.RED + "Malicious javascript  Detected and Quarantined")
+        
         return Response(f"""<!DOCTYPE html>
 								<html lang="en">
 
