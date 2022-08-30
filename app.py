@@ -319,18 +319,25 @@ def antivirus_post():
             if ((re.search("\/usr" , w)) and ((re.search("ruby" , w)))) or (webfile.endswith(".rb")):
                 shutil.move(webfile,Quarantine)
                 logger.warning(Fore.RED + "Malicious Ruby Script Detected and Quarantined")
-        imgfiles = glob.glob("/home/koosha/Pictures/**/*.JPG",recursive=True)
-        for img in imgfiles:
-            with open(img, 'rb') as f:
+        
+        files = glob.glob(f"{dir}/**/*.JPG",recursive=True)
+        for file in files:
+            with open(file, 'rb') as f:
                 tags = exifread.process_file(f)
-                if tags == "PNG file does not have exif data .":
+                if tags:
                     pass
                 else:
-                    shutil.move(img,Quarantine)
-                    logger.warning(Fore.RED + "Find Exif Data in images and Quarantine [ERROR]")    
+                    logger.warning(Fore.RED + "Find Exif Data in PNG images and Quarantine [ERROR]")
+        pngfiles = glob.glob(f"{dir}/**/*.png",recursive=True)
+        for file in pngfiles:
+            with open(file, 'rb') as f:
+                tags = exifread.process_file(f)
+                if tags:
+                    pass
+                else:
+                    logger.warning(Fore.RED + "Find Exif Data in PNG images and Quarantine [ERROR]")
         return Response(f"""<!DOCTYPE html>
 								<html lang="en">
-
 								<head>
 									<meta charset="UTF-8">
 									<meta http-equiv="X-UA-Compatible" content="IE=edge">
