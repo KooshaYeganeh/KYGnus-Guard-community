@@ -1,6 +1,8 @@
 # KYGnus Guard community
 KYGnus Antivirus For Linux Systems
 
+![image](./static/logo.png)
+
 # INFO
 
 This App is Linux Security Tool But it's nut Just Pure Antivirus.This app Have:  
@@ -72,7 +74,7 @@ This App is Linux Security Tool But it's nut Just Pure Antivirus.This app Have:
 	- **cd /var/log**
 	- **sudo mkdir KYGnus_Guard**
 	- **cd KYGnus_Guard**
-	- **ln -s /home/koosha/Apps/KYGnus_Guard_community/KYGnus_Guard.log KYGnus_Guard.log**	
+	- **ln -s /home/koosha/Apps/KYGnus_Guard_community/Log/KYGnus_Guard.log KYGnus_Guard.log**	
 
 
 10- Create Directory For standard Settings /etc
