@@ -1,0 +1,9 @@
+[Unit]
+Description=Minimal Antivirus For Linux with Web GUI
+
+[Service]
+Type=simple
+ExecStart=/bin/bash /home/koosha/App/KYGnus_Guard_community/KYGnus_Guard.sh
+
+[Install]
+WantedBy=multi-user.target
