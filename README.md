@@ -3,11 +3,11 @@ KYGnus Antivirus For Linux Systems
 
 # INFO
 
-This App is Linux Security Tool But it's nut Just Pure Antivirus.This app Have:
-1- Pure Antivirus for Detect Files Have potantional Malicious
-2- Search page for Search in Malicious Urls
-3- check Permissions of system 
-4- check configs
+This App is Linux Security Tool But it's nut Just Pure Antivirus.This app Have:  
+1- Pure Antivirus for Detect Files Have potantional Malicious  
+2- Search page for Search in Malicious Urls  
+3- check Permissions of system  
+4- check configs  
 5- Scan Remote system with clamAV
 
 
