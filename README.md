@@ -1,7 +1,7 @@
 # KYGnus Guard community
 KYGnus Antivirus For Linux Systems
 
-![image](./static/README_LOGO.jpg)
+![image](./static/README_LOGO.png)
 
 # INFO
 
