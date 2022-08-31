@@ -40,7 +40,7 @@ This App is Linux Security Tool But it's nut Just Pure Antivirus.This app Have:
 > sudo pip install virtualenv
 
 6- Create database in mariaDB  
-*Note : if Mariadb Not installed on system Install it*
+*Note : if Mariadb Not installed on system Install it*  
 [For more Information About Install mariaDB on Fedora35](https://docs.fedoraproject.org/en-US/quick-docs/installing-mysql-mariadb/)  
 [For more Information About Install mariaDB on Ubuntu 20.04 ](https://www.digitalocean.com/community/tutorials/how-to-install-mariadb-on-ubuntu-20-04)
 
