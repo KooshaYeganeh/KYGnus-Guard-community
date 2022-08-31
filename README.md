@@ -28,10 +28,10 @@ This App is Linux Security Tool But it's nut Just Pure Antivirus.This app Have:
 **$ wget https://github.com/KooshaYeganeh/KYGnus-Guard-community/archive/refs/heads/main.zip**
 
 3- Unzip File  
-**$ unzip main.zip**
+**$ unzip main.zip && mv KYGnus-Guard-community-main KYGnus-Guard-community**
 
 4- Go to Directory  
-**$ cd KYGnus-Guard-community-main/**
+**$ cd KYGnus-Guard-community**
 
 5- create virtualenv 
 **$ virtualenv venv**
@@ -41,7 +41,7 @@ This App is Linux Security Tool But it's nut Just Pure Antivirus.This app Have:
 
 6- Create database in mariaDB  
 *Note : if Mariadb Not installed on system Install it*
-[For more Information About Install mariaDB on Fedora35](https://docs.fedoraproject.org/en-US/quick-docs/installing-mysql-mariadb/)
+[For more Information About Install mariaDB on Fedora35](https://docs.fedoraproject.org/en-US/quick-docs/installing-mysql-mariadb/)  
 [For more Information About Install mariaDB on Ubuntu 20.04 ](https://www.digitalocean.com/community/tutorials/how-to-install-mariadb-on-ubuntu-20-04)
 
 
@@ -63,7 +63,28 @@ This App is Linux Security Tool But it's nut Just Pure Antivirus.This app Have:
 **$ cd /etc/systemd/system/**  
 **$ sudo systemctl enable --now KYGnus_Guard.service**
 
-9 - for Better Security You should Block 8080 port in Your system
+
+
+
+9- Create Directory For standard Logs /var/log
+*Note: change user(koosha) with Your user in all lines*
+ - 9-1 : Go to /var/log Directory and make Directory for app
+	- **cd /var/log**
+	- **sudo mkdir KYGnus_Guard**
+	- **cd KYGnus_Guard**
+	- **ln -s /home/koosha/Apps/KYGnus_Guard_community/KYGnus_Guard.log KYGnus_Guard.log**	
+
+
+10- Create Directory For standard Settings /etc
+*Note: change user(koosha) with Your user in all lines*
+ - 9-1 : Go to /etc Directory and make Directory for app
+	- **cd /etc**
+	- **sudo mkdir KYGnus_Guard**
+	- **cd KYGnus_Guard**
+	- **ln -s /home/koosha/Apps/KYGnus_Guard_community/config.py KYGnus_Guard.conf**	
+
+
+11- for Better Security You should Block 8080 port in Your system
 
 **$ sudo iptables -t filter -A INPUT -p tcp -i any --dport 8080 -j DROP**
 
