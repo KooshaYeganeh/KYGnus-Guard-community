@@ -6,7 +6,7 @@ KYGnus Antivirus For Linux Systems
 # INFO
 
 This App is Linux Security Tool But it's nut Just Pure Antivirus.This app Have:  
-1- Pure Antivirus for Detect Files Have potantional Malicious  
+1- Pure Antivirus for Detect Files Have potantional Malicious  Files 
 2- Search page for Search in Malicious Urls  
 3- check Permissions of system  
 4- check configs  
@@ -35,7 +35,7 @@ This App is Linux Security Tool But it's nut Just Pure Antivirus.This app Have:
 4- Go to Directory  
 **$ cd KYGnus-Guard-community**
 
-5- create virtualenv 
+5- create virtualenv  
 **$ virtualenv venv**
 
 *Note : if virtualenv Not Installed on You system install it with this command:*  
