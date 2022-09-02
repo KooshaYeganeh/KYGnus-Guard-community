@@ -93,32 +93,32 @@ sudo systemctl enable --now KYGnus_Guard.service
 13- Create Directory For standard Logs /var/log
 *Note: change user(koosha) with Your user in all lines*
  - 9-1 : Go to /var/log Directory and make Directory for app
-	- ```
-	 cd /var/log
-	 ```
-	- ```
-	sudo mkdir KYGnus_Guard
-	```
-	- ```
-	cd KYGnus_Guard
-	```
-	- ```
-	ln -s /home/koosha/Apps/KYGnus_Guard_community/Log/KYGnus_Guard.log KYGnus_Guard.log
+```
+cd /var/log
+```
+```
+sudo mkdir KYGnus_Guard
+```
+```
+cd KYGnus_Guard
+```
+```
+ln -s /home/koosha/Apps/KYGnus_Guard_community/Log/KYGnus_Guard.log KYGnus_Guard.log
 ```
 
 14- Create Directory For standard Settings /etc
 *Note: change user(koosha) with Your user in all lines*
  - 9-1 : Go to /etc Directory and make Directory for app
-	- ```
+```
 cd /etc
 ```
-	- ```
+```
 sudo mkdir KYGnus_Guard
 ```
-	- ```
+```
 cd KYGnus_Guard
 ```
-	- ```
+```
 ln -s /home/koosha/Apps/KYGnus_Guard_community/config.py KYGnus_Guard.conf
 ```
 
