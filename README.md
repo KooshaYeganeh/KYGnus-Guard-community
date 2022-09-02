@@ -20,26 +20,26 @@ This App is Linux Security Tool But it's nut Just Pure Antivirus.This app Have:
 
 ## For Install App Follow the steps below:
 
-1- create App Directory in hone of user for Example:  
+**1- create App Directory in hone of user for Example:**
 *Note : replace my username(koosha) with Your ursername in command below*
 
 ```
 mkdir /home/koosha/App && cd /home/koosha/App
 ```
-2- Goes To App Directory and Get File From Github
+**2- Goes To App Directory and Get File From Github**
 
 ```
 wget https://github.com/KooshaYeganeh/KYGnus-Guard-community/archive/refs/heads/main.zip
 ```
-3- Unzip File  
+**3- Unzip File**  
 ```
 unzip main.zip && mv KYGnus-Guard-community-main KYGnus-Guard-community**
 ```
-4- Go to Directory  
+**4- Go to Directory**  
 ```
 cd KYGnus-Guard-community**
 ```
-5- create virtualenv  
+**5- create virtualenv**  
 ```
 virtualenv venv
 ```
@@ -48,38 +48,38 @@ virtualenv venv
 sudo pip install virtualenv
 ```
 
-6- Create database in mariaDB  
+**6- Create database in mariaDB**  
 *Note : if Mariadb Not installed on system Install it*  
 [For more Information About Install mariaDB on Fedora35](https://docs.fedoraproject.org/en-US/quick-docs/installing-mysql-mariadb/)  
 [For more Information About Install mariaDB on Ubuntu 20.04 ](https://www.digitalocean.com/community/tutorials/how-to-install-mariadb-on-ubuntu-20-04)
 
-7- create database malware in mariaDB
+**7- create database malware in mariaDB**
 
 ```
 create database malware;
 ```
 
-8- Restore malware.sql database to Your DB
+**8- Restore malware.sql database to Your DB**
 
 ```
 mysql -u root -p  malware < malware.sql
 ```
 
-9- Edit KYGnus_Guard.sh File:  
- - 7-1 : in KYGnus_guard.sh File You Should First chanage Username with Your user  
+**9- Edit KYGnus_Guard.sh File:**  
+ - 9-1 : in KYGnus_guard.sh File You Should First chanage Username with Your user  
 *Note: if You use Debian Base systems Like Ubuntu You chould change command python with python3.*  
 *Note: in RedHat Base systems Like Fedora You Don't Need chnage python command because in Default mode python Running python3 command.*
 
-10- change Service File :  
- - 6-1: change user(koosha) with Your user in Line : /home/**koosha**/App/KYGnus_Guard_community/KYGnus_Guard.sh
+**10- change Service File :**  
+ - 10-1: change user(koosha) with Your user in Line : /home/**koosha**/App/KYGnus_Guard_community/KYGnus_Guard.sh
 
-11- copy service File in /etc/systemd/system Directory
+**11- copy service File in /etc/systemd/system Directory**
 
 ```
 sudo cp KYGnus_Guard.service  /etc/systemd/system directory
 ```
 
-12 - Enable Service File
+**12 - Enable Service File**
 
 ```
 cd /etc/systemd/system/
@@ -90,9 +90,9 @@ sudo systemctl enable --now KYGnus_Guard.service
 
 
 
-13- Create Directory For standard Logs /var/log
+**13- Create Directory For standard Logs /var/log**
 *Note: change user(koosha) with Your user in all lines*
- - 9-1 : Go to /var/log Directory and make Directory for app
+ - 13-1 : Go to /var/log Directory and make Directory for app
 ```
 cd /var/log
 ```
@@ -106,9 +106,9 @@ cd KYGnus_Guard
 ln -s /home/koosha/Apps/KYGnus_Guard_community/Log/KYGnus_Guard.log KYGnus_Guard.log
 ```
 
-14- Create Directory For standard Settings /etc
+**14- Create Directory For standard Settings /etc**
 *Note: change user(koosha) with Your user in all lines*
- - 9-1 : Go to /etc Directory and make Directory for app
+ - 14-1 : Go to /etc Directory and make Directory for app
 ```
 cd /etc
 ```
@@ -123,7 +123,7 @@ ln -s /home/koosha/Apps/KYGnus_Guard_community/config.py KYGnus_Guard.conf
 ```
 
 
-15- for Better Security You should Block 8080 port in Your system
+**15- for Better Security You should Block 8080 port in Your system**
 
 ```
 sudo iptables -t filter -A INPUT -p tcp -i any --dport 8080 -j DROP
