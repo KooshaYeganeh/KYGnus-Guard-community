@@ -23,23 +23,30 @@ This App is Linux Security Tool But it's nut Just Pure Antivirus.This app Have:
 1- create App Directory in hone of user for Example:  
 *Note : replace my username(koosha) with Your ursername in command below*
 
-**$ mkdir /home/koosha/App && cd /home/koosha/App**
-
+```
+mkdir /home/koosha/App && cd /home/koosha/App
+```
 2- Goes To App Directory and Get File From Github
 
-**$ wget https://github.com/KooshaYeganeh/KYGnus-Guard-community/archive/refs/heads/main.zip**
-
+```
+wget https://github.com/KooshaYeganeh/KYGnus-Guard-community/archive/refs/heads/main.zip
+```
 3- Unzip File  
-**$ unzip main.zip && mv KYGnus-Guard-community-main KYGnus-Guard-community**
-
+```
+unzip main.zip && mv KYGnus-Guard-community-main KYGnus-Guard-community**
+```
 4- Go to Directory  
-**$ cd KYGnus-Guard-community**
-
+```
+cd KYGnus-Guard-community**
+```
 5- create virtualenv  
-**$ virtualenv venv**
-
+```
+virtualenv venv
+```
 *Note : if virtualenv Not Installed on You system install it with this command:*  
-> sudo pip install virtualenv
+```
+sudo pip install virtualenv
+```
 
 6- Create database in mariaDB  
 *Note : if Mariadb Not installed on system Install it*  
@@ -48,11 +55,15 @@ This App is Linux Security Tool But it's nut Just Pure Antivirus.This app Have:
 
 7- create database malware in mariaDB
 
-**MariaDB [(none)]> create database malware;**
+```
+create database malware;
+```
 
 8- Restore malware.sql database to Your DB
 
-**mysql -u root -p  malware < malware.sql**
+```
+mysql -u root -p  malware < malware.sql
+```
 
 9- Edit KYGnus_Guard.sh File:  
  - 7-1 : in KYGnus_guard.sh File You Should First chanage Username with Your user  
@@ -64,39 +75,59 @@ This App is Linux Security Tool But it's nut Just Pure Antivirus.This app Have:
 
 11- copy service File in /etc/systemd/system Directory
 
-**$ sudo cp KYGnus_Guard.service  /etc/systemd/system directory**
-
+```
+sudo cp KYGnus_Guard.service  /etc/systemd/system directory
+```
 
 12 - Enable Service File
 
-**$ cd /etc/systemd/system/**  
-**$ sudo systemctl enable --now KYGnus_Guard.service**
-
+```
+cd /etc/systemd/system/
+```
+```
+sudo systemctl enable --now KYGnus_Guard.service
+```
 
 
 
 13- Create Directory For standard Logs /var/log
 *Note: change user(koosha) with Your user in all lines*
  - 9-1 : Go to /var/log Directory and make Directory for app
-	- **cd /var/log**
-	- **sudo mkdir KYGnus_Guard**
-	- **cd KYGnus_Guard**
-	- **ln -s /home/koosha/Apps/KYGnus_Guard_community/Log/KYGnus_Guard.log KYGnus_Guard.log**	
-
+	- ```
+	 cd /var/log
+	 ```
+	- ```
+	sudo mkdir KYGnus_Guard
+	```
+	- ```
+	cd KYGnus_Guard
+	```
+	- ```
+	ln -s /home/koosha/Apps/KYGnus_Guard_community/Log/KYGnus_Guard.log KYGnus_Guard.log
+```
 
 14- Create Directory For standard Settings /etc
 *Note: change user(koosha) with Your user in all lines*
  - 9-1 : Go to /etc Directory and make Directory for app
-	- **cd /etc**
-	- **sudo mkdir KYGnus_Guard**
-	- **cd KYGnus_Guard**
-	- **ln -s /home/koosha/Apps/KYGnus_Guard_community/config.py KYGnus_Guard.conf**	
+	- ```
+cd /etc
+```
+	- ```
+sudo mkdir KYGnus_Guard
+```
+	- ```
+cd KYGnus_Guard
+```
+	- ```
+ln -s /home/koosha/Apps/KYGnus_Guard_community/config.py KYGnus_Guard.conf
+```
 
 
 15- for Better Security You should Block 8080 port in Your system
 
-**$ sudo iptables -t filter -A INPUT -p tcp -i any --dport 8080 -j DROP**
-
+```
+sudo iptables -t filter -A INPUT -p tcp -i any --dport 8080 -j DROP
+```
 
 
 
