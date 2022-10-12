@@ -47,9 +47,12 @@ os.makedirs(Quarantine,exist_ok=True)
 
 app = Flask(__name__)
 
+now = datetime.datetime.now()
+logdate = f"{now.year}_{now.month}_{now.day}"
+logtime = f"{now.hour}:{now.minute}"
 
 
-logging.basicConfig(filename=f"{appdir}/Log/KYGnus_Guard.log",
+logging.basicConfig(filename=f"{appdir}/Log/[ {logdate}_{logtime} ]KYGnus_Guard.log",
                     format='%(asctime)s %(message)s',
                     filemode='w')
 
@@ -683,7 +686,7 @@ def vul():
 								<img src='./static/KYguard.png' alt='KYguard' width="250" height="250">
 
 								<div>
-								<a href='/vulnerability'>
+								<a href='/home'>
 												<button style='background-color: #778899;  border: none;
 													color: black;
 													padding: 10px 40px;
