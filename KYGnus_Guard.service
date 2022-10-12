@@ -1,9 +1,13 @@
 [Unit]
 Description=Minimal Antivirus For Linux with Web GUI
-
+Documentation=https://github.com/KooshaYeganeh/KYGnus-Guard-community
+After=NetworkManager.service mariadb.service
 [Service]
 Type=simple
 ExecStart=/bin/bash /home/koosha/App/KYGnus_Guard_community/KYGnus_Guard.sh
+ExecStop=/bin/bash /home/koosha/App/KYGnus_Guard_community/KYGnus_Guard.sh --Kill
+ExecReload=/bin/bash /home/koosha/App/KYGnus_Guard_community/KYGnus_Guard.sh --HUP
+
 
 [Install]
 WantedBy=multi-user.target
