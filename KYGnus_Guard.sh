@@ -9,7 +9,7 @@ username
 username="" # Enter username
 
 
-cd /home/$username/App/KYGnus_Guard_community
+cd /home/koosha/work/Test/Security/bashApp/Antivirus/KYGnus-AV
 
 source venv/bin/activate
 

@@ -20,7 +20,6 @@ from cryptography.fernet import Fernet
 import pyfiglet
 import sys
 import socket
-from datetime import datetime
 from colorama import init, Fore, Back, Style
 import config
 from socket import *
@@ -33,14 +32,14 @@ import exifread
 username = getpass.getuser()
 
 
-appdir = os.path.join(f"/home/{username}/KYGnus_Guard_community")
+appdir = os.path.join(f"/opt/KYGnus-Guard-community-main")
 os.makedirs(appdir,exist_ok=True)
 
-Log = os.path.join(f"/home/{username}/KYGnus_Guard_community/Log")
+Log = os.path.join(f"/opt/KYGnus-Guard-community-main/Log")
 os.makedirs(Log,exist_ok=True)
 
 
-Quarantine = os.path.join(f"/home/{username}/KYGnus_Guard_community/Quarantine")
+Quarantine = os.path.join(f"/tmp/Quarantine")
 os.makedirs(Quarantine,exist_ok=True)
 
 
@@ -68,9 +67,6 @@ logger.info(Fore.LIGHTRED_EX + """
 ██╔═██╗   ╚██╔╝  ██║   ██║██║╚██╗██║██║   ██║╚════██║╚════╝██║   ██║██║   ██║██╔══██║██╔══██╗██║  ██║
 ██║  ██╗   ██║   ╚██████╔╝██║ ╚████║╚██████╔╝███████║      ╚██████╔╝╚██████╔╝██║  ██║██║  ██║██████╔╝
 ╚═╝  ╚═╝   ╚═╝    ╚═════╝ ╚═╝  ╚═══╝ ╚═════╝ ╚══════╝       ╚═════╝  ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝ 
-                                                                                                     
-            
-            
             """)
 
 

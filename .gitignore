@@ -162,3 +162,4 @@ cython_debug/
 test.py
 config.py
 test_flask.py
+*.swp

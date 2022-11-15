@@ -20,16 +20,17 @@ This App is Linux Security Tool But it's nut Just Pure Antivirus.This app Have:
 
 ## For Install App Follow the steps below:
 
-**1- create App Directory in hone of user for Example:**
-*Note : replace my username(koosha) with Your ursername in command below*
+**1-chnage Directory to /opt**
 
-```
-mkdir /home/koosha/App && cd /home/koosha/App
-```
-**2- Goes To App Directory and Get File From Github**
+``
+ cd /opt
+``
+
+**2-Download File From Github **
 
 ```
 wget https://github.com/KooshaYeganeh/KYGnus-Guard-community/archive/refs/heads/main.zip
+
 ```
 **3- Unzip File**  
 ```
@@ -37,21 +38,29 @@ unzip main.zip && mv KYGnus-Guard-community-main KYGnus-Guard-community**
 ```
 **4- Go to Directory**  
 ```
-cd KYGnus-Guard-community**
+cd KYGnus-Guard-community-main**
 ```
-**5- create virtualenv**  
+
+**5- Install python Packages**  
 ```
-virtualenv venv
+Fedora: pip install -r requirements.txt
+Ubuntu: pip install -r requirements.txt
+openSUSE Leap : pip3 install -r requirements.txt
 ```
-*Note : if virtualenv Not Installed on You system install it with this command:*  
-```
-sudo pip install virtualenv
-```
+
+Note : if get Error when Install Packeges Like Version Error You can remove Version of Packages in requirements FileLike this: 
+
+> vi requirements.txt
+> :%s/==.*//g
+
+Note2 : When Remove Version of Packages Latest Version of Packes Will be Install
 
 **6- Create database in mariaDB**  
 *Note : if Mariadb Not installed on system Install it*  
 [For more Information About Install mariaDB on Fedora35](https://docs.fedoraproject.org/en-US/quick-docs/installing-mysql-mariadb/)  
 [For more Information About Install mariaDB on Ubuntu 20.04 ](https://www.digitalocean.com/community/tutorials/how-to-install-mariadb-on-ubuntu-20-04)
+
+Note : Installation of MariaDB in openSuse Same as ubuntu
 
 **7- create database malware in mariaDB**
 
@@ -65,21 +74,33 @@ create database malware;
 mysql -u root -p  malware < malware.sql
 ```
 
-**9- Edit KYGnus_Guard.sh File:**  
- - 9-1 : in KYGnus_guard.sh File You Should First chanage Username with Your user  
-*Note: if You use Debian Base systems Like Ubuntu You chould change command python with python3.*  
+**9- Change config (config.py) File From Your Configurations**
+
+
+**10- Run App For First Time**
+
+Note : in opensuse you Might see seLinux status Error,You should Install selinux Packages : 
+
+```
+sudo zypper in restorecond policycoreutils setools-console
+```
+  
+
+**11- Edit KYGnus_Guard.sh File:**  
+ - 11-1 : in KYGnus_guard.sh File You Should First chanage Username with Your user  
+*Note: if You use Debian Base systems Like Ubuntu and openSuse You chould change command python with python3.*  
 *Note: in RedHat Base systems Like Fedora You Don't Need chnage python command because in Default mode python Running python3 command.*
 
-**10- change Service File :**  
- - 10-1: change user(koosha) with Your user in Line : /home/**koosha**/App/KYGnus_Guard_community/KYGnus_Guard.sh
+**12- change Service File :**  
+ - 12-1: change user(koosha) with Your user in Line : /opt/KYGnus-Guard-community-main/KYGnus_Guard.sh
 
-**11- copy service File in /etc/systemd/system Directory**
+**13- copy service File in /etc/systemd/system Directory**
 
 ```
 sudo cp KYGnus_Guard.service  /etc/systemd/system directory
 ```
 
-**12 - Enable Service File**
+**14 - Enable Service File**
 
 ```
 cd /etc/systemd/system/
@@ -87,12 +108,17 @@ cd /etc/systemd/system/
 ```
 sudo systemctl enable --now KYGnus_Guard.service
 ```
+Note : In some Linux distributions, an error may occur in the start service, which may be due to the bash call path. In this case, modify the KYGnus_Guard.sh file and put your system bash call path in the file.
+for Example:
+Fedora : /usr/bin/bash
+OpenSuse : /usr/bin/bash
+Peppermint : /bin/bash
 
 
 
-**13- Create Directory For standard Logs /var/log**
+**15- Create Directory For standard Logs /var/log**
 *Note: change user(koosha) with Your user in all lines*
- - 13-1 : Go to /var/log Directory and make Directory for app
+ - 15-1 : Go to /var/log Directory and make Directory for app
 ```
 cd /var/log
 ```
@@ -103,12 +129,12 @@ sudo mkdir KYGnus_Guard
 cd KYGnus_Guard
 ```
 ```
-ln -s /home/koosha/Apps/KYGnus_Guard_community/Log/KYGnus_Guard.log KYGnus_Guard.log
+ln -s /opt/KYGnus-Guard-community-main/Log/KYGnus_Guard.log KYGnus_Guard.log
 ```
 
-**14- Create Directory For standard Settings /etc**
+**16- Create Directory For standard Settings /etc**
 *Note: change user(koosha) with Your user in all lines*
- - 14-1 : Go to /etc Directory and make Directory for app
+ - 16-1 : Go to /etc Directory and make Directory for app
 ```
 cd /etc
 ```
@@ -119,11 +145,11 @@ sudo mkdir KYGnus_Guard
 cd KYGnus_Guard
 ```
 ```
-ln -s /home/koosha/Apps/KYGnus_Guard_community/config.py KYGnus_Guard.conf
+ln -s /opt/KYGnus-Guard-community-main/config.py KYGnus_Guard.conf
 ```
 
 
-**15- for Better Security You should Block 8080 port in Your system**
+**17- for Better Security You should Block 8080 port in Your system**
 
 ```
 sudo iptables -t filter -A INPUT -p tcp -i any --dport 8080 -j DROP
