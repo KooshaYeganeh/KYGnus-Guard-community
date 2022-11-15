@@ -26,7 +26,7 @@ This App is Linux Security Tool But it's nut Just Pure Antivirus.This app Have:
  cd /opt
 ``
 
-**2-Download File From Github **
+**2-Download File From Github**
 
 ```
 wget https://github.com/KooshaYeganeh/KYGnus-Guard-community/archive/refs/heads/main.zip
