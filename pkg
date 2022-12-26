@@ -1,0 +1,8 @@
+#!/usr/bin/bash
+
+
+
+packages=`cat requirements.txt | cut -d"=" -f1`
+for package in $packages;do
+	sudo pip install $package
+done
