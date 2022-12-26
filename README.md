@@ -34,24 +34,35 @@ wget https://github.com/KooshaYeganeh/KYGnus-Guard-community/archive/refs/heads/
 ```
 **3- Unzip File**  
 ```
-unzip main.zip && mv KYGnus-Guard-community-main KYGnus-Guard-community**
+unzip main.zip && mv KYGnus-Guard-community-main KYGnus_Guard
 ```
+**Create Directory for App in /opt**
+```
+sudo mv KYGnus_Guard /opt
+```
+
 **4- Go to Directory**  
 ```
-cd KYGnus-Guard-community-main**
+cd /opt/KYGnus_Guard
 ```
 
 **5- Install python Packages**  
 ```
-Fedora: pip install -r requirements.txt
-Ubuntu: pip install -r requirements.txt
-openSUSE Leap : pip3 install -r requirements.txt
+Fedora: sudo pip install -r requirements.txt
+Ubuntu: sido pip3 install -r requirements.txt
+openSUSE Leap : sudo pip install -r requirements.txt
 ```
 
-Note : if get Error when Install Packeges Like Version Error You can remove Version of Packages in requirements FileLike this: 
+Note : if get Error when Install Packeges Like Version Error You can remove Version of Packages in requirements File Like this: 
 
 > vi requirements.txt
 > :%s/==.*//g
+
+or run This Script
+
+```
+./pkg
+```
 
 Note2 : When Remove Version of Packages Latest Version of Packes Will be Install
 
