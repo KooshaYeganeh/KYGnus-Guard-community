@@ -70,7 +70,6 @@ Note2 : When Remove Version of Packages Latest Version of Packes Will be Install
 *Note : if Mariadb Not installed on system Install it*  
 [For more Information About Install mariaDB on Fedora35](https://docs.fedoraproject.org/en-US/quick-docs/installing-mysql-mariadb/)  
 [For more Information About Install mariaDB on Ubuntu 20.04 ](https://www.digitalocean.com/community/tutorials/how-to-install-mariadb-on-ubuntu-20-04)
-
 [OpenSuse4Developers](https://github.com/KooshaYeganeh/OpenSuse4Developers)
 
 Note : Installation of MariaDB in openSuse Same as ubuntu
