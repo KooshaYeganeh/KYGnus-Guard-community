@@ -80,10 +80,14 @@ Note : Installation of MariaDB in openSuse Same as ubuntu
 create database malware;
 ```
 
-**8- Restore malware.sql database to Your DB**
+**8- Restore malware.sql database to Your DB and insert shellTable**
 
 ```
 mysql -u root -p  malware < malware.sql
+```
+
+```
+./insert_mysql
 ```
 
 **9- Change config (config.py) File From Your Configurations**
