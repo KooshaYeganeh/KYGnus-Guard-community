@@ -180,5 +180,35 @@ ln -s /opt/KYGnus-Guard-community-main/config.py KYGnus_Guard.conf
 sudo iptables -t filter -A INPUT -p tcp -i any --dport 8080 -j DROP
 ```
 
+## Remove
 
-
+```
+sudo iptables -F
+```
+```
+cd /opt/KYGnus_Guard
+```
+```
+sudo pip3 uninstall -r requirements.txt
+```
+```
+cd ..
+```
+```
+sudo rm -rf KYGnus_Guard
+```
+```
+sudo rm /usr/bin/KYGnus_Guard.sh
+```
+```
+mysql --execute="DROP DATABASE malware;"
+```
+```
+sudo rm /etc/systemd/system/KYGnus_Guard.service
+```
+```
+sudo rm -rf /var/log/KYGnus_Guard
+```
+```
+sudo rm -rf /etc/KYGnus_Guard
+```
