@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/bin/bash
 
 
 
@@ -19,5 +19,5 @@ Yoy should Change python with python3 tu Run App.in RedHat Base systems Like
 Fedora python command Runs Default Python3
 python
 
-python app.py
+python3 app.py
 
