@@ -125,9 +125,9 @@ cd /etc/systemd/system/
 sudo systemctl enable --now KYGnus_Guard.service
 ```
 Note : In some Linux distributions, an error may occur in the start service, which may be due to the bash call path. In this case, modify the KYGnus_Guard.sh file and put your system bash call path in the file.
-for Example:
-Fedora : /usr/bin/bash
-OpenSuse : /usr/bin/bash
+for Example:  
+Fedora : /bin/bash  
+OpenSuse : /bin/bash  
 Peppermint : /bin/bash
 
 
