@@ -113,7 +113,7 @@ sudo zypper in restorecond policycoreutils setools-console
 **13- copy service File in /etc/systemd/system Directory**
 
 ```
-sudo cp KYGnus_Guard.service  /etc/systemd/system directory
+sudo cp KYGnus_Guard.service  /etc/systemd/system 
 ```
 
 **14 - Enable Service File**
@@ -122,8 +122,13 @@ sudo cp KYGnus_Guard.service  /etc/systemd/system directory
 cd /etc/systemd/system/
 ```
 ```
-sudo systemctl enable --now KYGnus_Guard.service
+sudo systemctl enable KYGnus_Guard.service
 ```
+
+```
+sudo systemctl start KYGnus_Giard.service
+```
+
 Note : In some Linux distributions, an error may occur in the start service, which may be due to the bash call path. In this case, modify the KYGnus_Guard.sh file and put your system bash call path in the file.
 for Example:  
 Fedora : /bin/bash  
