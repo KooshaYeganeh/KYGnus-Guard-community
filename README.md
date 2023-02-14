@@ -102,10 +102,14 @@ sudo zypper in restorecond policycoreutils setools-console
 ```
   
 
-**11- Edit KYGnus_Guard.sh File:**  
+**11- Edit KYGnus_Guard.sh File amd Create Softlink to /usr/bin **  
  - 11-1 : in KYGnus_guard.sh File You Should First chanage Username with Your user  
 *Note: if You use Debian Base systems Like Ubuntu and openSuse You chould change command python with python3.*  
 *Note: in RedHat Base systems Like Fedora You Don't Need chnage python command because in Default mode python Running python3 command.*
+
+```
+cd /usr/bin && sudo ln -s /opt/KYGnus_Guard/KYGnus_Guard.sh KYGnus_Guard.sh
+```
 
 **12- change Service File :**  
  - 12-1: change user(koosha) with Your user in Line : /opt/KYGnus-Guard-community-main/KYGnus_Guard.sh
