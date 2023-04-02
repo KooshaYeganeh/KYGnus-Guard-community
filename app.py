@@ -125,7 +125,7 @@ def netwok_manager():
     return status
 
 def clam_status():
-    clamav = "systemctl | grep clamav | awk {'print $4'}"
+    clamav = "systemctl | grep clamd | awk {'print $4'}"
     status  = os.popen(clamav).read()
     if status:
         return status
