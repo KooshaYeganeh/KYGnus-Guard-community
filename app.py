@@ -32,14 +32,14 @@ import exifread
 username = getpass.getuser()
 
 
-appdir = os.path.join(f"/opt/KYGnus-Guard-community-main")
+appdir = os.path.join(f"/home/{username}/.KYGnus_Guard_Community")
 os.makedirs(appdir,exist_ok=True)
 
-Log = os.path.join(f"/opt/KYGnus-Guard-community-main/Log")
+Log = os.path.join(f"/home/{username}/.KYGnus_Guard_Community/Log")
 os.makedirs(Log,exist_ok=True)
 
 
-Quarantine = os.path.join(f"/tmp/Quarantine")
+Quarantine = os.path.join(f"/home/{username}/.KYGnus_Guard_Community/Quarantine")
 os.makedirs(Quarantine,exist_ok=True)
 
 
@@ -150,7 +150,7 @@ def app_disk_usage():
 
 
 def num_quarantine():
-    files = glob.glob("/home/koosha/Desktop/**/*.*" , recursive=True)
+    files = glob.glob(f"/{Quarantine}/**/*.*" , recursive=True)
     num = len(files)
     return num
 
@@ -403,12 +403,12 @@ def port_scanner():
 		portlist = [20, 21, 22, 23, 25, 53, 80, 110,
 					119, 123, 143, 161, 194, 443, 3306, 3389]
 		startTime = time.time()
-		target = 'localhost'
-		t_IP = gethostbyname(target)
+		target = '127.0.0.1'
+		t_IP =  socket.gethostbyname(target)
 		logger.info(Fore.LIGHTYELLOW_EX + "Starting Scan to host;", t_IP)
 		logger.info(Fore.LIGHTYELLOW_EX + "scaning for poorts")
 		for i in range(1, 65535):
-			s = socket(AF_INET, SOCK_STREAM)
+			s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 			conn = s.connect_ex((t_IP, i))
 			if(conn == 0):
 				logger.info(Fore.YELLOW+'Port %d: OPEN' % (i,))
