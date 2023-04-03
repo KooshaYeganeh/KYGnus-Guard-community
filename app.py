@@ -22,7 +22,6 @@ import sys
 import socket
 from colorama import init, Fore, Back, Style
 import config
-from socket import *
 import paramiko
 import exifread
 
@@ -127,10 +126,14 @@ def netwok_manager():
 def clam_status():
     clamav = "systemctl | grep clamd | awk {'print $4'}"
     status  = os.popen(clamav).read()
-    if status:
-        return status
-    else:
-        return "Not Found"
+    return status
+
+
+def fail2ban_status():
+    fail = "systemctl | grep fail2ban | awk {'print $4'}"
+    status  = os.popen(fail).read()
+    return status
+
 
 
 def mariadb_malware_url():
@@ -190,7 +193,7 @@ def loggin():
     username = request.form["username"]
     password = request.form["password"]
     if username == config.USERNAME and password == config.PASSWORD:
-        return render_template("dashboard.html", sestatus=se_status() ,\
+        return render_template("dashboard.html",clamstatus = clam_status() , sestatus=se_status() ,\
             firewalld=firewall_status() , maria = maria_status() , malware_url=mariadb_malware_url(),\
                 app_usage = app_disk_usage())
     else:
@@ -399,30 +402,48 @@ def antivirus_post():
 
 @app.route("/av/port_scan" , methods=["POST"])
 def port_scanner():
-	try:
-		portlist = [20, 21, 22, 23, 25, 53, 80, 110,
+    try:
+        portlist = [20, 21, 22, 23, 25, 53, 80, 110,
 					119, 123, 143, 161, 194, 443, 3306, 3389]
-		startTime = time.time()
-		target = '127.0.0.1'
-		t_IP =  socket.gethostbyname(target)
-		logger.info(Fore.LIGHTYELLOW_EX + "Starting Scan to host;", t_IP)
-		logger.info(Fore.LIGHTYELLOW_EX + "scaning for poorts")
-		for i in range(1, 65535):
-			s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-			conn = s.connect_ex((t_IP, i))
-			if(conn == 0):
-				logger.info(Fore.YELLOW+'Port %d: OPEN' % (i,))
-				if i in portlist:
-					pass
-				else:
-					logger.warning(Fore.RED+"find Some unusual port")
-					logger.warning(Fore.LIGHTYELLOW_EX +
+        startTime = time.time()
+        target = '127.0.0.1'
+        t_IP =  socket.gethostbyname(target)
+        logger.info(Fore.LIGHTYELLOW_EX + "Starting Scan to host;" +  t_IP)
+        logger.info(Fore.LIGHTYELLOW_EX + "scaning for poorts")
+        for i in range(1, 65535):
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            conn = s.connect_ex((t_IP, i))
+            if(conn == 0):
+                logger.info(Fore.YELLOW+'Port %d: OPEN' % (i,))
+                if i in portlist:
+                    t = time.time()
+                    return Response(f"""<body style='background-color: #2F4F4F;'>
+                                    <center><h1 style='color:white;'> Port Scanning Result</h1>
+                                    <h2 style='color:black;'> No Unusual Ports Detected [ OK ] </h2>
+                                    <h2 style='color:black;'> 'Time taken:', {t} - {startTime}</h2>
+                                    <h4 style='color:#808080;'> Note:Please check ports with netstat for more Details</h4>
+                                    <a href='/av'>
+                                    <button style='background-color: #778899;  border: none;
+                                    color: white;
+                                    padding: 15px 32px;
+                                    text-align: center;
+                                    text-decoration: none;
+                                    display: inline-block;
+                                    font-size: 16px;'>
+                                    Home											
+                        </button></a>
+                        </center>
+                        </body>""")
+                    s.close()
+                else:
+                    logger.warning(Fore.RED+"find Some unusual port")
+                    logger.warning(Fore.LIGHTYELLOW_EX +
 						"Please check ports with netstat for more details")
-					return Response(f"""<body style='background-color: #2F4F4F;'>
-							<center><h1 style='color:white;'> Port Scannong</h1>
-							<h2 style='color:black;'> find Some unusual port {i}</h2>
+                    return Response(f"""<body style='background-color: #2F4F4F;'>
+							<center><h1 style='color:white;'> Port Scanning Result</h1>
+							<h2 style='color:black;'> Find Some Unusual Port {i}</h2>
 							<h4 style='color:#808080;'> Note:Please check ports with netstat for more Details</h4>
-							<a href='/user'>
+							<a href='/av'>
 							<button style='background-color: #778899;  border: none;
 									color: white;
 									padding: 15px 32px;
@@ -434,27 +455,9 @@ def port_scanner():
 							</button></a>
 							</center>
 							</body>""") 
-				s.close()
-		t = time.time()
-		return Response(f"""<body style='background-color: #2F4F4F;'>
-							<center><h1 style='color:white;'> Port Scanning</h1>
-							<h2 style='color:black;'> 'Time taken:', {t} - {startTime}</h2>
-							<h4 style='color:#808080;'> Note:Please check ports with netstat for more Details</h4>
-							<a href='/user'>
-							<button style='background-color: #778899;  border: none;
-									color: white;
-									padding: 15px 32px;
-									text-align: center;
-									text-decoration: none;
-									display: inline-block;
-									font-size: 16px;'>
-									Home											
-							</button></a>
-							</center>
-							</body>""")
-
-	except:
-		return render_template("Error.html")
+                    s.close()
+    except:
+        return render_template("Error.html")
 
 
 
@@ -509,7 +512,7 @@ def port_clamav():
 
 @app.route("/network")
 def network():
-    return render_template("network.html", sestatus=se_status() ,\
+    return render_template("network.html", fail2ban=fail2ban_status() ,\
             firewalld=firewall_status() ,network = netwok_manager(),ldap = ldap())
 
 
@@ -533,7 +536,7 @@ def search_url():
     if data1:
         return render_template("search_url_table.html" , data = data1 , info = info )
     else:
-        return render_template("search_url_table.html" , data = data1 , info = "Nothing Found !!!" )
+        return render_template("search_url_table.html" , data = data1 , info = "Nothing Found About URL Status : [ OK ] " )
         
 
 
@@ -708,7 +711,9 @@ def vul():
 
 @app.route("/home")
 def home():
-    return render_template("dashboard.html")
+    return render_template("dashboard.html",clamstatus = clam_status() , sestatus=se_status() ,\
+            firewalld=firewall_status() , maria = maria_status() , malware_url=mariadb_malware_url(),\
+                app_usage = app_disk_usage())
 
 
 
