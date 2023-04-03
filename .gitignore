@@ -163,3 +163,4 @@ test.py
 config.py
 test_flask.py
 *.swp
+insert_mysql
