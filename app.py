@@ -338,7 +338,24 @@ def antivirus_post():
                     pass
                 else:
                     logger.warning(Fore.RED + "Find Exif Data in PNG images and Quarantine [ERROR]")
-        return Response(f"""<!DOCTYPE html>
+        
+        phpfiles = glob.glob(f"{dir}/**/*.php",recursive=True)
+        con = connect_db()
+        cur  = con.cursor()
+        for phpfile in phpfiles:
+            with open (phpfile , 'rb') as f:
+                while True:
+                    data = f.read(BUF_SIZE)
+                    if not data:
+                        break
+                    else:
+                        sha1.update(data)
+                        sha_hash = sha1.hexdigest()
+                        cur.execute("SELECT * FROM malware_shell WHERE shell = %s" , sha_hash)
+                        hash_sha = cur.fetchall()
+                        if hash_sha:
+                            shutil.move(phpfile,Quarantine)
+                            return Response(f"""<!DOCTYPE html>
 								<html lang="en">
 								<head>
 									<meta charset="UTF-8">
@@ -355,7 +372,8 @@ def antivirus_post():
 										<div class="row">
 											<div class="col-md-12" style="text-align: center;">
 												<h1>KYGnus Guard</h1>
-									<h2 style="color: black;">Directory Scaned Successfully</h2>
+									<h2 style="color: black;">Directory Scaned Successfully For Shell Files</h2>
+                                    <h2 style="color: black;">Find Malicious File and Quarantined Sucessfully</h2>
 									<p> Details will be in Log Files and Quarantine Files are in {appdir}/Quarantine Folder</p>
 								<img src='./static/KYguard.png' alt='kyguard' width="250" height="250">
         						<h3 style="color: black;"> Do You want to Scan With clamAV?</h3>
@@ -385,13 +403,125 @@ def antivirus_post():
 											No</button></a>
 											</form>
 
-								</div>
-							</div>
-						</div>
+								        </div>
+                                    </div>
+                                    </div>
 
-					</body>
+                                    </body>
 
-					</html>""")
+					            </html>""")
+                        else:
+                            return Response(f"""<!DOCTYPE html>
+								<html lang="en">
+								<head>
+									<meta charset="UTF-8">
+									<meta http-equiv="X-UA-Compatible" content="IE=edge">
+									<meta name="viewport" content="width=device-width, initial-scale=1.0">
+									<link rel="stylesheet" href="./static/bootstrap.min.css">
+									<script src="./static/bootstrap.min.js"></script>
+									<title>KYGnus Guard Response</title>
+								</head>
+
+								<body style="margin-top: 50px;">
+
+									<div class="containter">
+										<div class="row">
+											<div class="col-md-12" style="text-align: center;">
+												<h1>KYGnus Guard</h1>
+									<h2 style="color: black;">Directory Scaned Successfully for Shell Files</h2>
+                                    <h2 style="color: black;">No Malicoius Files Deteced [ OK ]</h2>
+									<p> Details will be in Log Files and Quarantine Files are in {appdir}/Quarantine Folder</p>
+								<img src='./static/KYguard.png' alt='kyguard' width="250" height="250">
+        						<h3 style="color: black;"> Do You want to Scan With clamAV?</h3>
+								<div>
+								<a href='/av/clamav'>
+												<button style='background-color: #778899;  border: none;
+													color: black;
+													padding: 10px 40px;
+													margin: 40px;
+													text-align: center;
+													text-decoration: none;
+													display: inline-block;
+													font-size: 16px;'>
+																								
+											yes</button></a>
+											</form>
+									<a href='/av'>
+												<button style='background-color: #778899;  border: none;
+													color: black;
+													padding: 10px 40px;
+													margin: 40px;
+													text-align: center;
+													text-decoration: none;
+													display: inline-block;
+													font-size: 16px;'>
+																								
+											No</button></a>
+											</form>
+
+								        </div>
+                                    </div>
+                                    </div>
+
+                                    </body>
+
+					            </html>""")
+        
+        return Response(f"""<!DOCTYPE html>
+								<html lang="en">
+								<head>
+									<meta charset="UTF-8">
+									<meta http-equiv="X-UA-Compatible" content="IE=edge">
+									<meta name="viewport" content="width=device-width, initial-scale=1.0">
+									<link rel="stylesheet" href="./static/bootstrap.min.css">
+									<script src="./static/bootstrap.min.js"></script>
+									<title>KYGnus Guard Response</title>
+								</head>
+
+								<body style="margin-top: 50px;">
+
+									<div class="containter">
+										<div class="row">
+											<div class="col-md-12" style="text-align: center;">
+												<h1>KYGnus Guard</h1>
+									<h2 style="color: black;">Directory Scaned Successfully for Shell Files</h2>
+                                    <h2 style="color: black;">No Malicoius Files Deteced [ OK ]</h2>
+									<p> Details will be in Log Files and Quarantine Files are in {appdir}/Quarantine Folder</p>
+								<img src='./static/KYguard.png' alt='kyguard' width="250" height="250">
+        						<h3 style="color: black;"> Do You want to Scan With clamAV?</h3>
+								<div>
+								<a href='/av/clamav'>
+												<button style='background-color: #778899;  border: none;
+													color: black;
+													padding: 10px 40px;
+													margin: 40px;
+													text-align: center;
+													text-decoration: none;
+													display: inline-block;
+													font-size: 16px;'>
+																								
+											yes</button></a>
+											</form>
+									<a href='/av'>
+												<button style='background-color: #778899;  border: none;
+													color: black;
+													padding: 10px 40px;
+													margin: 40px;
+													text-align: center;
+													text-decoration: none;
+													display: inline-block;
+													font-size: 16px;'>
+																								
+											No</button></a>
+											</form>
+
+								        </div>
+                                    </div>
+                                    </div>
+
+                                    </body>
+
+					            </html>""")
 
     except:
         return render_template("Error.html")
@@ -465,13 +595,84 @@ def port_scanner():
 
 @app.route("/av/clamav")
 def clamav():
-    return render_template("clamAV.html")
+    return render_template("clamAV.html",clamstatus = clam_status() , sestatus=se_status() ,\
+            firewalld=firewall_status() , maria = maria_status())
 
 
-@app.route("/av/clamav" , methods=["POST"])
-def port_clamav():
+@app.route("/av/clamav/dir" , methods=["POST"])
+def clam_av_dir():
     logger.warning(Fore.RED + "User Start to Scan system with clamAV")
     clamdir = request.form["clamdir"]
+    clamav = os.popen(f"clamscan --infected --recursive --remove {clamdir}").read()
+    return Response(f"""<html style='background-color:black;'><body>
+                    <center>
+                    <h3 style='color: #B22222;'> ClamAV </h3>
+                    <h1 style='color: #B22222 ; '> {clamdir} Scanned Successfully </h1>
+                    <p style='color: #B22222 ; '> Note:check Results in Log File in {appdir}</p>
+                    <p style='color: #B22222 ; '> Note: This app Scan Directory with clamAV <code> Remote System</code> so clamAV should be Install on Remote system</p>
+					 <img src='./static/clamav.png' alt='clamAV' width="250" height="250">
+					<div style='margin-top:20px;'>
+					<a href='/av/clamav'><button class='return' style='background-color:red;
+						border: none;
+						color: white;
+						padding: 10px 32px;
+						text-align: center;
+						text-decoration: none;
+						display: inline-block;
+						font-size: 16px;
+						margin: 4px 2px;
+						transition-duration: 0.4s;
+						cursor: pointer;'>
+					return</button></a>
+
+    		 </div>
+     		</center>
+     	</body>
+      </html>
+    """)  
+
+
+
+
+
+@app.route("/av/clamav/all" , methods=["POST"])
+def clam_av_all():
+    logger.warning(Fore.RED + "User Start to Scan system with clamAV")
+    clamav = os.popen(f"clamscan --infected --recursive --remove /home").read()
+    return Response(f"""<html style='background-color:black;'><body>
+                    <center>
+                    <h3 style='color: #B22222;'> ClamAV </h3>
+                    <h1 style='color: #B22222 ; '> All Files in /home Scaned Successfully </h1>
+                    <p style='color: #B22222 ; '> Note:check Results in Log File in {appdir}</p>
+                    <p style='color: #B22222 ; '> Note: This app Scan Directory with clamAV <code> Remote System</code> so clamAV should be Install on Remote system</p>
+					 <img src='./static/clamav.png' alt='clamAV' width="250" height="250">
+					<div style='margin-top:20px;'>
+					<a href='/av/clamav'><button class='return' style='background-color:red;
+						border: none;
+						color: white;
+						padding: 10px 32px;
+						text-align: center;
+						text-decoration: none;
+						display: inline-block;
+						font-size: 16px;
+						margin: 4px 2px;
+						transition-duration: 0.4s;
+						cursor: pointer;'>
+					return</button></a>
+
+    		 </div>
+     		</center>
+     	</body>
+      </html>
+    """)
+
+
+
+
+@app.route("/av/clamav/remote" , methods=["POST"])
+def port_clamav():
+    logger.warning(Fore.RED + "User Start to Scan system with clamAV")
+    clamdir = request.form["clamdir_remote"]
     clamav = f"clamscan --infected --recursive --remove {clamdir}"
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
