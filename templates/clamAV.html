@@ -120,7 +120,7 @@
 										<i class="fa fa-linux"></i>
 									</div>
 									<p class="card-category">clamav</p>
-									<h3 class="card-title">{{clamav}}
+									<h3 class="card-title">{{clamstatus}}
 
 									</h3>
 								</div>
@@ -187,23 +187,23 @@
 								<div class="col-md-4">
 									<div class="card">
 										<div class=" card-header card-header-primary">
-											<h4 class="card-title" style="color:black">Scan With clamAV</h4>
-											<p class="card-category" style="color:black">Scan Directory With ClamAV
+											<h4 class="card-title" style="color:black">clamAV</h4>
+											<p class="card-category" style="color:black">Scan Directory Recursively With ClamAV
 											</p>
 										</div>
 										<div class="card-body">
-											<input type="text" name="clamdir" class="form-control"
-												placeholder="Enter Directory">
-											<form action="/av/clamav" method="post">
+											<form action="/av/clamav/dir" method="post">
 												<div class="row">
 													<div class="col-md-12">
 														<div class="form-group">
+															<p style="color:orange">Before you start scanning, make sure that the clamd service is active on the above card</p>
+															<input type="text" name="clamdir" placeholder="Enter Directory " class="form-control">
 														</div>
 													</div>
 												</div>
 										</div>
 										<button type="submit" class="btn btn-primary pull-right"
-											style="background-color: deepskyblue; color:black">Start Update</button>
+											style="background-color: deepskyblue; color:black">Start Scan </button>
 										<div class="clearfix"></div>
 										</form>
 									</div>
@@ -211,21 +211,23 @@
 								<div class="col-md-4">
 									<div class="card">
 										<div class=" card-header card-header-primary">
-											<h4 class="card-title" style="color:black">Scan With clamAV</h4>
-											<p class="card-category" style="color:black">Scan Directory With ClamAV
+											<h4 class="card-title" style="color:black">clamAV</h4>
+											<p class="card-category" style="color:black">Scan /home Directory recursively With ClamAV
 											</p>
 										</div>
 										<div class="card-body">
-											<form action="/antivirus/clamav/all" method="post">
+											<form action="/av/clamav/all" method="post">
 												<div class="row">
 													<div class="col-md-12">
 														<div class="form-group">
+															<p style="color:orange;">In this section, all files and directories in the user's home will be scanned.</p>
+															<p style="color:#FF4500;">Note : This process may take some time</p>
 														</div>
 													</div>
 												</div>
 										</div>
 										<button type="submit" class="btn btn-primary pull-right"
-											style="background-color: deepskyblue; color:black">Start Update</button>
+											style="background-color: deepskyblue; color:black">Start Scan All system</button>
 										<div class="clearfix"></div>
 										</form>
 									</div>
@@ -233,21 +235,22 @@
 								<div class="col-md-4">
 									<div class="card">
 										<div class=" card-header card-header-primary">
-											<h4 class="card-title" style="color:black">Scan With clamAV</h4>
-											<p class="card-category" style="color:black">Scan Directory With ClamAV
+											<h4 class="card-title" style="color:black">clamAV</h4>
+											<p class="card-category" style="color:black">Scan Remote With clamAV
 											</p>
 										</div>
 										<div class="card-body">
-											<form action="/antivirus/clamav/all" method="post">
+											<form action="av/clamav/remote" method="post">
 												<div class="row">
 													<div class="col-md-12">
 														<div class="form-group">
+															<p style="color:orange;">For Scan Remote System You Should Enter Remote system Information in config File then Start Scan</p>  
 														</div>
 													</div>
 												</div>
 										</div>
 										<button type="submit" class="btn btn-primary pull-right"
-											style="background-color: deepskyblue; color:black">Start Update</button>
+											style="background-color: deepskyblue; color:black">Start Scan Remote</button>
 										<div class="clearfix"></div>
 										</form>
 									</div>
