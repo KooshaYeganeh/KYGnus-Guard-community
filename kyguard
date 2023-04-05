@@ -32,7 +32,7 @@ help_page(){
 
 
 
-if [ "$0" == "./kyguard" ];then
+if [ "$0" == "kyguard" ];then
 	if [ "$1" == "--stop" ];then
 		stop_system
 	elif [ "$1" == "--start" ];then
