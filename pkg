@@ -1,6 +1,8 @@
 #!/usr/bin/bash
 
-
+<< pipnote
+This script will install the latest version of all Python packages for you
+pipnote
 
 packages=`cat requirements.txt | cut -d"=" -f1`
 for package in $packages;do
