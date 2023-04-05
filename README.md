@@ -3,60 +3,56 @@ KYGnus Antivirus For Linux Systems
 
 ![image](./static/README_LOGO.png)
 
-# INFO
+## INFO
 
 This App is Linux Security Tool But it's nut Just Pure Antivirus.This app Have:  
 1- Pure Antivirus for Detect Files Have potantional Malicious  Files 
 2- Search page for Search in Malicious Urls  
-3- check Permissions of system  
+3- Visit Permissions of System and Save them
 4- check configs  
-5- Scan Remote system with clamAV
+5- Scan Local system with clamav
+6- Scan Remote system with clamAV
 
 
 
 
 
-# Install
+## Install
 
 ## For Install App Follow the steps below:
 
-**1-chnage Directory to /opt**
-
-``
- cd /opt
-``
-
-**2-Download File From Github**
+**1-chnage Directory to /tmp and Download File From GitHub**
 
 ```
-wget https://github.com/KooshaYeganeh/KYGnus-Guard-community/archive/refs/heads/main.zip
-
-```
-**3- Unzip File**  
-```
-unzip main.zip && mv KYGnus-Guard-community-main KYGnus_Guard
-```
-**Create Directory for App in /opt**
-```
-sudo mv KYGnus_Guard /opt
+cd /tmp && wget https://github.com/KooshaYeganeh/KYGnus-Guard-community/archive/refs/heads/main.zip && unzip main.zip && mv KYGnus-Guard-community-main KYGnus-Guard-community
 ```
 
-**4- Go to Directory**  
+  
 ```
-cd /opt/KYGnus_Guard
+mkdir /home/$USER/App && mv /tmp/KYGnus-Guard-community /home/$USER/App && cd /home/$USER/App && mv KYGnus-Guard-community .KYGnus-Guard-community
+```
+**2-Create venv in App Directory**
+
+First First, we check that the pipe is installed correctly on the system, then Install virtualenv with pip
+
+```
+sudo pip install virtualenv
+```
+then Create virtuelenv in main Directory and Activate 
+```
+cd /home/$USER/App/KYGnus-Guard-community && virtualenv venv && source venv/bin/activate
 ```
 
-**5- Install python Packages**  
+**3- Install python Packages**  
 ```
-Fedora: sudo pip install -r requirements.txt
-Ubuntu: sido pip3 install -r requirements.txt
-openSUSE Leap : sudo pip install -r requirements.txt
+Fedora: pip install -r requirements.txt
+Ubuntu: pip3 install -r requirements.txt
+openSUSE Leap : pip install -r requirements.txt
 ```
 
 Note : if get Error when Install Packeges Like Version Error You can remove Version of Packages in requirements File Like this: 
 
-> vi requirements.txt
-> :%s/==.*//g
+> sed 's/==.*//g' requirements.txt > requirements.txt
 
 or run This Script
 
@@ -66,7 +62,7 @@ or run This Script
 
 Note2 : When Remove Version of Packages Latest Version of Packes Will be Install
 
-**6- Create database in mariaDB**  
+**4- Create database in mariaDB**  
 *Note : if Mariadb Not installed on system Install it*  
 [For more Information About Install mariaDB on Fedora35](https://docs.fedoraproject.org/en-US/quick-docs/installing-mysql-mariadb/)  
 [For more Information About Install mariaDB on Ubuntu 20.04 ](https://www.digitalocean.com/community/tutorials/how-to-install-mariadb-on-ubuntu-20-04)  
@@ -74,26 +70,23 @@ Note2 : When Remove Version of Packages Latest Version of Packes Will be Install
 
 Note : Installation of MariaDB in openSuse Same as ubuntu
 
-**7- create database malware in mariaDB**
+**5- create database malware_comminitu in MariaDB**
 
 ```
-create database malware;
+create database malware_community;
 ```
 
-**8- Restore malware.sql database to Your DB and insert shellTable**
+**6- Restore malware.sql database to Your DB and insert shellTable**
 
 ```
-mysql -u root -p  malware < malware.sql
+mysql -u root -p  malware_community < malware_comminity.sql
 ```
 
-```
-./insert_mysql
-```
 
-**9- Change config (config.py) File From Your Configurations**
+**7- Change config (config.py) File From Your Configurations**
 
 
-**10- Run App For First Time**
+**8- Run App For First Time**
 
 Note : in opensuse you Might see seLinux status Error,You should Install selinux Packages : 
 
@@ -101,26 +94,18 @@ Note : in opensuse you Might see seLinux status Error,You should Install selinux
 sudo zypper in restorecond policycoreutils setools-console
 ```
   
-
-**11- Edit KYGnus_Guard.sh File amd Create Softlink to /usr/bin **  
- - 11-1 : in KYGnus_guard.sh File You Should First chanage Username with Your user  
-*Note: if You use Debian Base systems Like Ubuntu and openSuse You chould change command python with python3.*  
 *Note: in RedHat Base systems Like Fedora You Don't Need chnage python command because in Default mode python Running python3 command.*
 
-```
-cd /usr/bin && sudo ln -s /opt/KYGnus_Guard/KYGnus_Guard.sh KYGnus_Guard.sh
-```
 
-**12- change Service File :**  
- - 12-1: change user(koosha) with Your user in Line : /opt/KYGnus-Guard-community-main/KYGnus_Guard.sh
 
-**13- copy service File in /etc/systemd/system Directory**
+
+**9- copy service File in /etc/systemd/system Directory**
 
 ```
 sudo cp KYGnus_Guard.service  /etc/systemd/system 
 ```
 
-**14 - Enable Service File**
+**10 - Enable Service File**
 
 ```
 cd /etc/systemd/system/
@@ -130,34 +115,27 @@ sudo systemctl enable KYGnus_Guard.service
 ```
 
 ```
-sudo systemctl start KYGnus_Giard.service
+sudo systemctl start  KYGnus_Guard.service
 ```
 
-Note : In some Linux distributions, an error may occur in the start service, which may be due to the bash call path. In this case, modify the KYGnus_Guard.sh file and put your system bash call path in the file.
-for Example:  
-Fedora : /bin/bash  
-OpenSuse : /bin/bash  
-Peppermint : /bin/bash
 
 
 
-**15- Create Directory For standard Logs /var/log**
+**11- Create Directory For standard Logs /var/log**
 *Note: change user(koosha) with Your user in all lines*
  - 15-1 : Go to /var/log Directory and make Directory for app
 ```
 cd /var/log
 ```
 ```
-sudo mkdir KYGnus_Guard
-```
-```
-cd KYGnus_Guard
-```
-```
-ln -s /opt/KYGnus-Guard-community-main/Log/KYGnus_Guard.log KYGnus_Guard.log
+sudo mkdir KYGnus-Guard-community
 ```
 
-**16- Create Directory For standard Settings /etc**
+```
+ln -s /home/$USER/App/.KYGnus-Guard-community/Log KYGnus-Guard-community
+```
+
+**12- Create Directory For standard Settings /etc**
 *Note: change user(koosha) with Your user in all lines*
  - 16-1 : Go to /etc Directory and make Directory for app
 ```
@@ -170,11 +148,11 @@ sudo mkdir KYGnus_Guard
 cd KYGnus_Guard
 ```
 ```
-ln -s /opt/KYGnus-Guard-community-main/config.py KYGnus_Guard.conf
+ln -s  /home/$USER/App/.KYGnus-Guard-community/config.py KYGnus_Guard_community.conf
 ```
 
 
-**17- for Better Security You should Block 8080 port in Your system**
+**13- for Better Security You should Block 8080 port in Your system**
 
 ```
 sudo iptables -t filter -A INPUT -p tcp -i any --dport 8080 -j DROP
@@ -183,32 +161,8 @@ sudo iptables -t filter -A INPUT -p tcp -i any --dport 8080 -j DROP
 ## Remove
 
 ```
-sudo iptables -F
+sudo iptables -F && sudo rm /etc/systemd/system/KYGnus_Guard.service && sudo rm -rf /var/log/KYGnus_Guard_community && sudo rm -rf /etc/KYGnus_Guard_community  && rm -rf /home/$USER/App/.KYGnus_Guard_community && mysql --execute="DROP DATABASE malware_community;"
 ```
-```
-cd /opt/KYGnus_Guard
-```
-```
-sudo pip3 uninstall -r requirements.txt
-```
-```
-cd ..
-```
-```
-sudo rm -rf KYGnus_Guard
-```
-```
-sudo rm /usr/bin/KYGnus_Guard.sh
-```
-```
-mysql --execute="DROP DATABASE malware;"
-```
-```
-sudo rm /etc/systemd/system/KYGnus_Guard.service
-```
-```
-sudo rm -rf /var/log/KYGnus_Guard
-```
-```
-sudo rm -rf /etc/KYGnus_Guard
-```
+
+
+

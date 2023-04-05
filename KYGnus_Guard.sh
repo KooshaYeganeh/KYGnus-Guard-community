@@ -2,11 +2,6 @@
 
 
 
-<<username
-Enter Your Youser and App Files will be in This User
-username
-
-username="" # Enter username
 
 
 cd /home/$USER/App/.KYGnus_Guard_Community
