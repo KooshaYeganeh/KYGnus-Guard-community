@@ -4,5 +4,5 @@
 
 packages=`cat requirements.txt | cut -d"=" -f1`
 for package in $packages;do
-	sudo pip install $package
+	pip install $package
 done
