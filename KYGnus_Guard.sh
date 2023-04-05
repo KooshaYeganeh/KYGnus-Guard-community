@@ -9,7 +9,7 @@ username
 username="" # Enter username
 
 
-cd /home/koosha/work/Test/Security/bashApp/Antivirus/KYGnus-AV
+cd /home/$USER/App/.KYGnus_Guard_Community
 
 source venv/bin/activate
 
@@ -19,5 +19,5 @@ Yoy should Change python with python3 tu Run App.in RedHat Base systems Like
 Fedora python command Runs Default Python3
 python
 
-python3 app.py
+python app.py
 
