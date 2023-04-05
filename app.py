@@ -31,14 +31,14 @@ import exifread
 username = getpass.getuser()
 
 
-appdir = os.path.join(f"/home/{username}/.KYGnus_Guard_Community")
+appdir = os.path.join(f"/home/{username}/.KYGnus-Guard-Community")
 os.makedirs(appdir,exist_ok=True)
 
-Log = os.path.join(f"/home/{username}/.KYGnus_Guard_Community/Log")
+Log = os.path.join(f"/home/{username}/.KYGnus-Guard-Community/Log")
 os.makedirs(Log,exist_ok=True)
 
 
-Quarantine = os.path.join(f"/home/{username}/.KYGnus_Guard_Community/Quarantine")
+Quarantine = os.path.join(f"/home/{username}/.KYGnus-Guard-Community/Quarantine")
 os.makedirs(Quarantine,exist_ok=True)
 
 
