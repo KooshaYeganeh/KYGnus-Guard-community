@@ -47,10 +47,21 @@ cd /opt/KYGnus-Guard-Community && virtualenv venv && source venv/bin/activate
 
 **3- Install python Packages**  
 
+
+Fedora: 
+
 ```
-Fedora: sudo pip install -r requirements.txt
-Ubuntu: sudo pip3 install -r requirements.txt
-openSUSE Leap : sudo pip install -r requirements.txt
+sudo pip install -r requirements.txt
+```
+Ubuntu: 
+
+```
+sudo pip3 install -r requirements.txt
+```
+openSUSE Leap : 
+
+```
+sudo pip install -r requirements.txt
 ```
 
 Note : if get Error when Install Packeges Like Version Error You can remove Version of Packages in requirements File Like this: 
