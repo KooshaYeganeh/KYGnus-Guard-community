@@ -133,7 +133,7 @@ cd /etc/systemd/system/ && sudo systemctl enable KYGnus_Guard.service && sudo sy
  - 15-1 : Go to /var/log Directory and make Directory for app
 
 ```
-cd /var/log && sudo mkdir KYGnus-Guard-Community && ln -s /home/$USER/.KYGnus-Guard-Community/Log KYGnus-Guard-Community && echo "Standard Log File Created Successfully [ OK ]"
+cd /var/log && sudo mkdir KYGnus-Guard-Community && sudo ln -s /opt/KYGnus-Guard-Community/Log KYGnus-Guard-Community && echo "Standard Log File Created Successfully [ OK ]"
 ```
 
 **12- Create Directory For standard Settings /etc**
@@ -141,7 +141,7 @@ cd /var/log && sudo mkdir KYGnus-Guard-Community && ln -s /home/$USER/.KYGnus-Gu
  - 16-1 : Go to /etc Directory and make Directory for app
 
 ```
-cd /etc && sudo mkdir KYGnus_Guard && cd KYGnus_Guard && ln -s  /home/$USER/.KYGnus-Guard-Community/config.py KYGnus-Guard-Community.conf && echo "Standard config File Created Successfully [ OK ]"
+cd /etc && sudo mkdir KYGnus_Guard && cd KYGnus_Guard && sudo ln -s  /opt/KYGnus-Guard-Community/config.py KYGnus-Guard.conf && echo "Standard config File Created Successfully [ OK ]"
 ```
 
 
