@@ -28,7 +28,7 @@ cd /tmp && wget https://github.com/KooshaYeganeh/KYGnus-Guard-community/archive/
 ```
 
 ```
-mkdir /home/$USER && mv /tmp/KYGnus-Guard-community /home/$USER && cd /home/$USER && mv KYGnus-Guard-community .KYGnus-Guard-community && cd
+mv /tmp/KYGnus-Guard-community /home/$USER && cd /home/$USER && mv KYGnus-Guard-community .KYGnus-Guard-community && cd
 ```
 **2-Create venv in App Directory**
 
