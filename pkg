@@ -6,5 +6,5 @@ pipnote
 
 packages=`cat requirements.txt | cut -d"=" -f1`
 for package in $packages;do
-	pip install $package
+	sudo pip install $package
 done

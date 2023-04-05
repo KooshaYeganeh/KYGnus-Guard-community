@@ -28,25 +28,29 @@ cd /tmp && wget https://github.com/KooshaYeganeh/KYGnus-Guard-community/archive/
 ```
 
 ```
-mv /tmp/KYGnus-Guard-Community /home/$USER/ && cd /home/$USER && mv KYGnus-Guard-Community .KYGnus-Guard-Community
+mv /tmp/KYGnus-Guard-Community /opt 
 ```
+
 **2-Create venv in App Directory**
 
-First First, we check that the pipe is installed correctly on the system, then Install virtualenv with pip
+First First, we check that the pip is installed correctly on the system, then Install virtualenv with pip
 
 ```
 sudo pip install virtualenv
 ```
+
 then Create virtuelenv in main Directory and Activate 
+
 ```
-cd /home/$USER/.KYGnus-Guard-Community && virtualenv venv && source venv/bin/activate
+cd /opt/KYGnus-Guard-Community && virtualenv venv && source venv/bin/activate
 ```
 
 **3- Install python Packages**  
+
 ```
-Fedora: pip install -r requirements.txt
-Ubuntu: pip3 install -r requirements.txt
-openSUSE Leap : pip install -r requirements.txt
+Fedora: sudo pip install -r requirements.txt
+Ubuntu: sudo pip3 install -r requirements.txt
+openSUSE Leap : sudo pip install -r requirements.txt
 ```
 
 Note : if get Error when Install Packeges Like Version Error You can remove Version of Packages in requirements File Like this: 
@@ -69,37 +73,25 @@ Note2 : When Remove Version of Packages Latest Version of Packes Will be Install
 
 Note : Installation of MariaDB in openSuse Same as ubuntu
 
-**5- create database malware_comminitu in MariaDB**
+**5- Create Database malware_comminitu in MariaDB**
 
 ```
-CREATE DATABASE malware_community;
+create database malware_community;
 ```
 
-**6- Restore malware.sql database to Your DB and insert shellTable**
+**6- Restore malware_community.sql database to Your DB and insert shellTable**
 
 ```
-mysql -u <user> -p  malware_community < malware_comminity.sql
+mysql -u root -p  malware_community < malware_community.sql
 ```
 
 
 **7- Change config (config.py) File From Your Configurations**
 
 
-**8- copy Main File to /usr/bin and Run App For First Time**
+**8- Run App For First Time**
 
-```
-sudo mv /home/$USER/.KYGnus-Guard-Community /usr/bin
-```
-```
-kyguard --start
-```
-*For More Information About kyguard command :*
-```
-kyguard --help
-```
-
-
-Note : in opensuse you Might see seLinux status Error,You should Install selinux Packages : 
+Note : in openSUSE you Might see SELinux status Error,You should Install SELinux Packages : 
 
 ```
 sudo zypper in restorecond policycoreutils setools-console
@@ -110,41 +102,39 @@ sudo zypper in restorecond policycoreutils setools-console
 
 
 
+**9- copy service File in /etc/systemd/system Directory**
+
+```
+sudo cp KYGnus_Guard.service  /etc/systemd/system 
+```
+
+**10- Enable Service File**
+
+```
+cd /etc/systemd/system/ && sudo systemctl enable KYGnus_Guard.service && sudo systemctl start  KYGnus_Guard.service && echo "Service File [ OK ]"
+```
 
 
 
-**9- Create Directory For standard Logs /var/log**
+
+**11- Create Directory For standard Logs /var/log**
 *Note: change user(koosha) with Your user in all lines*
  - 15-1 : Go to /var/log Directory and make Directory for app
-```
-cd /var/log
-```
-```
-sudo mkdir KYGnus-Guard-Community
-```
 
 ```
-sudo ln -s /home/$USER/.KYGnus-Guard-Community/Log KYGnus-Guard-Community
+cd /var/log && sudo mkdir KYGnus-Guard-Community && ln -s /home/$USER/.KYGnus-Guard-Community/Log KYGnus-Guard-Community && echo "Standard Log File Created Successfully [ OK ]"
 ```
 
-**10- Create Directory For standard Settings /etc**
+**12- Create Directory For standard Settings /etc**
 *Note: change user(koosha) with Your user in all lines*
  - 16-1 : Go to /etc Directory and make Directory for app
+
 ```
-cd /etc
-```
-```
-sudo mkdir KYGnus-Guard-Community
-```
-```
-cd KYGnus-Guard-Community
-```
-```
-sudo ln -s  /home/$USER/.KYGnus-Guard-Community/config.py KYGnus-Guard-Community.conf
+cd /etc && sudo mkdir KYGnus_Guard && cd KYGnus_Guard && ln -s  /home/$USER/.KYGnus-Guard-Community/config.py KYGnus-Guard-Community.conf && echo "Standard config File Created Successfully [ OK ]"
 ```
 
 
-**11- for Better Security You should Block 8080 port in Your system**
+**13- for Better Security You should Block 8080 port in Your system**
 
 ```
 sudo iptables -t filter -A INPUT -p tcp -i any --dport 8080 -j DROP
@@ -153,7 +143,7 @@ sudo iptables -t filter -A INPUT -p tcp -i any --dport 8080 -j DROP
 ## Remove
 
 ```
-sudo iptables -F && sudo rm /etc/systemd/system/KYGnus-Guard-Community.service && sudo rm -rf /var/log/KYGnus-Guard-Community && sudo rm -rf /etc/KYGnus-Guard-Community  && rm -rf /home/$USER/.KYGnus-Guard-Community && mysql --execute="DROP DATABASE malware_community;"
+sudo iptables -F && sudo rm /etc/systemd/system/KYGnus_Guard.service && sudo rm -rf /var/log/KYGnus-Guard-Community && sudo rm -rf /etc/KYGnus-Guard-Community  && rm -rf /opt/KYGnus-Guard-Community && mysql --execute="DROP DATABASE malware_community;" && echo "KYGnus-Guard-Community Removed [ Successfully ]"
 ```
 
 
