@@ -21,15 +21,14 @@ This App is Linux Security Tool But it's nut Just Pure Antivirus.This app Have:
 
 ## For Install App Follow the steps below:
 
-**1-chnage Directory to /tmp and Download File From GitHub**
+**1-Change Directory to /tmp and Download File From GitHub**
 
 ```
-cd /tmp && wget https://github.com/KooshaYeganeh/KYGnus-Guard-community/archive/refs/heads/main.zip && unzip main.zip && mv KYGnus-Guard-community-main KYGnus-Guard-community
+cd /tmp && wget https://github.com/KooshaYeganeh/KYGnus-Guard-community/archive/refs/heads/main.zip && unzip main.zip && mv KYGnus-Guard-community-main KYGnus-Guard-community && cd
 ```
 
-  
 ```
-mkdir /home/$USER/App && mv /tmp/KYGnus-Guard-community /home/$USER/App && cd /home/$USER/App && mv KYGnus-Guard-community .KYGnus-Guard-community
+mkdir /home/$USER && mv /tmp/KYGnus-Guard-community /home/$USER && cd /home/$USER && mv KYGnus-Guard-community .KYGnus-Guard-community && cd
 ```
 **2-Create venv in App Directory**
 
@@ -40,7 +39,7 @@ sudo pip install virtualenv
 ```
 then Create virtuelenv in main Directory and Activate 
 ```
-cd /home/$USER/App/KYGnus-Guard-community && virtualenv venv && source venv/bin/activate
+cd /home/$USER/.KYGnus-Guard-community && virtualenv venv && source venv/bin/activate
 ```
 
 **3- Install python Packages**  
@@ -132,7 +131,7 @@ sudo mkdir KYGnus-Guard-community
 ```
 
 ```
-ln -s /home/$USER/App/.KYGnus-Guard-community/Log KYGnus-Guard-community
+ln -s /home/$USER/.KYGnus-Guard-community/Log KYGnus-Guard-community
 ```
 
 **12- Create Directory For standard Settings /etc**
@@ -148,7 +147,7 @@ sudo mkdir KYGnus_Guard
 cd KYGnus_Guard
 ```
 ```
-ln -s  /home/$USER/App/.KYGnus-Guard-community/config.py KYGnus_Guard_community.conf
+ln -s  /home/$USER/.KYGnus-Guard-community/config.py KYGnus_Guard_community.conf
 ```
 
 
@@ -161,7 +160,7 @@ sudo iptables -t filter -A INPUT -p tcp -i any --dport 8080 -j DROP
 ## Remove
 
 ```
-sudo iptables -F && sudo rm /etc/systemd/system/KYGnus_Guard.service && sudo rm -rf /var/log/KYGnus_Guard_community && sudo rm -rf /etc/KYGnus_Guard_community  && rm -rf /home/$USER/App/.KYGnus_Guard_community && mysql --execute="DROP DATABASE malware_community;"
+sudo iptables -F && sudo rm /etc/systemd/system/KYGnus_Guard.service && sudo rm -rf /var/log/KYGnus_Guard_community && sudo rm -rf /etc/KYGnus_Guard_community  && rm -rf /home/$USER/.KYGnus_Guard_community && mysql --execute="DROP DATABASE malware_community;"
 ```
 
 
