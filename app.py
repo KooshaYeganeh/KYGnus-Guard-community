@@ -375,7 +375,7 @@ def antivirus_post():
 									<h2 style="color: black;">Directory Scaned Successfully For Shell Files</h2>
                                     <h2 style="color: black;">Find Malicious File and Quarantined Sucessfully</h2>
 									<p> Details will be in Log Files and Quarantine Files are in {appdir}/Quarantine Folder</p>
-								<img src='./static/KYguard.png' alt='kyguard' width="250" height="250">
+								<img src='./static/logo.png' alt='kyguard' width="250" height="250">
         						<h3 style="color: black;"> Do You want to Scan With clamAV?</h3>
 								<div>
 								<a href='/av/clamav'>
@@ -431,7 +431,7 @@ def antivirus_post():
 									<h2 style="color: black;">Directory Scaned Successfully for Shell Files</h2>
                                     <h2 style="color: black;">No Malicoius Files Deteced [ OK ]</h2>
 									<p> Details will be in Log Files and Quarantine Files are in {appdir}/Quarantine Folder</p>
-								<img src='./static/KYguard.png' alt='kyguard' width="250" height="250">
+								<img src='./static/logo.png' alt='kyguard' width="250" height="250">
         						<h3 style="color: black;"> Do You want to Scan With clamAV?</h3>
 								<div>
 								<a href='/av/clamav'>
@@ -487,7 +487,7 @@ def antivirus_post():
 									<h2 style="color: black;">Directory Scaned Successfully for Shell Files</h2>
                                     <h2 style="color: black;">No Malicoius Files Deteced [ OK ]</h2>
 									<p> Details will be in Log Files and Quarantine Files are in {appdir}/Quarantine Folder</p>
-								<img src='./static/KYguard.png' alt='kyguard' width="250" height="250">
+								<img src='./static/logo.png' alt='kyguard' width="250" height="250">
         						<h3 style="color: black;"> Do You want to Scan With clamAV?</h3>
 								<div>
 								<a href='/av/clamav'>
@@ -781,7 +781,7 @@ def system_permissions():
 									<h2 style="color: black;">Directory Scaned Successfully</h2>
                  						<p > The permissions of /usr/bin and /usr/sbin and /etc Directories calculated and save in /tmp/perm Directorie's.</p>
 								<p >if You Want to save This Files Move Them From /tmp Directory</p>
-								<img src='./static/KYguard.png' alt='KYguard' width="250" height="250">
+								<img src='./static/logo.png' alt='KYguard' width="250" height="250">
 
 								<div>
 								<a href='/av/clamav'>
@@ -883,7 +883,7 @@ def vul():
 									<h2 style="color: black;">system Scaned Successfully</h2>
                  						<p > Vulnerability checked and results Saved in Text File in /tmp</p>
 								<p >if You Want to save The File Move it From /tmp Directory</p>
-								<img src='./static/KYguard.png' alt='KYguard' width="250" height="250">
+								<img src='./static/logo.png' alt='KYguard' width="250" height="250">
 
 								<div>
 								<a href='/home'>
