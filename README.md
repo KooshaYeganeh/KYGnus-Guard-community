@@ -28,7 +28,7 @@ cd /tmp && wget https://github.com/KooshaYeganeh/KYGnus-Guard-community/archive/
 ```
 
 ```
-mv /tmp/KYGnus-Guard-Community /opt && cd /opt/KYGnus-Guard-Community
+sudo mv /tmp/KYGnus-Guard-Community /opt && cd /opt/KYGnus-Guard-Community
 ```
 
 **2-Test the pip Package Manager and then Install the packages**
