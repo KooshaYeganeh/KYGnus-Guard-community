@@ -28,25 +28,14 @@ cd /tmp && wget https://github.com/KooshaYeganeh/KYGnus-Guard-community/archive/
 ```
 
 ```
-mv /tmp/KYGnus-Guard-Community /opt 
+mv /tmp/KYGnus-Guard-Community /opt && cd /opt/KYGnus-Guard-Community
 ```
 
-**2-Create venv in App Directory**
+**2-Test the pip package manager and then install the packages**
 
-First First, we check that the pip is installed correctly on the system, then Install virtualenv with pip
+First First, we check that the pip is installed correctly on the system, then Install packages
 
-```
-sudo pip install virtualenv
-```
-
-then Create virtuelenv in main Directory and Activate 
-
-```
-cd /opt/KYGnus-Guard-Community && virtualenv venv && source venv/bin/activate
-```
-
-**3- Install python Packages**  
-
+*pip -V*
 
 Fedora: 
 
@@ -76,7 +65,7 @@ or run This Script
 
 Note2 : When Remove Version of Packages Latest Version of Packes Will be Install
 
-**4- Create database in mariaDB**  
+**3- Create database in mariaDB**  
 *Note : if Mariadb Not installed on system Install it*  
 [For more Information About Install mariaDB on Fedora35](https://docs.fedoraproject.org/en-US/quick-docs/installing-mysql-mariadb/)  
 [For more Information About Install mariaDB on Ubuntu 20.04 ](https://www.digitalocean.com/community/tutorials/how-to-install-mariadb-on-ubuntu-20-04)  
@@ -84,23 +73,23 @@ Note2 : When Remove Version of Packages Latest Version of Packes Will be Install
 
 Note : Installation of MariaDB in openSuse Same as ubuntu
 
-**5- Create Database malware_comminitu in MariaDB**
+**4- Create Database malware_comminitu in MariaDB**
 
 ```
 create database malware_community;
 ```
 
-**6- Restore malware_community.sql database to Your DB and insert shellTable**
+**5- Restore malware_community.sql database to Your DB and insert shellTable**
 
 ```
 mysql -u root -p  malware_community < malware_community.sql
 ```
 
 
-**7- Change config (config.py) File From Your Configurations**
+**6- Change config (config.py) File From Your Configurations**
 
 
-**8- Run App For First Time**
+**7- Run App For First Time**
 
 Note : in openSUSE you Might see SELinux status Error,You should Install SELinux Packages : 
 
@@ -113,39 +102,39 @@ sudo zypper in restorecond policycoreutils setools-console
 
 
 
-**9- copy service File in /etc/systemd/system Directory**
+**8- copy service File in /etc/systemd/system Directory**
 
 ```
 sudo cp KYGnus_Guard.service  /etc/systemd/system 
 ```
 
-**10- Enable Service File**
+**9- Enable Service File**
 
 ```
-cd /etc/systemd/system/ && sudo systemctl enable KYGnus_Guard.service && sudo systemctl start  KYGnus_Guard.service && echo "Service File [ OK ]"
+cd /etc/systemd/system/ && sudo systemctl enable KYGnus_Guard.service && sudo systemctl start  KYGnus_Guard.service && cd && echo "Service File [ OK ]"
 ```
 
 
 
 
-**11- Create Directory For standard Logs /var/log**
+**10- Create Directory For standard Logs /var/log**
 *Note: change user(koosha) with Your user in all lines*
  - 15-1 : Go to /var/log Directory and make Directory for app
 
 ```
-cd /var/log && sudo mkdir KYGnus-Guard-Community && sudo ln -s /opt/KYGnus-Guard-Community/Log KYGnus-Guard-Community && echo "Standard Log File Created Successfully [ OK ]"
+cd /var/log && sudo mkdir KYGnus-Guard-Community && sudo ln -s /opt/KYGnus-Guard-Community/Log KYGnus-Guard-Community && cd && echo "Standard Log File Created Successfully [ OK ]"
 ```
 
-**12- Create Directory For standard Settings /etc**
+**11- Create Directory For standard Settings /etc**
 *Note: change user(koosha) with Your user in all lines*
  - 16-1 : Go to /etc Directory and make Directory for app
 
 ```
-cd /etc && sudo mkdir KYGnus_Guard && cd KYGnus_Guard && sudo ln -s  /opt/KYGnus-Guard-Community/config.py KYGnus-Guard.conf && echo "Standard config File Created Successfully [ OK ]"
+cd /etc && sudo mkdir KYGnus_Guard && cd KYGnus_Guard && sudo ln -s  /opt/KYGnus-Guard-Community/config.py KYGnus-Guard.conf && cd && echo "Standard config File Created Successfully [ OK ]"
 ```
 
 
-**13- for Better Security You should Block 8080 port in Your system**
+**12- for Better Security You should Block 8080 port in Your system**
 
 ```
 sudo iptables -t filter -A INPUT -p tcp -i any --dport 8080 -j DROP
