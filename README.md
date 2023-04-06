@@ -31,7 +31,7 @@ cd /tmp && wget https://github.com/KooshaYeganeh/KYGnus-Guard-community/archive/
 mv /tmp/KYGnus-Guard-Community /opt && cd /opt/KYGnus-Guard-Community
 ```
 
-**2-Test the pip package manager and then install the packages**
+**2-Test the pip Package Manager and then Install the packages**
 
 First First, we check that the pip is installed correctly on the system, then Install packages
 
@@ -42,6 +42,7 @@ Fedora:
 ```
 sudo pip install -r requirements.txt
 ```
+
 Ubuntu: 
 
 ```
