@@ -4,9 +4,9 @@ Documentation=https://github.com/KooshaYeganeh/KYGnus-Guard-community
 After=NetworkManager.service mariadb.service
 [Service]
 Type=simple
-ExecStart=/bin/bash /home/$USER/App/.KYGnus-Guard-Community/ KYGnus_Guard.sh
-ExecStop=/bin/bash  /home/$USER/App/.KYGnus-Guard-Community/ --Kill
-ExecReload=/bin/bash /home/$USER/App/.KYGnus-Guard-Community/ --HUP
+ExecStart=/bin/bash /opt/KYGnus-Guard-Community/KYGnus_Guard.sh
+ExecStop=/bin/bash  /opt/KYGnus-Guard-Community/KYGnus_Guard.sh --Kill
+ExecReload=/bin/bash /opt/KYGnus-Guard-Community/KYGnus_Guard.sh --HUP
 
 
 [Install]
