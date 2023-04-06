@@ -4,9 +4,8 @@
 
 
 
-cd /home/$USER/App/.KYGnus-Guard-Community/
+cd /opt/KYGnus-Guard-Community/
 
-source venv/bin/activate
 
 <<python
 Note : if You User Debian Base systems Like Ubunjtu or Lubuntu or Others
