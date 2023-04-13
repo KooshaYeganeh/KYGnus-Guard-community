@@ -76,6 +76,20 @@ Note : Installation of MariaDB in openSuse Same as ubuntu
 
 **4- Create Database malware_comminitu in MariaDB**
 
+**ٔNote :** *If the database is located in the local system, it is better to put the username and password of the database in the /etc/my.conf file so that it is easy to log in and work with the database.*
+
+
+[client]
+user = mysqluser
+password = mysqlpassword
+
+> change dbuser with your databaseuser and dbpassword with your database password in command below 
+
+```
+echo -e "[clinet-server]\n\n[client]\nuser=dbuser\npassword=dbpassword\n\n!includedir /etc/my.cnf.d" > /tmp/my.cnf
+```
+
+
 ```
 create database malware_community;
 ```
@@ -141,6 +155,22 @@ cd /etc && sudo mkdir KYGnus_Guard && cd KYGnus_Guard && sudo ln -s  /opt/KYGnus
 sudo iptables -t filter -A INPUT -p tcp -i any --dport 8080 -j DROP
 ```
 
+
+
+### Groupe Installer
+
+Ansible software can be used to install the software on several hosts at the same time. To do this, just run the grp_install script.  
+
+**Note 1:** Note that the database is on your system, and if the database is placed on the remote system, delete the relevant line from the script.  
+
+**Note 2 :** In the script, all the hosts are taken into account. In order to specify specific hosts for installation, change the host on the playbook.
+
+
+```
+ansible-playbook grp_install.yml
+```
+
+
 ## Remove
 
 ```
@@ -149,3 +179,8 @@ sudo iptables -F && sudo rm /etc/systemd/system/KYGnus_Guard.service && sudo rm 
 
 
 
+### Groupe Remove
+
+```
+ansible-playbook grp_remove.yml
+```
