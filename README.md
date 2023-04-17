@@ -157,8 +157,18 @@ sudo iptables -t filter -A INPUT -p tcp -i any --dport 8080 -j DROP
 
 
 
-### Groupe Installer
+## Remove
 
+```
+sudo iptables -F && sudo rm /etc/systemd/system/KYGnus_Guard.service && sudo rm -rf /var/log/KYGnus-Guard-Community && sudo rm -rf /etc/KYGnus-Guard-Community  && rm -rf /opt/KYGnus-Guard-Community && mysql --execute="DROP DATABASE malware_community;" && echo "KYGnus-Guard-Community Removed [ Successfully ]"
+```
+
+
+
+
+## Ansible
+
+### Groupe Installer 
 Ansible software can be used to install the software on several hosts at the same time. To do this, just run the grp_install script.  
 
 **Note 1:** Note that the database is on your system, and if the database is placed on the remote system, delete the relevant line from the script.  
@@ -170,17 +180,11 @@ Ansible software can be used to install the software on several hosts at the sam
 ansible-playbook grp_install.yml
 ```
 
-
-## Remove
-
-```
-sudo iptables -F && sudo rm /etc/systemd/system/KYGnus_Guard.service && sudo rm -rf /var/log/KYGnus-Guard-Community && sudo rm -rf /etc/KYGnus-Guard-Community  && rm -rf /opt/KYGnus-Guard-Community && mysql --execute="DROP DATABASE malware_community;" && echo "KYGnus-Guard-Community Removed [ Successfully ]"
-```
-
-
-
 ### Groupe Remove
 
 ```
 ansible-playbook grp_remove.yml
 ```
+
+
+
