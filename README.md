@@ -1,4 +1,3 @@
-```markdown
 # Mini EDR solutions For Linux
 
 ![Security Shield](https://img.shields.io/badge/Security-EDR-blue)
@@ -159,21 +158,4 @@ For continuous monitoring, consider setting up cron jobs:
 ## License
 
 MIT License
-
-## Disclaimer
-
-This tool is provided for security monitoring and educational purposes only. The authors are not responsible for any damages caused by improper use of this tool. Always test in a non-production environment first.
-```
-
-This README includes:
-1. Clear badges for quick project identification
-2. Comprehensive feature listing
-3. Installation instructions
-4. Detailed usage documentation with tables
-5. Configuration directory structure
-6. Rule customization guidance
-7. Logging information
-8. System requirements
-9. Recommended production setup
-10. License and disclaimer
 
