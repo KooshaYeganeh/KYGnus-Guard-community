@@ -1,5 +1,3 @@
-Here's a comprehensive `README.md` for your LinuxAV-Solutions with EDR project:
-
 ```markdown
 # LinuxAV-Solutions with EDR
 
