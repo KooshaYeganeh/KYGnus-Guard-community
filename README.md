@@ -1,5 +1,5 @@
 ```markdown
-# LinuxAV-Solutions with EDR
+# Mini EDR solutions For Linux
 
 ![Security Shield](https://img.shields.io/badge/Security-EDR-blue)
 ![Bash Version](https://img.shields.io/badge/Bash-5.x-green)
@@ -27,13 +27,13 @@ A comprehensive endpoint security solution combining antivirus capabilities with
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/yourusername/linuxav-solutions-edr.git
-   cd linuxav-solutions-edr
+   git clone https://github.com/KooshaYeganeh/myEDR.git
+   cd myEDR
    ```
 
 2. **Make the script executable**:
    ```bash
-   chmod +x linuxav-edr.sh
+   chmod +x myEDR
    ```
 
 3. **Install dependencies** (optional for full functionality):
@@ -48,7 +48,7 @@ A comprehensive endpoint security solution combining antivirus capabilities with
 ## Usage
 
 ```bash
-./linuxav-edr.sh [OPTION]...
+./myEDR [OPTION]...
 ```
 
 ### Basic Operations
@@ -74,27 +74,27 @@ A comprehensive endpoint security solution combining antivirus capabilities with
 
 1. **Create a system baseline**:
    ```bash
-   sudo ./linuxav-edr.sh --edr-baseline
+   sudo ./myEDR --edr-baseline
    ```
 
 2. **Scan a directory with ClamAV**:
    ```bash
-   sudo ./linuxav-edr.sh --scan /home/user/downloads --type clamav
+   sudo ./myEDR --scan /home/user/downloads --type clamav
    ```
 
 3. **Check for system deviations**:
    ```bash
-   sudo ./linuxav-edr.sh --edr-deviations
+   sudo ./myEDR --edr-deviations
    ```
 
 4. **Monitor processes in real-time**:
    ```bash
-   sudo ./linuxav-edr.sh --edr-monitor-processes
+   sudo ./myEDR --edr-monitor-processes
    ```
 
 5. **View last 20 security events**:
    ```bash
-   ./linuxav-edr.sh --edr-events --last 20
+   ./myEDR --edr-events --last 20
    ```
 
 ## Configuration
@@ -147,13 +147,13 @@ For continuous monitoring, consider setting up cron jobs:
 
 ```bash
 # Daily system check
-0 3 * * * root /path/to/linuxav-edr.sh --edr-deviations
+0 3 * * * root /path/to/myEDR --edr-deviations
 
 # Weekly vulnerability scan
-0 4 * * 0 root /path/to/linuxav-edr.sh --vulnerability
+0 4 * * 0 root /path/to/myEDR --vulnerability
 
 # Hourly threat hunting
-0 * * * * root /path/to/linuxav-edr.sh --edr-threat-hunt
+0 * * * * root /path/to/myEDR --edr-threat-hunt
 ```
 
 ## License
