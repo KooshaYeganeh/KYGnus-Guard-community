@@ -1,0 +1,671 @@
+#!/bin/bash
+
+# LinuxAV-Solutions Command Line Tool with EDR Capabilities
+
+# Configuration
+USERNAME=$(whoami)
+APPDIR="/home/$USERNAME/.LinuxAV-Solutions"
+LOG_DIR="$APPDIR/Log"
+QUARANTINE_DIR="$APPDIR/Quarantine"
+SIGNATURES_DIR="$APPDIR/Signatures"
+MALWARE_SIGNATURES="$SIGNATURES_DIR/malware_signatures.txt"
+MALICIOUS_IPS="$SIGNATURES_DIR/malicious_ips.txt"
+EDR_DIR="$APPDIR/EDR"
+EVENT_LOG="$EDR_DIR/events.log"
+BASELINE_DIR="$EDR_DIR/baseline"
+CONFIG_DIR="$EDR_DIR/config"
+RULES_DIR="$EDR_DIR/rules"
+
+# Initialize directories
+init_directories() {
+    mkdir -p "$APPDIR" "$LOG_DIR" "$QUARANTINE_DIR" "$SIGNATURES_DIR" "$EDR_DIR" "$BASELINE_DIR" "$CONFIG_DIR" "$RULES_DIR"
+    
+    # Create default signature database if not exists
+    if [ ! -f "$MALWARE_SIGNATURES" ]; then
+        echo "# Malware signatures database" > "$MALWARE_SIGNATURES"
+        echo "d41d8cd98f00b204e9800998ecf8427e:TEST_SIGNATURE" >> "$MALWARE_SIGNATURES"
+    fi
+    
+    # Create default malicious IPs list if not exists
+    if [ ! -f "$MALICIOUS_IPS" ]; then
+        echo "# Known malicious IP addresses" > "$MALICIOUS_IPS"
+        echo "# Add one IP per line" >> "$MALICIOUS_IPS"
+    fi
+    
+    # Create default EDR rules if not exists
+    if [ ! -f "$RULES_DIR/process_rules.txt" ]; then
+        echo "# EDR Process Monitoring Rules" > "$RULES_DIR/process_rules.txt"
+        echo "# Format: process_name:severity:action" >> "$RULES_DIR/process_rules.txt"
+        echo "nc:high:alert" >> "$RULES_DIR/process_rules.txt"
+        echo "socat:high:alert" >> "$RULES_DIR/process_rules.txt"
+        echo "miner:critical:kill" >> "$RULES_DIR/process_rules.txt"
+    fi
+    
+    if [ ! -f "$RULES_DIR/file_rules.txt" ]; then
+        echo "# EDR File Monitoring Rules" > "$RULES_DIR/file_rules.txt"
+        echo "# Format: path:permission_changes:content_changes" >> "$RULES_DIR/file_rules.txt"
+        echo "/etc/passwd:alert:critical" >> "$RULES_DIR/file_rules.txt"
+        echo "/etc/shadow:alert:critical" >> "$RULES_DIR/file_rules.txt"
+        echo "/root/.ssh/:critical:critical" >> "$RULES_DIR/file_rules.txt"
+    fi
+    
+    # Initialize event log
+    if [ ! -f "$EVENT_LOG" ]; then
+        echo "# LinuxAV-Solutions EDR Event Log" > "$EVENT_LOG"
+        echo "# Timestamp,EventType,Severity,Details" >> "$EVENT_LOG"
+    fi
+}
+
+# EDR Logging
+log_event() {
+    local event_type=$1
+    local severity=$2
+    local details=$3
+    local timestamp=$(date "+%Y-%m-%d %H:%M:%S")
+    
+    echo "$timestamp,$event_type,$severity,$details" >> "$EVENT_LOG"
+    echo "[EDR Event] $timestamp - $event_type ($severity): $details"
+}
+
+# System Status Functions
+get_system_status() {
+    local command=$1
+    local result=$(eval "$command" 2>/dev/null || echo "Unknown")
+    echo "$result"
+}
+
+se_status() {
+    get_system_status "sestatus | grep 'Current mode' | awk {'print \$3'}"
+}
+
+firewall_status() {
+    get_system_status "systemctl is-active firewalld"
+}
+
+network_manager_status() {
+    get_system_status "systemctl is-active NetworkManager"
+}
+
+clam_status() {
+    get_system_status "systemctl is-active clamav-freshclam"
+}
+
+fail2ban_status() {
+    get_system_status "systemctl is-active fail2ban"
+}
+
+app_disk_usage() {
+    get_system_status "du -h $APPDIR | tail -1 | awk '{print \$1}'"
+}
+
+num_quarantine() {
+    find "$QUARANTINE_DIR" -type f | wc -l
+}
+
+# EDR Baseline Functions
+create_baseline() {
+    echo "Creating system baseline..."
+    
+    # File system baseline
+    echo "Creating filesystem baseline..."
+    find / -type f -exec stat --format="%n,%U,%G,%a,%F,%y,%z" {} \; 2>/dev/null > "$BASELINE_DIR/filesystem.csv"
+    
+    # Process baseline
+    echo "Creating process baseline..."
+    ps -eo pid,user,group,cmd > "$BASELINE_DIR/processes.txt"
+    
+    # Network baseline
+    echo "Creating network baseline..."
+    netstat -tulnp > "$BASELINE_DIR/network.txt"
+    
+    # User/group baseline
+    echo "Creating user/group baseline..."
+    cat /etc/passwd > "$BASELINE_DIR/passwd.baseline"
+    cat /etc/group > "$BASELINE_DIR/group.baseline"
+    cat /etc/shadow > "$BASELINE_DIR/shadow.baseline" 2>/dev/null
+    
+    # Kernel modules
+    echo "Creating kernel modules baseline..."
+    lsmod > "$BASELINE_DIR/kernel_modules.txt"
+    
+    # Cron jobs
+    echo "Creating cron jobs baseline..."
+    crontab -l > "$BASELINE_DIR/crontab_root.txt" 2>/dev/null
+    for user in $(cut -f1 -d: /etc/passwd); do
+        crontab -u "$user" -l > "$BASELINE_DIR/crontab_$user.txt" 2>/dev/null
+    done
+    
+    log_event "baseline" "info" "System baseline created"
+    echo "System baseline created at $BASELINE_DIR"
+}
+
+check_deviations() {
+    echo "Checking for system deviations from baseline..."
+    
+    # Check filesystem changes
+    if [ -f "$BASELINE_DIR/filesystem.csv" ]; then
+        echo -e "\n[+] Checking for filesystem changes..."
+        find / -type f -exec stat --format="%n,%U,%G,%a,%F,%y,%z" {} \; 2>/dev/null > "$BASELINE_DIR/filesystem_current.csv"
+        diff "$BASELINE_DIR/filesystem.csv" "$BASELINE_DIR/filesystem_current.csv" | grep '^>' | while read -r line; do
+            log_event "filesystem" "warning" "File change detected: ${line:2}"
+        done
+    fi
+    
+    # Check user/group changes
+    echo -e "\n[+] Checking for user/group changes..."
+    if [ -f "$BASELINE_DIR/passwd.baseline" ]; then
+        diff "$BASELINE_DIR/passwd.baseline" /etc/passwd | grep '^>' | while read -r line; do
+            log_event "user" "alert" "User account change: ${line:2}"
+        done
+    fi
+    
+    if [ -f "$BASELINE_DIR/group.baseline" ]; then
+        diff "$BASELINE_DIR/group.baseline" /etc/group | grep '^>' | while read -r line; do
+            log_event "user" "alert" "Group change: ${line:2}"
+        done
+    fi
+    
+    # Check kernel modules
+    echo -e "\n[+] Checking for kernel module changes..."
+    lsmod > "$BASELINE_DIR/kernel_modules_current.txt"
+    if [ -f "$BASELINE_DIR/kernel_modules.txt" ]; then
+        diff "$BASELINE_DIR/kernel_modules.txt" "$BASELINE_DIR/kernel_modules_current.txt" | grep '^>' | while read -r line; do
+            log_event "kernel" "warning" "Kernel module change: ${line:2}"
+        done
+    fi
+    
+    # Check cron jobs
+    echo -e "\n[+] Checking for cron job changes..."
+    crontab -l > "$BASELINE_DIR/crontab_root_current.txt" 2>/dev/null
+    if [ -f "$BASELINE_DIR/crontab_root.txt" ]; then
+        diff "$BASELINE_DIR/crontab_root.txt" "$BASELINE_DIR/crontab_root_current.txt" | grep '^>' | while read -r line; do
+            log_event "cron" "alert" "Root cron job change: ${line:2}"
+        done
+    fi
+    
+    for user in $(cut -f1 -d: /etc/passwd); do
+        crontab -u "$user" -l > "$BASELINE_DIR/crontab_${user}_current.txt" 2>/dev/null
+        if [ -f "$BASELINE_DIR/crontab_$user.txt" ]; then
+            diff "$BASELINE_DIR/crontab_$user.txt" "$BASELINE_DIR/crontab_${user}_current.txt" | grep '^>' | while read -r line; do
+                log_event "cron" "alert" "User cron job change ($user): ${line:2}"
+            done
+        fi
+    done
+    
+    echo "Deviation check completed. Review $EVENT_LOG for details."
+}
+
+# EDR Monitoring Functions
+monitor_processes() {
+    echo "Starting process monitoring with EDR rules..."
+    
+    # Load process rules
+    declare -A process_rules
+    while IFS=: read -r process severity action; do
+        [[ "$process" =~ ^# ]] || [[ -z "$process" ]] && continue
+        process_rules["$process"]="$severity:$action"
+    done < "$RULES_DIR/process_rules.txt"
+    
+    # Monitor processes
+    while true; do
+        for process in "${!process_rules[@]}"; do
+            if pgrep -x "$process" >/dev/null; then
+                IFS=: read -r severity action <<< "${process_rules[$process]}"
+                details="Suspicious process detected: $process (Severity: $severity)"
+                
+                case $action in
+                    "alert")
+                        log_event "process" "$severity" "$details"
+                        ;;
+                    "kill")
+                        log_event "process" "$severity" "$details - Process killed"
+                        pkill -9 "$process"
+                        ;;
+                    "quarantine")
+                        log_event "process" "$severity" "$details - Process quarantined"
+                        pkill -9 "$process"
+                        # Additional quarantine actions would go here
+                        ;;
+                    *)
+                        log_event "process" "$severity" "$details"
+                        ;;
+                esac
+            fi
+        done
+        sleep 10
+    done
+}
+
+monitor_files() {
+    echo "Starting file monitoring with EDR rules..."
+    
+    # Load file rules
+    declare -A file_rules
+    while IFS=: read -r path perm_change content_change; do
+        [[ "$path" =~ ^# ]] || [[ -z "$path" ]] && continue
+        file_rules["$path"]="$perm_change:$content_change"
+    done < "$RULES_DIR/file_rules.txt"
+    
+    # Monitor files
+    for path in "${!file_rules[@]}"; do
+        IFS=: read -r perm_change content_change <<< "${file_rules[$path]}"
+        
+        if [ -e "$path" ]; then
+            # Check permission changes
+            current_perm=$(stat -c "%a" "$path" 2>/dev/null)
+            original_perm=$(grep "$path," "$BASELINE_DIR/filesystem.csv" 2>/dev/null | cut -d, -f4)
+            
+            if [ -n "$original_perm" ] && [ "$current_perm" != "$original_perm" ]; then
+                log_event "file" "$perm_change" "Permission change detected: $path (from $original_perm to $current_perm)"
+            fi
+            
+            # Check content changes (simplified)
+            if [ -f "$path" ]; then
+                current_hash=$(md5sum "$path" | awk '{print $1}' 2>/dev/null)
+                original_hash=$(grep "$path," "$BASELINE_DIR/filesystem.csv" 2>/dev/null | cut -d, -f1 | md5sum | awk '{print $1}' 2>/dev/null)
+                
+                if [ -n "$original_hash" ] && [ "$current_hash" != "$original_hash" ]; then
+                    log_event "file" "$content_change" "Content change detected: $path"
+                fi
+            fi
+        fi
+    done
+}
+
+# Scanning Functions
+scan_with_clamav() {
+    local path=$1
+    clamscan --infected --recursive --verbose --no-summary "$path" 2>&1
+}
+
+scan_with_maldet() {
+    local path=$1
+    /usr/local/sbin/maldet --scan "$path" 2>&1
+}
+
+check_file_signatures() {
+    local file_path=$1
+    local file_hash=$(md5sum "$file_path" | awk '{print $1}' 2>/dev/null)
+    
+    if [ -z "$file_hash" ]; then
+        echo "Error: Could not calculate hash"
+        return 1
+    fi
+    
+    while IFS= read -r line; do
+        if [[ ! "$line" =~ ^# ]] && [[ "$line" =~ "$file_hash:" ]]; then
+            echo "${line#*:}"
+            return 0
+        fi
+    done < "$MALWARE_SIGNATURES"
+    
+    echo "Clean"
+}
+
+scan_directory() {
+    local path=$1
+    local scan_type=$2
+    local infected_files=()
+    
+    case $scan_type in
+        clamav)
+            echo "Running ClamAV scan on $path"
+            scan_with_clamav "$path"
+            ;;
+        maldet)
+            echo "Running Maldet scan on $path"
+            scan_with_maldet "$path"
+            ;;
+        signature)
+            echo "Running signature scan on $path"
+            while IFS= read -r -d '' file; do
+                result=$(check_file_signatures "$file")
+                if [ "$result" != "Clean" ]; then
+                    echo "Found infected file: $file (Signature: $result)"
+                    infected_files+=("$file")
+                    
+                    # Quarantine the file
+                    quarantine_path="${file/$path/$QUARANTINE_DIR}"
+                    mkdir -p "$(dirname "$quarantine_path")"
+                    mv "$file" "$quarantine_path"
+                    
+                    log_event "quarantine" "high" "File quarantined: $file (Signature: $result)"
+                fi
+            done < <(find "$path" -type f -print0)
+            
+            if [ ${#infected_files[@]} -eq 0 ]; then
+                echo "No infected files found"
+            else
+                echo "Quarantined ${#infected_files[@]} files"
+            fi
+            ;;
+        *)
+            echo "Invalid scan type. Available options: clamav, maldet, signature"
+            return 1
+            ;;
+    esac
+}
+
+# Quarantine Management
+list_quarantine() {
+    find "$QUARANTINE_DIR" -type f
+}
+
+restore_file() {
+    local filename=$1
+    local original_path="${filename/$QUARANTINE_DIR/}"
+    
+    if [ ! -f "$filename" ]; then
+        echo "Error: File not found in quarantine"
+        return 1
+    fi
+    
+    mkdir -p "$(dirname "$original_path")"
+    mv "$filename" "$original_path"
+    echo "Restored $filename to $original_path"
+    log_event "quarantine" "info" "File restored from quarantine: $filename to $original_path"
+}
+
+delete_file() {
+    local filename=$1
+    
+    if [ ! -f "$filename" ]; then
+        echo "Error: File not found in quarantine"
+        return 1
+    fi
+    
+    rm -f "$filename"
+    echo "Permanently deleted $filename"
+    log_event "quarantine" "info" "File permanently deleted from quarantine: $filename"
+}
+
+# Network Functions
+check_malicious_connections() {
+    local malicious_ips=()
+    
+    if [ -f "$MALICIOUS_IPS" ]; then
+        while IFS= read -r line; do
+            [[ "$line" =~ ^# ]] || malicious_ips+=("$line")
+        done < "$MALICIOUS_IPS"
+    fi
+    
+    echo "Checking for malicious connections..."
+    netstat -tunap | awk '/ESTABLISHED/ {print $5, $7}' | while read -r raddr pid_proc; do
+        ip=$(echo "$raddr" | cut -d: -f1)
+        pid=$(echo "$pid_proc" | cut -d'/' -f1)
+        
+        for malicious_ip in "${malicious_ips[@]}"; do
+            if [ "$ip" == "$malicious_ip" ]; then
+                process=$(ps -p "$pid" -o comm= 2>/dev/null || echo "Unknown")
+                details="Malicious connection detected: PID: $pid, Process: $process, Remote IP: $ip, Port: $(echo "$raddr" | cut -d: -f2)"
+                log_event "network" "critical" "$details"
+                echo "$details"
+            fi
+        done
+    done
+}
+
+check_abnormal_ports() {
+    echo "Checking for abnormal listening ports..."
+    netstat -tunlp | awk '/LISTEN/ {print $4, $7}' | while read -r laddr pid_proc; do
+        port=$(echo "$laddr" | rev | cut -d: -f1 | rev)
+        pid=$(echo "$pid_proc" | cut -d'/' -f1)
+        
+        # Common ports to ignore
+        case $port in
+            20|21|22|23|25|53|80|110|143|443|465|587|993|995|3306|3389)
+                continue
+                ;;
+        esac
+        
+        if [ "$port" -gt 1024 ]; then
+            process=$(ps -p "$pid" -o comm= 2>/dev/null || echo "Unknown")
+            details="Abnormal port detected: Port: $port, PID: $pid, Process: $process"
+            log_event "network" "warning" "$details"
+            echo "$details"
+        fi
+    done
+}
+
+# System Monitoring
+check_abnormal_processes() {
+    echo "Checking for abnormal processes..."
+    ps -eo pid,%cpu,%mem,comm --sort=-%cpu | awk 'NR>1 && ($2 > 80 || $3 > 30) {
+        details="High resource usage: PID: "$1", CPU: "$2"%, MEM: "$3"%, Process: "$4
+        log_event "process", "warning", details
+        printf "%s\n\n", details
+    }'
+    
+    echo "Checking for hidden/deleted executables..."
+    find /proc/[0-9]*/exe -type l -exec ls -l {} + 2>/dev/null | grep '(deleted)' | while read -r line; do
+        pid=$(echo "$line" | awk -F'/' '{print $3}')
+        process=$(ps -p "$pid" -o comm= 2>/dev/null || echo "Unknown")
+        details="Deleted executable still running: PID: $pid, Process: $process, Executable: $(echo "$line" | awk '{print $11}')"
+        log_event "process" "alert" "$details"
+        echo "$details"
+    done
+}
+
+# Vulnerability Scanning
+vulnerability_scan() {
+    echo "Running vulnerability scan..."
+    
+    echo -e "\nWorld-writable files:"
+    find / -xdev -type f -perm -0002 2>/dev/null | while read -r file; do
+        log_event "vulnerability" "medium" "World-writable file: $file"
+        echo "$file"
+    done
+    
+    echo -e "\nSUID/SGID files:"
+    find / -xdev -type f -perm -4000 -o -perm -2000 2>/dev/null | while read -r file; do
+        log_event "vulnerability" "medium" "SUID/SGID file: $file"
+        echo "$file"
+    done
+    
+    echo -e "\nPending system updates:"
+    if command -v apt-get &>/dev/null; then
+        updates=$(apt list --upgradable 2>/dev/null)
+        if [ -n "$updates" ]; then
+            log_event "vulnerability" "high" "Pending system updates available"
+            echo "$updates"
+        fi
+    elif command -v yum &>/dev/null; then
+        updates=$(yum list updates 2>/dev/null)
+        if [ -n "$updates" ]; then
+            log_event "vulnerability" "high" "Pending system updates available"
+            echo "$updates"
+        fi
+    else
+        echo "Could not determine package manager"
+    fi
+}
+
+# Threat Hunting
+hunt_suspicious_activity() {
+    echo "Hunting for suspicious activity..."
+    
+    # Check for SSH brute force attempts
+    echo -e "\nSSH login attempts:"
+    grep "Failed password" /var/log/auth.log 2>/dev/null || grep "Failed password" /var/log/secure 2>/dev/null | \
+    awk '{print $1,$2,$3,$9,$11}' | sort | uniq -c | sort -nr | while read -r line; do
+        count=$(echo "$line" | awk '{print $1}')
+        ip=$(echo "$line" | awk '{print $5}')
+        if [ "$count" -gt 5 ]; then
+            details="Possible SSH brute force attempt from $ip ($count attempts)"
+            log_event "threat" "high" "$details"
+            echo "$details"
+        fi
+    done
+    
+    # Check for suspicious commands in history
+    echo -e "\nSuspicious commands in bash history:"
+    for user in $(cut -f1 -d: /etc/passwd); do
+        home=$(eval echo "~$user")
+        if [ -f "$home/.bash_history" ]; then
+            grep -E "(wget|curl|chmod|chown|ssh|scp|nc|socat|telnet|ftp|lynx|whois) " "$home/.bash_history" | \
+            while read -r cmd; do
+                details="Suspicious command in $user's history: $cmd"
+                log_event "threat" "medium" "$details"
+                echo "$details"
+            done
+        fi
+    done
+    
+    # Check for unusual cron jobs
+    echo -e "\nUnusual cron jobs:"
+    find /etc/cron* /var/spool/cron -type f -exec grep -vE "^#" {} \; | \
+    grep -E "(wget|curl|chmod|chown|ssh|scp|nc|socat|telnet|ftp|lynx|whois) " | \
+    while read -r line; do
+        details="Suspicious cron job: $line"
+        log_event "threat" "high" "$details"
+        echo "$details"
+    done
+}
+
+# Main function
+main() {
+    init_directories
+    
+    if [ $# -eq 0 ]; then
+        echo "LinuxAV-Solutions Command Line Tool with EDR"
+        echo "Usage: $0 [OPTION]..."
+        echo
+        echo "Options:"
+        echo "  --status                  Show system security status"
+        echo "  --scan PATH [--type TYPE] Scan a directory (types: clamav, maldet, signature)"
+        echo "  --quarantine [--list]     List quarantined files"
+        echo "  --quarantine --restore FILE  Restore a file from quarantine"
+        echo "  --quarantine --delete FILE    Permanently delete a quarantined file"
+        echo "  --network-connections     Check for malicious network connections"
+        echo "  --network-ports           Check for abnormal listening ports"
+        echo "  --processes               Check for abnormal processes"
+        echo "  --vulnerability           Run vulnerability scan"
+        echo "  --edr-baseline            Create system baseline for EDR"
+        echo "  --edr-deviations          Check for system deviations from baseline"
+        echo "  --edr-monitor-processes   Start EDR process monitoring"
+        echo "  --edr-monitor-files       Run EDR file monitoring"
+        echo "  --edr-threat-hunt         Perform threat hunting"
+        echo "  --edr-events [--last N]   Show EDR events (last N events)"
+        echo "  --help                    Show this help message"
+        return 1
+    fi
+    
+    while [ $# -gt 0 ]; do
+        case $1 in
+            --status)
+                echo "=== System Security Status ==="
+                echo "SELinux Status: $(se_status)"
+                echo "Firewall Status: $(firewall_status)"
+                echo "Network Manager Status: $(network_manager_status)"
+                echo "ClamAV Status: $(clam_status)"
+                echo "Fail2Ban Status: $(fail2ban_status)"
+                echo "Quarantine Items: $(num_quarantine)"
+                echo "App Disk Usage: $(app_disk_usage)"
+                shift
+                ;;
+            --scan)
+                if [ -z "$2" ]; then
+                    echo "Error: No path specified for scan"
+                    return 1
+                fi
+                path=$2
+                shift 2
+                
+                scan_type="signature"
+                if [ "$1" == "--type" ]; then
+                    scan_type=$2
+                    shift 2
+                fi
+                
+                scan_directory "$path" "$scan_type"
+                ;;
+            --quarantine)
+                case $2 in
+                    --list)
+                        echo "Quarantined files:"
+                        list_quarantine
+                        shift 2
+                        ;;
+                    --restore)
+                        if [ -z "$3" ]; then
+                            echo "Error: No file specified for restore"
+                            return 1
+                        fi
+                        restore_file "$3"
+                        shift 3
+                        ;;
+                    --delete)
+                        if [ -z "$3" ]; then
+                            echo "Error: No file specified for deletion"
+                            return 1
+                        fi
+                        delete_file "$3"
+                        shift 3
+                        ;;
+                    *)
+                        echo "Quarantined files:"
+                        list_quarantine
+                        shift
+                        ;;
+                esac
+                ;;
+            --network-connections)
+                check_malicious_connections
+                shift
+                ;;
+            --network-ports)
+                check_abnormal_ports
+                shift
+                ;;
+            --processes)
+                check_abnormal_processes
+                shift
+                ;;
+            --vulnerability)
+                vulnerability_scan
+                shift
+                ;;
+            --edr-baseline)
+                create_baseline
+                shift
+                ;;
+            --edr-deviations)
+                check_deviations
+                shift
+                ;;
+            --edr-monitor-processes)
+                monitor_processes
+                shift
+                ;;
+            --edr-monitor-files)
+                monitor_files
+                shift
+                ;;
+            --edr-threat-hunt)
+                hunt_suspicious_activity
+                shift
+                ;;
+            --edr-events)
+                if [ "$2" == "--last" ]; then
+                    count=$3
+                    tail -n "$count" "$EVENT_LOG"
+                    shift 3
+                else
+                    cat "$EVENT_LOG"
+                    shift
+                fi
+                ;;
+            --help)
+                main
+                return 0
+                ;;
+            *)
+                echo "Unknown option: $1"
+                return 1
+                ;;
+        esac
+    done
+}
+
+# Run the script
+main "$@"
