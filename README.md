@@ -1,6 +1,5 @@
 # myEDR - Linux Endpoint Detection & Response
 
-![myEDR Logo](https://via.placeholder.com/150x50?text=myEDR) 
 ![License](https://img.shields.io/badge/License-GPLv3-blue.svg)
 
 A customizable EDR solution offering both minimal protection and full enterprise-grade security for Linux systems.
