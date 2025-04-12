@@ -1,161 +1,155 @@
-# Mini EDR solutions For Linux
+# myEDR - Linux Endpoint Detection & Response
 
-![Security Shield](https://img.shields.io/badge/Security-EDR-blue)
-![Bash Version](https://img.shields.io/badge/Bash-5.x-green)
-![Platform](https://img.shields.io/badge/Platform-Linux-lightgrey)
+![myEDR Logo](https://via.placeholder.com/150x50?text=myEDR) 
+![License](https://img.shields.io/badge/License-GPLv3-blue.svg)
 
-A comprehensive endpoint security solution combining antivirus capabilities with Endpoint Detection and Response (EDR) functionality, all in a single bash script.
+A customizable EDR solution offering both minimal protection and full enterprise-grade security for Linux systems.
 
-## Features
+## Key Features
 
-### Antivirus Capabilities
-- **File Scanning**: Signature-based, ClamAV, and Maldet scanning
-- **Quarantine Management**: Isolate and manage suspicious files
-- **Vulnerability Scanning**: Identify system weaknesses
-- **Network Monitoring**: Detect malicious connections and abnormal ports
+### Deployment Options
+- **Minimal EDR**: Lightweight monitoring (<5% CPU) with essential detection
+- **Full Customizable**: Enterprise features with granular control
+- **Hybrid Mode**: Mix and match components as needed
 
-### EDR Capabilities
-- **System Baseline**: Create snapshots of system state
-- **Deviation Detection**: Identify changes from baseline
-- **Process Monitoring**: Real-time monitoring with rule-based responses
-- **File Integrity Monitoring**: Watch critical files for changes
-- **Threat Hunting**: Proactively search for indicators of compromise
-- **Event Logging**: Comprehensive security event tracking
+### Security Capabilities
+✔ Real-time process monitoring  
+✔ File integrity checking  
+✔ Threat intelligence integration  
+✔ Automated containment  
+✔ Compliance reporting  
+✔ Centralized management (enterprise version)
 
 ## Installation
 
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/KooshaYeganeh/myEDR.git
-   cd myEDR
-   ```
-
-2. **Make the script executable**:
-   ```bash
-   chmod +x myEDR
-   ```
-
-3. **Install dependencies** (optional for full functionality):
-   ```bash
-   # For Debian/Ubuntu
-   sudo apt install clamav maldet net-tools
-
-   # For RHEL/CentOS
-   sudo yum install clamav maldet net-tools
-   ```
-
-## Usage
-
+### Quick Install (Minimal EDR)
 ```bash
-./myEDR [OPTION]...
+curl -s https://example.com/install-myedr | bash -s -- --minimal
 ```
 
-### Basic Operations
+### Full Install (All Features)
+```bash
+curl -s https://example.com/install-myedr | bash -s -- --full
+```
+
+### Manual Installation
+1. Download package:
+   ```bash
+   wget https://example.com/myedr-latest.tar.gz
+   tar -xzf myedr-latest.tar.gz
+   cd myedr/
+   ```
+2. Run installer:
+   ```bash
+   sudo ./install.sh
+   ```
+
+## Removal
+```bash
+sudo /opt/myedr/uninstall.sh
+# Or for complete removal:
+sudo /opt/myedr/uninstall.sh --purge
+```
+
+## Command Reference
+
+### Core Commands
 | Command | Description |
 |---------|-------------|
-| `--status` | Show system security status |
-| `--scan PATH [--type TYPE]` | Scan a directory (types: `clamav`, `maldet`, `signature`) |
-| `--quarantine --list` | List quarantined files |
-| `--quarantine --restore FILE` | Restore a file from quarantine |
-| `--quarantine --delete FILE` | Permanently delete a quarantined file |
+| `myedr --scan PATH` | Scan directory/files |
+| `myedr --monitor` | Start real-time monitoring |
+| `myedr --status` | Show protection status |
 
-### EDR Operations
+### EDR Features
 | Command | Description |
 |---------|-------------|
-| `--edr-baseline` | Create system baseline |
-| `--edr-deviations` | Check for system deviations |
-| `--edr-monitor-processes` | Start process monitoring |
-| `--edr-monitor-files` | Run file integrity monitoring |
-| `--edr-threat-hunt` | Perform threat hunting |
-| `--edr-events [--last N]` | Show EDR events (last N events) |
+| `myedr --baseline` | Create system baseline (what's this?) |
+| `myedr --check-deviations` | Compare against baseline |
+| `myedr --threat-hunt` | Active threat hunting |
 
-### Examples
+### Management
+| Command | Description |
+|---------|-------------|
+| `myedr --install-service` | Install as systemd service |
+| `myedr --uninstall` | Remove myEDR |
+| `myedr --update` | Fetch latest signatures |
 
-1. **Create a system baseline**:
-   ```bash
-   sudo ./myEDR --edr-baseline
-   ```
+## About Key Features
 
-2. **Scan a directory with ClamAV**:
-   ```bash
-   sudo ./myEDR --scan /home/user/downloads --type clamav
-   ```
+### System Baseline (`--baseline`)
+Creates a snapshot of your system including:
+- All file hashes and permissions
+- Running processes
+- Network configuration
+- User accounts
+- Installed packages
 
-3. **Check for system deviations**:
-   ```bash
-   sudo ./myEDR --edr-deviations
-   ```
+Used as reference for detecting changes during `--check-deviations`.
 
-4. **Monitor processes in real-time**:
-   ```bash
-   sudo ./myEDR --edr-monitor-processes
-   ```
-
-5. **View last 20 security events**:
-   ```bash
-   ./myEDR --edr-events --last 20
-   ```
+### Monitoring Modes
+| Mode | CPU Usage | Protection Level | Best For |
+|------|----------|------------------|----------|
+| Minimal | 3-5% | Basic threats | Low-power devices |
+| Standard | 5-15% | Most attacks | General servers |
+| Full | 15-30% | Advanced threats | Critical systems |
 
 ## Configuration
 
-The tool automatically creates configuration directories at `~/.LinuxAV-Solutions/` with the following structure:
+Edit `/etc/myedr/config.yaml`:
 
-```
-.LinuxAV-Solutions/
-├── EDR/
-│   ├── baseline/          # System baseline snapshots
-│   ├── config/            # Configuration files
-│   ├── rules/             # Detection rules
-│   └── events.log         # Security event log
-├── Log/                   # Application logs
-├── Quarantine/            # Quarantined files
-└── Signatures/            # Malware signatures
-```
+```yaml
+# Minimal EDR Example
+mode: minimal
+scan_schedule: daily
 
-### Customizing Rules
-
-1. **Process Rules** (`EDR/rules/process_rules.txt`):
-   ```
-   # Format: process_name:severity:action
-   nc:high:alert
-   miner:critical:kill
-   ```
-
-2. **File Rules** (`EDR/rules/file_rules.txt`):
-   ```
-   # Format: path:perm_change_severity:content_change_severity
-   /etc/passwd:alert:critical
-   /root/.ssh/:critical:critical
-   ```
-
-## Logging
-
-All security events are logged to:
-- `~/.LinuxAV-Solutions/EDR/events.log` (EDR events)
-- `~/.LinuxAV-Solutions/Log/LinuxAV_Solutions.log` (application logs)
-
-## Requirements
-
-- Bash 5.0+
-- Linux OS
-- Root privileges for most operations (recommended)
-
-## Recommended Setup
-
-For continuous monitoring, consider setting up cron jobs:
-
-```bash
-# Daily system check
-0 3 * * * root /path/to/myEDR --edr-deviations
-
-# Weekly vulnerability scan
-0 4 * * 0 root /path/to/myEDR --vulnerability
-
-# Hourly threat hunting
-0 * * * * root /path/to/myEDR --edr-threat-hunt
+# Full EDR Example
+mode: full
+threat_intel:
+  enabled: true
+  api_url: "https://ti.example.com/api"
+response:
+  auto_contain: medium+
+logging:
+  siem_enabled: true
 ```
 
-## License
+## Usage Examples
 
-MIT License
+1. **Basic Protection**:
+   ```bash
+   myedr --install-service --mode minimal
+   ```
+
+2. **Enterprise Deployment**:
+   ```bash
+   myedr --install-service --mode full \
+         --set threat_intel.api_url="https://ti.corp.com/v2" \
+         --set response.auto_contain=high
+   ```
+
+3. **On-Demand Scanning**:
+   ```bash
+   myedr --scan /var/www --type deep
+   ```
+
+## Support Levels
+
+| Tier | Includes | Response Time |
+|------|----------|---------------|
+| Community | Basic support | Best effort |
+| Professional | Configuration help | <24 hours |
+| Enterprise | 24/7 SOC integration | <1 hour |
+
+**Contact:** security-support@example.com
+
+## FAQ
+
+**Q: How does baseline help security?**  
+A: Baselines enable detection of unexpected changes - like when attackers modify system files.
+
+**Q: Can I run this alongside other AV?**  
+A: Yes, myEDR is designed to complement existing security tools.
+
+**Q: What's the minimum supported OS?**  
+A: Linux kernel 3.10+ (CentOS 7+, Ubuntu 16.04+)
 

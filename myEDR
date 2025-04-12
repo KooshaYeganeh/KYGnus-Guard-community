@@ -1,10 +1,13 @@
 #!/bin/bash
 
-# LinuxAV-Solutions Command Line Tool with EDR Capabilities
+# LinuxAV-Solutions Command Line Tool with Enterprise EDR Capabilities
+# Version: 3.0
+# Features: Centralized Management, Threat Intelligence Integration, Behavioral Analysis, 
+#           Automated Response, Compliance Reporting, SIEM Integration
 
-# Configuration
+## Global Configuration
 USERNAME=$(whoami)
-APPDIR="/home/$USERNAME/.LinuxAV-Solutions"
+APPDIR="/home/$USER/.myEDR"
 LOG_DIR="$APPDIR/Log"
 QUARANTINE_DIR="$APPDIR/Quarantine"
 SIGNATURES_DIR="$APPDIR/Signatures"
@@ -16,7 +19,20 @@ BASELINE_DIR="$EDR_DIR/baseline"
 CONFIG_DIR="$EDR_DIR/config"
 RULES_DIR="$EDR_DIR/rules"
 
-# Initialize directories
+## Enterprise EDR Configuration
+CONFIG_FILE="${CONFIG_DIR}/edr.conf"
+TEMP_DIR="/tmp/edr_$(date +%s)"
+LOCK_FILE="/var/run/edr.lock"
+VERSION="3.0.0"
+
+## Enterprise Features
+CENTRAL_MGMT_SERVER="edr-mgmt.corporate.com"
+SIEM_SERVER="siem.corporate.com:514"
+THREAT_INTEL_API="https://ti.corporate.com/api/v1/check"
+MACHINE_ID=$(cat /etc/machine-id 2>/dev/null || hostname)
+DEPLOYMENT_GROUP=$(cat ${CONFIG_DIR}/deployment_group 2>/dev/null || echo "default")
+
+# Initialize directories and enterprise environment
 init_directories() {
     mkdir -p "$APPDIR" "$LOG_DIR" "$QUARANTINE_DIR" "$SIGNATURES_DIR" "$EDR_DIR" "$BASELINE_DIR" "$CONFIG_DIR" "$RULES_DIR"
     
@@ -54,17 +70,242 @@ init_directories() {
         echo "# LinuxAV-Solutions EDR Event Log" > "$EVENT_LOG"
         echo "# Timestamp,EventType,Severity,Details" >> "$EVENT_LOG"
     fi
+    
+    # Initialize enterprise environment
+    init_enterprise
 }
 
-# EDR Logging
-log_event() {
-    local event_type=$1
-    local severity=$2
-    local details=$3
-    local timestamp=$(date "+%Y-%m-%d %H:%M:%S")
+## Initialize Enterprise Environment
+init_enterprise() {
+    # Create necessary directories
+    mkdir -p ${CONFIG_DIR} /var/log/edr /var/lib/edr/{quarantine,artifacts} \
+             /var/run/edr ${TEMP_DIR}
     
-    echo "$timestamp,$event_type,$severity,$details" >> "$EVENT_LOG"
-    echo "[EDR Event] $timestamp - $event_type ($severity): $details"
+    # Load configuration
+    if [ -f "${CONFIG_FILE}" ]; then
+        source "${CONFIG_FILE}"
+    else
+        generate_enterprise_config
+    fi
+    
+    # Set up logging
+    exec 2>>"${LOG_DIR}/edr_error.log"
+    
+    # Check for central configuration updates
+    check_config_updates
+}
+
+## Enterprise Configuration Generator
+generate_enterprise_config() {
+    cat > "${CONFIG_FILE}" <<EOF
+# Enterprise EDR Configuration
+# Auto-generated on $(date)
+
+# Directory Configuration
+LOG_DIR="/var/log/edr"
+REPORT_DIR="/var/reports/edr"
+QUARANTINE_DIR="/var/lib/edr/quarantine"
+ARTIFACT_DIR="/var/lib/edr/artifacts"
+
+# Network Configuration
+CENTRAL_MGMT_SERVER="edr-mgmt.corporate.com"
+SIEM_SERVER="siem.corporate.com:514"
+THREAT_INTEL_API="https://ti.corporate.com/api/v1/check"
+
+# Scanning Configuration
+SCAN_DIRS="/home /etc /bin /usr/bin /usr/sbin /opt"
+YARA_RULES_DIR="/etc/edr/yara_rules"
+SIGNATURE_DB="/etc/edr/signatures.db"
+
+# Response Configuration
+AUTO_CONTAINMENT_LEVEL="high"
+NETWORK_ISOLATION_THRESHOLD=3
+
+# Monitoring Configuration
+ENABLE_BEHAVIORAL_MONITORING=true
+ENABLE_REALTIME_PROCESS_MONITORING=true
+ENABLE_FILE_INTEGRITY_MONITORING=true
+
+# Notification Configuration
+SECURITY_TEAM_EMAIL="security-team@corporate.com"
+INCIDENT_RESPONSE_PAGER="ir-team@corporate.com"
+
+# Compliance Configuration
+COMPLIANCE_STANDARD="PCI DSS 3.2"
+REQUIRED_CHECKS="file_integrity,user_accounts,firewall_rules,audit_config"
+
+# Advanced Configuration
+MAX_LOG_SIZE="100M"
+LOG_RETENTION_DAYS=90
+EOF
+
+    chmod 600 "${CONFIG_FILE}"
+}
+
+## Centralized Management Functions
+check_config_updates() {
+    local last_update=$(stat -c %Y "${CONFIG_FILE}" 2>/dev/null || echo 0)
+    local current_time=$(date +%s)
+    
+    if (( current_time - last_update > 3600 )); then
+        log_event "INFO" "Checking for configuration updates from central server"
+        
+        if curl -s --connect-timeout 10 --cert ${CONFIG_DIR}/client.pem \
+           "https://${CENTRAL_MGMT_SERVER}/config/${MACHINE_ID}" -o "${TEMP_DIR}/new_config"; then
+            
+            if validate_config "${TEMP_DIR}/new_config"; then
+                mv "${TEMP_DIR}/new_config" "${CONFIG_FILE}"
+                log_event "INFO" "Configuration updated from central server"
+                source "${CONFIG_FILE}"
+            fi
+        fi
+    fi
+}
+
+validate_config() {
+    local config_file=$1
+    # Basic validation - ensure it's a proper bash file
+    return $(bash -n "${config_file}" 2>/dev/null)
+}
+
+## Enhanced Logging Framework
+log_event() {
+    local severity=$1
+    local message=$2
+    local timestamp=$(date --iso-8601=seconds)
+    local log_entry="[${timestamp}] [${severity}] ${message}"
+    
+    # Local logging
+    echo "${log_entry}" >> "${LOG_DIR}/edr_${current_date}.log"
+    echo "${timestamp},${severity},${message}" >> "${EVENT_LOG}"
+    
+    # SIEM integration (if configured)
+    if [ -n "${SIEM_SERVER}" ]; then
+        echo "<14>${timestamp} ${HOSTNAME} EDR[$$]: ${severity}: ${message}" | \
+            nc -w 2 -u "${SIEM_SERVER}" 2>/dev/null
+    fi
+    
+    # Central logging (if configured)
+    if [ -n "${CENTRAL_MGMT_SERVER}" ]; then
+        curl -s -X POST --connect-timeout 3 --cert ${CONFIG_DIR}/client.pem \
+             -d "host=${MACHINE_ID}&group=${DEPLOYMENT_GROUP}&severity=${severity}&message=${message}" \
+             "https://${CENTRAL_MGMT_SERVER}/logs" >/dev/null
+    fi
+}
+
+## Threat Intelligence Integration
+check_threat_intel() {
+    local indicator=$1
+    local indicator_type=$2  # ip, hash, domain
+    
+    if [ -z "${THREAT_INTEL_API}" ]; then
+        return
+    fi
+    
+    local response=$(curl -s --connect-timeout 5 --cert ${CONFIG_DIR}/client.pem \
+        "${THREAT_INTEL_API}/${indicator_type}/${indicator}")
+    
+    if echo "${response}" | jq -e '.match == true' >/dev/null; then
+        local threat_level=$(echo "${response}" | jq -r '.threat_level')
+        local threat_name=$(echo "${response}" | jq -r '.threat_name')
+        echo "${threat_level} ${threat_name}"
+    fi
+}
+
+## Behavioral Analysis Engine
+analyze_behavior() {
+    # Capture process tree snapshot
+    ps -eo pid,ppid,user,cmd --forest > "${TEMP_DIR}/process_tree.txt"
+    
+    # Network connections analysis
+    netstat -tulnpe > "${TEMP_DIR}/network_connections.txt"
+    
+    # File activity analysis
+    lsof +L1 > "${TEMP_DIR}/deleted_files.txt"
+    
+    # Send to central analysis (async) if configured
+    if [ -n "${CENTRAL_MGMT_SERVER}" ]; then
+        (tar czf - -C "${TEMP_DIR}" process_tree.txt network_connections.txt deleted_files.txt 2>/dev/null | \
+         curl -s -X POST --connect-timeout 10 --cert ${CONFIG_DIR}/client.pem \
+         --data-binary @- "https://${CENTRAL_MGMT_SERVER}/behavior/${MACHINE_ID}" >/dev/null) &
+    fi
+}
+
+## Enhanced Response Framework
+contain_threat() {
+    local threat_level=$1
+    local threat_type=$2
+    local indicator=$3
+    
+    case "${threat_level}" in
+        "critical")
+            # Immediate isolation
+            isolate_host
+            quarantine_artifacts "${threat_type}" "${indicator}"
+            notify_security_team "CRITICAL" "Contained critical ${threat_type} threat: ${indicator}"
+            ;;
+        "high")
+            # Block network activity
+            block_network "${threat_type}" "${indicator}"
+            quarantine_artifacts "${threat_type}" "${indicator}"
+            notify_security_team "HIGH" "Contained high ${threat_type} threat: ${indicator}"
+            ;;
+        *)
+            # Log and alert
+            log_event "WARNING" "Detected ${threat_type} threat: ${indicator}"
+            notify_security_team "MEDIUM" "Detected ${threat_type} threat: ${indicator}"
+            ;;
+    esac
+}
+
+isolate_host() {
+    log_event "CRITICAL" "Initiating host isolation procedures"
+    
+    # Network isolation
+    iptables -P INPUT DROP
+    iptables -P OUTPUT DROP
+    iptables -P FORWARD DROP
+    
+    # Process containment
+    pkill -STOP -f "${malicious_process_patterns}"
+    
+    # Central alert
+    if [ -n "${CENTRAL_MGMT_SERVER}" ]; then
+        curl -s -X POST --connect-timeout 5 --cert ${CONFIG_DIR}/client.pem \
+             -d "host=${MACHINE_ID}&action=isolated" \
+             "https://${CENTRAL_MGMT_SERVER}/response" >/dev/null
+    fi
+}
+
+## Compliance Reporting
+generate_compliance_report() {
+    local report_file="${REPORT_DIR}/compliance_$(date +%Y%m%d).json"
+    
+    # Collect compliance data
+    local compliance_data=$(cat <<EOF
+{
+    "timestamp": "$(date --iso-8601=seconds)",
+    "host": "${MACHINE_ID}",
+    "group": "${DEPLOYMENT_GROUP}",
+    "checks": {
+        "file_integrity": $(check_file_integrity),
+        "user_accounts": $(check_user_accounts),
+        "firewall_rules": $(check_firewall),
+        "audit_config": $(check_audit_config)
+    }
+}
+EOF
+    )
+    
+    echo "${compliance_data}" > "${report_file}"
+    
+    # Upload to central server if configured
+    if [ -n "${CENTRAL_MGMT_SERVER}" ]; then
+        curl -s -X POST --connect-timeout 10 --cert ${CONFIG_DIR}/client.pem \
+             -H "Content-Type: application/json" \
+             --data-binary @"${report_file}" \
+             "https://${CENTRAL_MGMT_SERVER}/compliance" >/dev/null
+    fi
 }
 
 # System Status Functions
@@ -330,6 +571,14 @@ scan_directory() {
                     mv "$file" "$quarantine_path"
                     
                     log_event "quarantine" "high" "File quarantined: $file (Signature: $result)"
+                    
+                    # Check threat intelligence if configured
+                    if [ -n "${THREAT_INTEL_API}" ]; then
+                        threat_info=$(check_threat_intel "$file_hash" "hash")
+                        if [ -n "$threat_info" ]; then
+                            log_event "threat" "critical" "Known malicious file detected: $file (Threat: $threat_info)"
+                        fi
+                    fi
                 fi
             done < <(find "$path" -type f -print0)
             
@@ -400,6 +649,15 @@ check_malicious_connections() {
                 details="Malicious connection detected: PID: $pid, Process: $process, Remote IP: $ip, Port: $(echo "$raddr" | cut -d: -f2)"
                 log_event "network" "critical" "$details"
                 echo "$details"
+                
+                # Check threat intelligence if configured
+                if [ -n "${THREAT_INTEL_API}" ]; then
+                    threat_info=$(check_threat_intel "$ip" "ip")
+                    if [ -n "$threat_info" ]; then
+                        log_event "threat" "critical" "Known malicious connection detected: $ip (Threat: $threat_info)"
+                        contain_threat "critical" "network" "$ip"
+                    fi
+                fi
             fi
         done
     done
@@ -494,6 +752,14 @@ hunt_suspicious_activity() {
             details="Possible SSH brute force attempt from $ip ($count attempts)"
             log_event "threat" "high" "$details"
             echo "$details"
+            
+            # Check threat intelligence if configured
+            if [ -n "${THREAT_INTEL_API}" ]; then
+                threat_info=$(check_threat_intel "$ip" "ip")
+                if [ -n "$threat_info" ]; then
+                    log_event "threat" "critical" "Known malicious SSH attempt from: $ip (Threat: $threat_info)"
+                fi
+            fi
         fi
     done
     
@@ -520,6 +786,45 @@ hunt_suspicious_activity() {
         log_event "threat" "high" "$details"
         echo "$details"
     done
+    
+    # Perform behavioral analysis
+    analyze_behavior
+}
+
+# Enterprise EDR Main Execution
+enterprise_edr_scan() {
+    # Prevent multiple runs
+    if [ -e "${LOCK_FILE}" ]; then
+        pid=$(cat "${LOCK_FILE}")
+        if ps -p "${pid}" > /dev/null; then
+            exit 0
+        fi
+    fi
+    echo $$ > "${LOCK_FILE}"
+    
+    # Initialize
+    current_date=$(date +%Y%m%d)
+    
+    # Start enterprise scan
+    log_event "INFO" "Starting enterprise EDR scan (v${VERSION})"
+    
+    # Behavioral analysis
+    analyze_behavior
+    
+    # Threat detection modules
+    check_malicious_connections
+    check_abnormal_ports
+    check_abnormal_processes
+    hunt_suspicious_activity
+    
+    # Compliance reporting
+    generate_compliance_report
+    
+    # Cleanup
+    rm -rf "${TEMP_DIR}"
+    rm -f "${LOCK_FILE}"
+    
+    log_event "INFO" "Enterprise EDR scan completed"
 }
 
 # Main function
@@ -527,7 +832,8 @@ main() {
     init_directories
     
     if [ $# -eq 0 ]; then
-        echo "LinuxAV-Solutions Command Line Tool with EDR"
+        echo "LinuxAV-Solutions Command Line Tool with Enterprise EDR"
+        echo "Version: $VERSION"
         echo "Usage: $0 [OPTION]..."
         echo
         echo "Options:"
@@ -546,6 +852,7 @@ main() {
         echo "  --edr-monitor-files       Run EDR file monitoring"
         echo "  --edr-threat-hunt         Perform threat hunting"
         echo "  --edr-events [--last N]   Show EDR events (last N events)"
+        echo "  --enterprise-scan         Run comprehensive enterprise EDR scan"
         echo "  --help                    Show this help message"
         return 1
     fi
@@ -561,6 +868,8 @@ main() {
                 echo "Fail2Ban Status: $(fail2ban_status)"
                 echo "Quarantine Items: $(num_quarantine)"
                 echo "App Disk Usage: $(app_disk_usage)"
+                echo "Enterprise EDR Version: $VERSION"
+                echo "Central Management: ${CENTRAL_MGMT_SERVER:-Not configured}"
                 shift
                 ;;
             --scan)
@@ -654,6 +963,10 @@ main() {
                     cat "$EVENT_LOG"
                     shift
                 fi
+                ;;
+            --enterprise-scan)
+                enterprise_edr_scan
+                shift
                 ;;
             --help)
                 main
