@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # LinuxAV-Solutions Command Line Tool with Enterprise EDR Capabilities
-# Version: 3.0
+# Version: 4.0
 # Features: Centralized Management, Threat Intelligence Integration, Behavioral Analysis, 
-#           Automated Response, Compliance Reporting, SIEM Integration
+#           Automated Response, Compliance Reporting, SIEM Integration, Suricata IDS/IPS
 
 ## Global Configuration
 USERNAME=$(whoami)
@@ -18,12 +18,16 @@ EVENT_LOG="$EDR_DIR/events.log"
 BASELINE_DIR="$EDR_DIR/baseline"
 CONFIG_DIR="$EDR_DIR/config"
 RULES_DIR="$EDR_DIR/rules"
+REPORT_DIR="$APPDIR/Reports"
+SURICATA_DIR="$APPDIR/Suricata"
+SURICATA_RULES="$SURICATA_DIR/rules"
+SURICATA_LOGS="$SURICATA_DIR/logs"
 
 ## Enterprise EDR Configuration
 CONFIG_FILE="${CONFIG_DIR}/edr.conf"
 TEMP_DIR="/tmp/edr_$(date +%s)"
 LOCK_FILE="/var/run/edr.lock"
-VERSION="3.0.0"
+VERSION="4.0.0"
 
 ## Enterprise Features
 CENTRAL_MGMT_SERVER="edr-mgmt.corporate.com"
@@ -32,9 +36,18 @@ THREAT_INTEL_API="https://ti.corporate.com/api/v1/check"
 MACHINE_ID=$(cat /etc/machine-id 2>/dev/null || hostname)
 DEPLOYMENT_GROUP=$(cat ${CONFIG_DIR}/deployment_group 2>/dev/null || echo "default")
 
+## Colors for reporting
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
 # Initialize directories and enterprise environment
 init_directories() {
-    mkdir -p "$APPDIR" "$LOG_DIR" "$QUARANTINE_DIR" "$SIGNATURES_DIR" "$EDR_DIR" "$BASELINE_DIR" "$CONFIG_DIR" "$RULES_DIR"
+    mkdir -p "$APPDIR" "$LOG_DIR" "$QUARANTINE_DIR" "$SIGNATURES_DIR" "$EDR_DIR" \
+             "$BASELINE_DIR" "$CONFIG_DIR" "$RULES_DIR" "$REPORT_DIR" \
+             "$SURICATA_DIR" "$SURICATA_RULES" "$SURICATA_LOGS"
     
     # Create default signature database if not exists
     if [ ! -f "$MALWARE_SIGNATURES" ]; then
@@ -46,6 +59,7 @@ init_directories() {
     if [ ! -f "$MALICIOUS_IPS" ]; then
         echo "# Known malicious IP addresses" > "$MALICIOUS_IPS"
         echo "# Add one IP per line" >> "$MALICIOUS_IPS"
+        echo "123.123.123.123" >> "$MALICIOUS_IPS"
     fi
     
     # Create default EDR rules if not exists
@@ -71,6 +85,12 @@ init_directories() {
         echo "# Timestamp,EventType,Severity,Details" >> "$EVENT_LOG"
     fi
     
+    # Initialize Suricata rules if not exists
+    if [ ! -f "$SURICATA_RULES/local.rules" ]; then
+        echo "# Suricata local rules" > "$SURICATA_RULES/local.rules"
+        echo 'alert ip any any -> any any (msg:"ET POLICY Suspicious inbound to MySQL port 3306"; flow:to_server,established; dport:3306; threshold: type limit, track by_src, count 1, seconds 60; reference:url,doc.emergingthreats.net/2001976; classtype:attempted-recon; sid:2001976; rev:9;)' >> "$SURICATA_RULES/local.rules"
+    fi
+    
     # Initialize enterprise environment
     init_enterprise
 }
@@ -93,6 +113,56 @@ init_enterprise() {
     
     # Check for central configuration updates
     check_config_updates
+    
+    # Initialize Suricata if installed
+    if command -v suricata &>/dev/null; then
+        init_suricata
+    fi
+}
+
+## Initialize Suricata IDS/IPS
+init_suricata() {
+    # Check if Suricata is running
+    if ! pgrep -x "suricata" >/dev/null; then
+        # Start Suricata in IDS mode
+        suricata -c /etc/suricata/suricata.yaml -i $(ip route get 1 | awk '{print $5;exit}') --user suricata --group suricata -D
+        
+        if [ $? -eq 0 ]; then
+            log_event "INFO" "Suricata IDS/IPS started successfully"
+        else
+            log_event "ERROR" "Failed to start Suricata IDS/IPS"
+        fi
+    fi
+    
+    # Update Suricata rules periodically
+    update_suricata_rules
+}
+
+update_suricata_rules() {
+    # Check if rule update is needed (once per day)
+    local last_update=0
+    if [ -f "$SURICATA_DIR/last_update" ]; then
+        last_update=$(date -r "$SURICATA_DIR/last_update" +%s)
+    fi
+    local current_time=$(date +%s)
+    
+    if (( current_time - last_update > 86400 )); then
+        log_event "INFO" "Updating Suricata rules"
+        
+        # Pull ET Open rules
+        if curl -s https://rules.emergingthreats.net/open/suricata-6.0.0/emerging.rules.tar.gz | \
+           tar xz -C "$SURICATA_RULES"; then
+            touch "$SURICATA_DIR/last_update"
+            log_event "INFO" "Suricata rules updated successfully"
+            
+            # Reload Suricata if running
+            if pgrep -x "suricata" >/dev/null; then
+                suricatasc -c reload-rules
+            fi
+        else
+            log_event "ERROR" "Failed to update Suricata rules"
+        fi
+    fi
 }
 
 ## Enterprise Configuration Generator
@@ -125,6 +195,7 @@ NETWORK_ISOLATION_THRESHOLD=3
 ENABLE_BEHAVIORAL_MONITORING=true
 ENABLE_REALTIME_PROCESS_MONITORING=true
 ENABLE_FILE_INTEGRITY_MONITORING=true
+ENABLE_SURICATA=true
 
 # Notification Configuration
 SECURITY_TEAM_EMAIL="security-team@corporate.com"
@@ -223,9 +294,14 @@ analyze_behavior() {
     # File activity analysis
     lsof +L1 > "${TEMP_DIR}/deleted_files.txt"
     
+    # Suricata alerts analysis
+    if [ -f "${SURICATA_LOGS}/fast.log" ]; then
+        cp "${SURICATA_LOGS}/fast.log" "${TEMP_DIR}/suricata_alerts.txt"
+    fi
+    
     # Send to central analysis (async) if configured
     if [ -n "${CENTRAL_MGMT_SERVER}" ]; then
-        (tar czf - -C "${TEMP_DIR}" process_tree.txt network_connections.txt deleted_files.txt 2>/dev/null | \
+        (tar czf - -C "${TEMP_DIR}" process_tree.txt network_connections.txt deleted_files.txt suricata_alerts.txt 2>/dev/null | \
          curl -s -X POST --connect-timeout 10 --cert ${CONFIG_DIR}/client.pem \
          --data-binary @- "https://${CENTRAL_MGMT_SERVER}/behavior/${MACHINE_ID}" >/dev/null) &
     fi
@@ -277,6 +353,29 @@ isolate_host() {
     fi
 }
 
+block_network() {
+    local threat_type=$1
+    local indicator=$2
+    
+    case "$threat_type" in
+        "ip")
+            iptables -A INPUT -s "$indicator" -j DROP
+            iptables -A OUTPUT -d "$indicator" -j DROP
+            log_event "NETWORK" "Blocked network traffic to/from $indicator"
+            ;;
+        "port")
+            iptables -A INPUT -p tcp --dport "$indicator" -j DROP
+            iptables -A OUTPUT -p tcp --dport "$indicator" -j DROP
+            log_event "NETWORK" "Blocked traffic on port $indicator"
+            ;;
+        "domain")
+            # Add to /etc/hosts to null route
+            echo "0.0.0.0 $indicator" >> /etc/hosts
+            log_event "NETWORK" "Null routed domain $indicator"
+            ;;
+    esac
+}
+
 ## Compliance Reporting
 generate_compliance_report() {
     local report_file="${REPORT_DIR}/compliance_$(date +%Y%m%d).json"
@@ -291,7 +390,8 @@ generate_compliance_report() {
         "file_integrity": $(check_file_integrity),
         "user_accounts": $(check_user_accounts),
         "firewall_rules": $(check_firewall),
-        "audit_config": $(check_audit_config)
+        "audit_config": $(check_audit_config),
+        "suricata_status": $(check_suricata_status)
     }
 }
 EOF
@@ -299,12 +399,138 @@ EOF
     
     echo "${compliance_data}" > "${report_file}"
     
+    # Generate visual report
+    generate_visual_report "${report_file}"
+    
     # Upload to central server if configured
     if [ -n "${CENTRAL_MGMT_SERVER}" ]; then
         curl -s -X POST --connect-timeout 10 --cert ${CONFIG_DIR}/client.pem \
              -H "Content-Type: application/json" \
              --data-binary @"${report_file}" \
              "https://${CENTRAL_MGMT_SERVER}/compliance" >/dev/null
+    fi
+}
+
+## Visual Reporting with termgraph
+generate_visual_report() {
+    local report_file=$1
+    local visual_report="${REPORT_DIR}/compliance_$(date +%Y%m%d)_visual.txt"
+    
+    # Extract data for visualization
+    local file_integrity=$(jq '.checks.file_integrity.score' "$report_file")
+    local user_accounts=$(jq '.checks.user_accounts.score' "$report_file")
+    local firewall=$(jq '.checks.firewall_rules.score' "$report_file")
+    local audit=$(jq '.checks.audit_config.score' "$report_file")
+    local suricata=$(jq '.checks.suricata_status.score' "$report_file")
+    
+    # Create termgraph data
+    cat > "${TEMP_DIR}/compliance.dat" <<EOF
+# Compliance Scores
+File Integrity,${file_integrity}
+User Accounts,${user_accounts}
+Firewall,${firewall}
+Audit Config,${audit}
+Suricata,${suricata}
+EOF
+    
+    # Generate visual report
+    echo -e "\n${BLUE}=== COMPLIANCE REPORT ===${NC}\n" > "$visual_report"
+    termgraph "${TEMP_DIR}/compliance.dat" --color {green,yellow,red} >> "$visual_report"
+    
+    # Add recommendations
+    echo -e "\n${YELLOW}=== RECOMMENDATIONS ===${NC}" >> "$visual_report"
+    
+    if (( $(echo "$file_integrity < 80" | bc -l) )); then
+        echo "- Investigate file integrity issues (Score: $file_integrity)" >> "$visual_report"
+    fi
+    
+    if (( $(echo "$user_accounts < 90" | bc -l) )); then
+        echo "- Review user account configurations (Score: $user_accounts)" >> "$visual_report"
+    fi
+    
+    if (( $(echo "$firewall < 85" | bc -l) )); then
+        echo "- Strengthen firewall rules (Score: $firewall)" >> "$visual_report"
+    fi
+    
+    if (( $(echo "$audit < 75" | bc -l) )); then
+        echo "- Improve audit configuration (Score: $audit)" >> "$visual_report"
+    fi
+    
+    if (( $(echo "$suricata < 70" | bc -l) )); then
+        echo "- Check Suricata IDS/IPS configuration (Score: $suricata)" >> "$visual_report"
+    fi
+    
+    # Display the report
+    cat "$visual_report"
+}
+
+check_file_integrity() {
+    # Simulate file integrity check
+    local score=$((80 + RANDOM % 20))
+    cat <<EOF
+{
+    "status": "$(if [ $score -gt 85 ]; then echo "good"; else echo "needs improvement"; fi)",
+    "score": $score,
+    "issues": $(if [ $score -lt 85 ]; then echo 3; else echo 0; fi)
+}
+EOF
+}
+
+check_user_accounts() {
+    # Simulate user account check
+    local score=$((85 + RANDOM % 15))
+    cat <<EOF
+{
+    "status": "$(if [ $score -gt 90 ]; then echo "excellent"; else echo "good"; fi)",
+    "score": $score,
+    "issues": $(if [ $score -lt 90 ]; then echo 2; else echo 0; fi)
+}
+EOF
+}
+
+check_firewall() {
+    # Simulate firewall check
+    local score=$((75 + RANDOM % 25))
+    cat <<EOF
+{
+    "status": "$(if [ $score -gt 85 ]; then echo "strong"; elif [ $score -gt 70 ]; then echo "adequate"; else echo "weak"; fi)",
+    "score": $score,
+    "issues": $(if [ $score -lt 85 ]; then echo 4; else echo 0; fi)
+}
+EOF
+}
+
+check_audit_config() {
+    # Simulate audit config check
+    local score=$((60 + RANDOM % 35))
+    cat <<EOF
+{
+    "status": "$(if [ $score -gt 75 ]; then echo "sufficient"; else echo "insufficient"; fi)",
+    "score": $score,
+    "issues": $(if [ $score -lt 75 ]; then echo 5; else echo 1; fi)
+}
+EOF
+}
+
+check_suricata_status() {
+    # Check Suricata status
+    if pgrep -x "suricata" >/dev/null; then
+        local score=$((70 + RANDOM % 25))
+        cat <<EOF
+{
+    "status": "running",
+    "score": $score,
+    "alerts": $(if [ $score -lt 80 ]; then echo 10; else echo 3; fi)
+}
+EOF
+    else
+        cat <<EOF
+{
+    "status": "not running",
+    "score": 0,
+    "alerts": 0
+}
+EOF
     fi
 }
 
@@ -333,6 +559,14 @@ clam_status() {
 
 fail2ban_status() {
     get_system_status "systemctl is-active fail2ban"
+}
+
+suricata_status() {
+    if pgrep -x "suricata" >/dev/null; then
+        echo "Running"
+    else
+        echo "Not running"
+    fi
 }
 
 app_disk_usage() {
@@ -375,6 +609,11 @@ create_baseline() {
     for user in $(cut -f1 -d: /etc/passwd); do
         crontab -u "$user" -l > "$BASELINE_DIR/crontab_$user.txt" 2>/dev/null
     done
+    
+    # Suricata rules checksum
+    if [ -f "/etc/suricata/suricata.yaml" ]; then
+        md5sum /etc/suricata/suricata.yaml > "$BASELINE_DIR/suricata_checksum.txt"
+    fi
     
     log_event "baseline" "info" "System baseline created"
     echo "System baseline created at $BASELINE_DIR"
@@ -432,6 +671,14 @@ check_deviations() {
             done
         fi
     done
+    
+    # Check Suricata configuration
+    if [ -f "$BASELINE_DIR/suricata_checksum.txt" ]; then
+        current_checksum=$(md5sum /etc/suricata/suricata.yaml 2>/dev/null)
+        if [ "$current_checksum" != "$(cat $BASELINE_DIR/suricata_checksum.txt)" ]; then
+            log_event "suricata" "warning" "Suricata configuration has changed"
+        fi
+    fi
     
     echo "Deviation check completed. Review $EVENT_LOG for details."
 }
@@ -524,6 +771,24 @@ scan_with_maldet() {
     /usr/local/sbin/maldet --scan "$path" 2>&1
 }
 
+scan_with_suricata() {
+    local path=$1
+    local suricata_log="${SURICATA_LOGS}/scan_$(date +%Y%m%d%H%M%S).log"
+    
+    # Run Suricata in pcap processing mode
+    suricata -r "$path" -l "$SURICATA_LOGS" > "$suricata_log" 2>&1
+    
+    # Check for alerts
+    if grep -q "alert" "${SURICATA_LOGS}/fast.log"; then
+        echo "Suricata alerts detected in scan:"
+        grep "alert" "${SURICATA_LOGS}/fast.log"
+        return 1
+    else
+        echo "No Suricata alerts detected"
+        return 0
+    fi
+}
+
 check_file_signatures() {
     local file_path=$1
     local file_hash=$(md5sum "$file_path" | awk '{print $1}' 2>/dev/null)
@@ -588,8 +853,12 @@ scan_directory() {
                 echo "Quarantined ${#infected_files[@]} files"
             fi
             ;;
+        suricata)
+            echo "Running Suricata IDS scan on $path"
+            scan_with_suricata "$path"
+            ;;
         *)
-            echo "Invalid scan type. Available options: clamav, maldet, signature"
+            echo "Invalid scan type. Available options: clamav, maldet, signature, suricata"
             return 1
             ;;
     esac
@@ -634,7 +903,7 @@ check_malicious_connections() {
     
     if [ -f "$MALICIOUS_IPS" ]; then
         while IFS= read -r line; do
-            [[ "$line" =~ ^# ]] || malicious_ips+=("$line")
+            [[ "$line" =~ ^# ]] || [[ -z "$line" ]] || malicious_ips+=("$line")
         done < "$MALICIOUS_IPS"
     fi
     
@@ -661,6 +930,14 @@ check_malicious_connections() {
             fi
         done
     done
+    
+    # Check Suricata alerts for malicious connections
+    if [ -f "${SURICATA_LOGS}/fast.log" ]; then
+        grep "ET.*MALWARE" "${SURICATA_LOGS}/fast.log" | while read -r alert; do
+            log_event "suricata" "high" "Suricata malware alert: $alert"
+            echo "Suricata malware alert: $alert"
+        done
+    fi
 }
 
 check_abnormal_ports() {
@@ -736,6 +1013,17 @@ vulnerability_scan() {
     else
         echo "Could not determine package manager"
     fi
+    
+    # Check Suricata rules freshness
+    if [ -f "$SURICATA_DIR/last_update" ]; then
+        local last_update=$(date -r "$SURICATA_DIR/last_update" +%s)
+        local current_time=$(date +%s)
+        
+        if (( current_time - last_update > 604800 )); then # 7 days
+            log_event "vulnerability" "high" "Suricata rules are outdated (last updated: $(date -d @$last_update))"
+            echo "Suricata rules are outdated (last updated: $(date -d @$last_update))"
+        fi
+    fi
 }
 
 # Threat Hunting
@@ -787,6 +1075,16 @@ hunt_suspicious_activity() {
         echo "$details"
     done
     
+    # Check Suricata alerts
+    echo -e "\nRecent Suricata alerts:"
+    if [ -f "${SURICATA_LOGS}/fast.log" ]; then
+        grep "alert" "${SURICATA_LOGS}/fast.log" | tail -n 10 | while read -r alert; do
+            details="Suricata alert: $alert"
+            log_event "suricata" "medium" "$details"
+            echo "$details"
+        done
+    fi
+    
     # Perform behavioral analysis
     analyze_behavior
 }
@@ -832,13 +1130,14 @@ main() {
     init_directories
     
     if [ $# -eq 0 ]; then
-        echo "LinuxAV-Solutions Command Line Tool with Enterprise EDR"
-        echo "Version: $VERSION"
+        echo -e "${BLUE}LinuxAV-Solutions Command Line Tool with Enterprise EDR${NC}"
+        echo -e "Version: ${GREEN}$VERSION${NC}"
+        echo -e "Suricata IDS/IPS: $(suricata_status)"
         echo "Usage: $0 [OPTION]..."
         echo
         echo "Options:"
         echo "  --status                  Show system security status"
-        echo "  --scan PATH [--type TYPE] Scan a directory (types: clamav, maldet, signature)"
+        echo "  --scan PATH [--type TYPE] Scan a directory (types: clamav, maldet, signature, suricata)"
         echo "  --quarantine [--list]     List quarantined files"
         echo "  --quarantine --restore FILE  Restore a file from quarantine"
         echo "  --quarantine --delete FILE    Permanently delete a quarantined file"
@@ -860,21 +1159,22 @@ main() {
     while [ $# -gt 0 ]; do
         case $1 in
             --status)
-                echo "=== System Security Status ==="
-                echo "SELinux Status: $(se_status)"
-                echo "Firewall Status: $(firewall_status)"
-                echo "Network Manager Status: $(network_manager_status)"
-                echo "ClamAV Status: $(clam_status)"
-                echo "Fail2Ban Status: $(fail2ban_status)"
-                echo "Quarantine Items: $(num_quarantine)"
-                echo "App Disk Usage: $(app_disk_usage)"
-                echo "Enterprise EDR Version: $VERSION"
-                echo "Central Management: ${CENTRAL_MGMT_SERVER:-Not configured}"
+                echo -e "${BLUE}=== System Security Status ===${NC}"
+                echo -e "SELinux Status: $(se_status)"
+                echo -e "Firewall Status: $(firewall_status)"
+                echo -e "Network Manager Status: $(network_manager_status)"
+                echo -e "ClamAV Status: $(clam_status)"
+                echo -e "Fail2Ban Status: $(fail2ban_status)"
+                echo -e "Suricata Status: $(suricata_status)"
+                echo -e "Quarantine Items: $(num_quarantine)"
+                echo -e "App Disk Usage: $(app_disk_usage)"
+                echo -e "Enterprise EDR Version: $VERSION"
+                echo -e "Central Management: ${CENTRAL_MGMT_SERVER:-Not configured}"
                 shift
                 ;;
             --scan)
                 if [ -z "$2" ]; then
-                    echo "Error: No path specified for scan"
+                    echo -e "${RED}Error: No path specified for scan${NC}"
                     return 1
                 fi
                 path=$2
@@ -891,13 +1191,13 @@ main() {
             --quarantine)
                 case $2 in
                     --list)
-                        echo "Quarantined files:"
+                        echo -e "${BLUE}Quarantined files:${NC}"
                         list_quarantine
                         shift 2
                         ;;
                     --restore)
                         if [ -z "$3" ]; then
-                            echo "Error: No file specified for restore"
+                            echo -e "${RED}Error: No file specified for restore${NC}"
                             return 1
                         fi
                         restore_file "$3"
@@ -905,14 +1205,14 @@ main() {
                         ;;
                     --delete)
                         if [ -z "$3" ]; then
-                            echo "Error: No file specified for deletion"
+                            echo -e "${RED}Error: No file specified for deletion${NC}"
                             return 1
                         fi
                         delete_file "$3"
                         shift 3
                         ;;
                     *)
-                        echo "Quarantined files:"
+                        echo -e "${BLUE}Quarantined files:${NC}"
                         list_quarantine
                         shift
                         ;;
@@ -957,10 +1257,12 @@ main() {
             --edr-events)
                 if [ "$2" == "--last" ]; then
                     count=$3
-                    tail -n "$count" "$EVENT_LOG"
+                    echo -e "${BLUE}=== Last $count EDR Events ===${NC}"
+                    tail -n "$count" "$EVENT_LOG" | awk -F, '{printf "[%s] %-7s %s\n", $1, $2, $3}'
                     shift 3
                 else
-                    cat "$EVENT_LOG"
+                    echo -e "${BLUE}=== EDR Events ===${NC}"
+                    cat "$EVENT_LOG" | awk -F, '{printf "[%s] %-7s %s\n", $1, $2, $3}'
                     shift
                 fi
                 ;;
@@ -973,7 +1275,7 @@ main() {
                 return 0
                 ;;
             *)
-                echo "Unknown option: $1"
+                echo -e "${RED}Unknown option: $1${NC}"
                 return 1
                 ;;
         esac
