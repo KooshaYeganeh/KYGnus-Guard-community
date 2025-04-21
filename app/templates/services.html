@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html dir="ltr" lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="keywords" content="linuxav, edr, security, dashboard">
+    <meta name="description" content="LinuxAV-Solutions Enterprise EDR Dashboard">
+    <title>LinuxAV-Solutions | Services</title>
+    <link rel="icon" type="image/png" sizes="16x16" href="../static/assets/images/favicon.png">
+    <!-- Custom CSS -->
+    <link href="../static/css/style.min.css" rel="stylesheet">
+    <!-- Toastr CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+    <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+    <script src="https://oss.maxcdn.com/libs/respond.../static/js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+</head>
+
+<body>
+    <div class="preloader">
+        <div class="lds-ripple">
+            <div class="lds-pos"></div>
+            <div class="lds-pos"></div>
+        </div>
+    </div>
+    <div id="main-wrapper" data-layout="vertical" data-navbarbg="skin5" data-sidebartype="full"
+        data-sidebar-position="absolute" data-header-position="absolute" data-boxed-layout="full">
+        <header class="topbar" data-navbarbg="skin6">
+            <nav class="navbar top-navbar navbar-expand-md navbar-dark" style="background-color: rgba(0, 255, 34, 0.256);">
+                <div class="navbar-header" data-logobg="skin6">
+                    <a class="navbar-brand" href="index.html">
+                        <b class="logo-icon">
+                            <img src="../static/openSUSE.png" alt="homepage" class="dark-logo" height="120" width="180">
+                        </b>
+                    </a>
+                    <a class="nav-toggler waves-effect waves-light text-dark d-block d-md-none"
+                        href="javascript:void(0)"><i class="ti-menu ti-close"></i></a>
+                </div>
+
+                <br><br>
+                <div class="navbar-collapse collapse" id="navbarSupportedContent" data-navbarbg="skin5">
+                    <ul class="navbar-nav me-auto mt-md-0 ">
+                        <li class="nav-item hidden-sm-down">
+                            <form class="app-search ps-3">
+                                <input type="text" class="form-control" placeholder="Search for..."> <a
+                                    class="srh-btn"><i class="ti-search"></i></a>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+            <br><br>
+        </header>
+        <br><br>
+        <aside class="left-sidebar" data-sidebarbg="skin6">
+            <br><br>
+            <br><br>
+            <div class="scroll-sidebar">
+                <nav class="sidebar-nav">
+                    <ul id="sidebarnav">
+                        <!-- User Profile-->
+                        <li class="sidebar-item"> <a class="sidebar-link waves-effect waves-dark sidebar-link"
+                                href="/" aria-expanded="false"><i class="me-3 fa fa-home"
+                                aria-hidden="true"></i><span class="hide-menu">Dashboard</span></a></li>
+                        <li class="sidebar-item"> <a class="sidebar-link waves-effect waves-dark sidebar-link"
+                                href="/scan" aria-expanded="false">
+                                <i class="me-3 fa fa-bug" aria-hidden="true"></i><span
+                                    class="hide-menu">scan</span></a>
+                        </li>
+                        <li class="sidebar-item"> <a class="sidebar-link waves-effect waves-dark sidebar-link"
+                                href="/services" aria-expanded="false"><i class="me-3 fa fa-table"
+                                    aria-hidden="true"></i><span class="hide-menu">Services</span></a></li>
+                        <li class="sidebar-item"> <a class="sidebar-link waves-effect waves-dark sidebar-link"
+                                href="/firewall" aria-expanded="false"><i class="me-3 fa fa-fire"
+                                    aria-hidden="true"></i><span class="hide-menu">Firewall</span></a></li>
+                        <li class="sidebar-item"> <a class="sidebar-link waves-effect waves-dark sidebar-link"
+                                href="/ids" aria-expanded="false"><i class="me-3 fa fa-eye"
+                                    aria-hidden="true"></i><span class="hide-menu">IDS</span></a></li>
+                        <li class="sidebar-item"> <a class="sidebar-link waves-effect waves-dark sidebar-link"
+                                href="/process" aria-expanded="false"><i class="me-3 fa fa-table"
+                                    aria-hidden="true"></i><span class="hide-menu">Process</span></a></li>
+                        <li class="sidebar-item"> <a class="sidebar-link waves-effect waves-dark sidebar-link"
+                                        href="/ai_detection" aria-expanded="false"><i class="me-3 fa fa-columns"
+                                            aria-hidden="true"></i><span class="hide-menu">AI Detection</span></a></li>
+                        <li class="sidebar-item"> <a class="sidebar-link waves-effect waves-dark sidebar-link"
+                                href="/logout" aria-expanded="false"><i class="me-3 fa fa-user"
+                                    aria-hidden="true"></i><span class="hide-menu">Logout</span></a></li>
+
+                    </ul>
+
+                </nav>
+            </div>
+        </aside>
+        <div class="page-wrapper">
+            <div class="page-breadcrumb">
+                <div class="row align-items-center">
+                    <div class="col-md-6 col-8 align-self-center">
+                        <h3 class="page-title mb-0 p-0">System Services</h3>
+                        <div class="d-flex align-items-center">
+                            <nav aria-label="breadcrumb">
+                                <ol class="breadcrumb">
+                                    <li class="breadcrumb-item"><a href="index.html">Home</a></li>
+                                    <li class="breadcrumb-item active" aria-current="page">Services</li>
+                                </ol>
+                            </nav>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-4 align-self-center">
+                        <div class="text-end">
+                            <button class="btn btn-info refresh-services">
+                                <i class="fas fa-sync-alt"></i> Refresh
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="d-md-flex mb-4">
+                                    <h4 class="card-title col-md-10 mb-md-0 mb-3 align-self-center">System Services Management</h4>
+                                    <div class="col-md-2 ms-auto">
+                                        <select class="form-select shadow-none" id="serviceStatusFilter">
+                                            <option value="all">All Services</option>
+                                            <option value="active">Active</option>
+                                            <option value="inactive">Inactive</option>
+                                            <option value="failed">Failed</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-hover" id="servicesTable">
+                                        <thead>
+                                            <tr>
+                                                <th>Service Name</th>
+                                                <th>Status</th>
+                                                <th>Description</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for service in services %}
+                                            <tr class="service-row" data-status="{{ service.active.lower() }}">
+                                                <td>
+                                                    <strong>{{ service.name }}</strong><br>
+                                                    <small class="text-muted">Loaded: {{ service.loaded }}</small>
+                                                </td>
+                                                <td>
+                                                    <span class="badge bg-{{ 'success' if service.active == 'active' else 'danger' }}">
+                                                        {{ service.active|capitalize }}
+                                                    </span>
+                                                    <br>
+                                                    <small class="text-muted">{{ service.status }}</small>
+                                                </td>
+                                                <td>{{ service.description|default('No description', true) }}</td>
+                                                <td>
+                                                    <div class="btn-group btn-group-sm" role="group">
+                                                        {% if service.active == 'active' %}
+                                                        <button class="btn btn-outline-danger stop-service" data-service="{{ service.name }}" title="Stop">
+                                                            <i class="fas fa-stop"></i>
+                                                        </button>
+                                                        <button class="btn btn-outline-warning restart-service" data-service="{{ service.name }}" title="Restart">
+                                                            <i class="fas fa-redo"></i>
+                                                        </button>
+                                                        {% else %}
+                                                        <button class="btn btn-outline-success start-service" data-service="{{ service.name }}" title="Start">
+                                                            <i class="fas fa-play"></i>
+                                                        </button>
+                                                        {% endif %}
+                                                        <button class="btn btn-outline-info service-details" data-service="{{ service.name }}" title="Details">
+                                                            <i class="fas fa-info-circle"></i>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <footer class="footer text-center">
+                LinuxAV-Solutions Enterprise EDR v{{ version }} &copy; {{ year }}
+            </footer>
+        </div>
+    </div>
+
+    <!-- All Jquery -->
+    <script src="../static/assets/plugins/jquery/dist/jquery.min.js"></script>
+    <script src="../static/assets/plugins/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../static/js/app-style-switcher.js"></script>
+    <script src="../static/js/waves.js"></script>
+    <script src="../static/js/sidebarmenu.js"></script>
+    <script src="../static/js/custom.js"></script>
+    <!-- Toastr JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    
+    <script>
+    $(document).ready(function() {
+        // Initialize toastr
+        toastr.options = {
+            "closeButton": true,
+            "progressBar": true,
+            "positionClass": "toast-top-right",
+            "timeOut": "5000"
+        };
+
+        // Filter services by status
+        $('#serviceStatusFilter').change(function() {
+            const status = $(this).val();
+            $('.service-row').hide();
+            
+            if (status === 'all') {
+                $('.service-row').show();
+            } else {
+                $(`.service-row[data-status="${status}"]`).show();
+            }
+        });
+
+        // Refresh services list
+        $('.refresh-services').click(function() {
+            $.ajax({
+                url: '/services',
+                method: 'GET',
+                success: function(data) {
+                    toastr.success('Services list refreshed');
+                    setTimeout(function() {
+                        location.reload();
+                    }, 1000);
+                },
+                error: function(xhr) {
+                    toastr.error('Failed to refresh services');
+                }
+            });
+        });
+
+        // Service actions
+        $(document).on('click', '.start-service', function() {
+            const serviceName = $(this).data('service');
+            manageService(serviceName, 'start');
+        });
+
+        $(document).on('click', '.stop-service', function() {
+            const serviceName = $(this).data('service');
+            manageService(serviceName, 'stop');
+        });
+
+        $(document).on('click', '.restart-service', function() {
+            const serviceName = $(this).data('service');
+            manageService(serviceName, 'restart');
+        });
+
+        $(document).on('click', '.service-details', function() {
+            const serviceName = $(this).data('service');
+            window.location.href = `/services/status/${serviceName}`;
+        });
+
+        function manageService(serviceName, action) {
+            $.ajax({
+                url: `/services/${serviceName}/${action}`,
+                method: 'POST',
+                beforeSend: function() {
+                    toastr.info(`Processing ${action} request for ${serviceName}...`);
+                },
+                success: function(response) {
+                    toastr.success(response.message);
+                    setTimeout(function() {
+                        location.reload();
+                    }, 1500);
+                },
+                error: function(xhr) {
+                    toastr.error(xhr.responseJSON.message || `Failed to ${action} service`);
+                }
+            });
+        }
+    });
+    </script>
+</body>
+</html>

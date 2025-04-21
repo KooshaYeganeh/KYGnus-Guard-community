@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html dir="ltr" lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <!-- Tell the browser to be responsive to screen width -->
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="keywords"
+        content="wrappixel, admin dashboard, html css dashboard, web dashboard, bootstrap 5 admin, bootstrap 5, css3 dashboard, bootstrap 5 dashboard, Monsterlite admin bootstrap 5 dashboard, frontend, responsive bootstrap 5 admin template, Monster admin lite design, Monster admin lite dashboard bootstrap 5 dashboard template">
+    <meta name="description"
+        content="Monster Lite is powerful and clean admin dashboard template, inpired from Bootstrap Framework">
+    <meta name="robots" content="noindex,nofollow">
+    <title>KYGnus myEDR</title>
+    <link rel="canonical" href="https://www.wrappixel.com/templates/monster-admin-lite/" />
+    <!-- Favicon icon -->
+    <!-- Custom CSS -->
+    <link href="../static/assets/plugins/chartist/dist/chartist.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="../static/css/style.min.css" rel="stylesheet">
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+    <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+    <script src="https://oss.maxcdn.com/libs/respond.../static/js/1.4.2/respond.min.js"></script>
+<![endif]-->
+</head>
+
+<body>
+    <div class="preloader">
+        <div class="lds-ripple">
+            <div class="lds-pos"></div>
+            <div class="lds-pos"></div>
+        </div>
+    </div>
+    <div id="main-wrapper" data-layout="vertical" data-navbarbg="skin5" data-sidebartype="full"
+        data-sidebar-position="absolute" data-header-position="absolute" data-boxed-layout="full">
+        <header class="topbar" data-navbarbg="skin6">
+            <nav class="navbar top-navbar navbar-expand-md navbar-dark" style="background-color: rgba(0, 255, 34, 0.256);">
+                <div class="navbar-header" data-logobg="skin6">
+                    <a class="navbar-brand" href="index.html">
+                        <b class="logo-icon">
+                            <img src="../static/openSUSE.png" alt="homepage" class="dark-logo" height="120" width="180">
+                        </b>
+                    </a>
+                    <a class="nav-toggler waves-effect waves-light text-dark d-block d-md-none"
+                        href="javascript:void(0)"><i class="ti-menu ti-close"></i></a>
+                </div>
+
+                <br><br>
+                <div class="navbar-collapse collapse" id="navbarSupportedContent" data-navbarbg="skin5">
+                    <ul class="navbar-nav me-auto mt-md-0 ">
+                        <li class="nav-item hidden-sm-down">
+                            <form class="app-search ps-3">
+                                <input type="text" class="form-control" placeholder="Search for..."> <a
+                                    class="srh-btn"><i class="ti-search"></i></a>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+            <br><br>
+        </header>
+        <br><br>
+        <aside class="left-sidebar" data-sidebarbg="skin6">
+            <br><br>
+            <!-- Sidebar scroll-->
+            <div class="scroll-sidebar">
+                <br>
+                <!-- Sidebar navigation-->
+                <nav class="sidebar-nav">
+                    <ul id="sidebarnav">
+                        <!-- User Profile-->
+                        <li class="sidebar-item"> <a class="sidebar-link waves-effect waves-dark sidebar-link"
+                                href="/" aria-expanded="false"><i class="me-3 fa fa-home"
+                                aria-hidden="true"></i><span class="hide-menu">Dashboard</span></a></li>
+                        <li class="sidebar-item"> <a class="sidebar-link waves-effect waves-dark sidebar-link"
+                                href="/scan" aria-expanded="false">
+                                <i class="me-3 fa fa-bug" aria-hidden="true"></i><span
+                                    class="hide-menu">scan</span></a>
+                        </li>
+                        <li class="sidebar-item"> <a class="sidebar-link waves-effect waves-dark sidebar-link"
+                                href="/services" aria-expanded="false"><i class="me-3 fa fa-table"
+                                    aria-hidden="true"></i><span class="hide-menu">Services</span></a></li>
+                        <li class="sidebar-item"> <a class="sidebar-link waves-effect waves-dark sidebar-link"
+                                href="/firewall" aria-expanded="false"><i class="me-3 fa fa-fire"
+                                    aria-hidden="true"></i><span class="hide-menu">Firewall</span></a></li>
+                        <li class="sidebar-item"> <a class="sidebar-link waves-effect waves-dark sidebar-link"
+                                href="/ids" aria-expanded="false"><i class="me-3 fa fa-eye"
+                                    aria-hidden="true"></i><span class="hide-menu">IDS</span></a></li>
+                        <li class="sidebar-item"> <a class="sidebar-link waves-effect waves-dark sidebar-link"
+                                href="/network" aria-expanded="false"><i class="me-3 fa fa-laptop"
+                                    aria-hidden="true"></i><span class="hide-menu">Network</span></a></li>
+                        <li class="sidebar-item"> <a class="sidebar-link waves-effect waves-dark sidebar-link"
+                                        href="/ai_detection" aria-expanded="false"><i class="me-3 fa fa-columns"
+                                            aria-hidden="true"></i><span class="hide-menu">AI Detection</span></a></li>
+                        <li class="sidebar-item"> <a class="sidebar-link waves-effect waves-dark sidebar-link"
+                                href="/logout" aria-expanded="false"><i class="me-3 fa fa-user"
+                                    aria-hidden="true"></i><span class="hide-menu">Logout</span></a></li>
+
+                    </ul>
+
+                </nav>
+                <!-- End Sidebar navigation -->
+            </div>
+            <!-- End Sidebar scroll-->
+        </aside>
+        <!-- ============================================================== -->
+        <!-- End Left Sidebar - style you can find in sidebar.scss  -->
+        <!-- ============================================================== -->
+        <!-- ============================================================== -->
+        <!-- Page wrapper  -->
+        <!-- ============================================================== -->
+        <div class="page-wrapper">
+            <!-- ============================================================== -->
+            <!-- Bread crumb and right sidebar toggle -->
+            <!-- ============================================================== -->
+            <div class="page-breadcrumb">
+                <div class="row align-items-center">
+                    <div class="col-md-6 col-8 align-self-center">
+                        <h3 class="page-title mb-0 p-0">Dashboard</h3>
+                        <div class="d-flex align-items-center">
+                            <nav aria-label="breadcrumb">
+                                <ol class="breadcrumb">
+                                    <li class="breadcrumb-item"><a href="#">Home</a></li>
+                                    <li class="breadcrumb-item active" aria-current="page">Dashboard</li>
+                                </ol>
+                            </nav>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+            <!-- ============================================================== -->
+            <!-- End Bread crumb and right sidebar toggle -->
+            <!-- ============================================================== -->
+            <!-- ============================================================== -->
+            <!-- Container fluid  -->
+            <!-- ============================================================== -->
+            <div class="container-fluid">
+                <!-- ============================================================== -->
+                <!-- Sales chart -->
+                <!-- ============================================================== -->
+<!-- ============================================================== -->
+<!-- Sales chart -->
+<!-- ============================================================== -->
+<div class="row">
+    <!-- Column -->
+    <div class="col-sm-6">
+        <div class="card">
+            <div class="card-body">
+                <h4 class="card-title">Application Status</h4>
+                <div class="text-end">
+                    <h2 class="font-light mb-0">{{ status }}</h2>
+                    <span class="text-muted">Current Status</span>
+                </div>
+                <span class="text-success">Running</span>
+                <div class="progress">
+                    <div class="progress-bar bg-success" role="progressbar"
+                        style="width: 100%; height: 6px;" aria-valuenow="25" aria-valuemin="0"
+                        aria-valuemax="100"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Column -->
+    <!-- Column -->
+    <div class="col-sm-6">
+        <div class="card">
+            <div class="card-body">
+                <h4 class="card-title">Version Info</h4>
+                <div class="text-end">
+                    <h2 class="font-light mb-0">{{ version }}</h2>
+                    <span class="text-muted">App Version</span>
+                </div>
+                <span class="text-info">Up to Date</span>
+                <div class="progress">
+                    <div class="progress-bar bg-info" role="progressbar"
+                        style="width: 30%; height: 6px;" aria-valuenow="25" aria-valuemin="0"
+                        aria-valuemax="100"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Column -->
+</div>
+                <!-- ============================================================== -->
+                <!-- Sales chart -->
+                <!-- ============================================================== -->
+<!-- ============================================================== -->
+<!-- Endpoints Section -->
+<!-- ============================================================== -->
+<div class="row">
+    <div class="col-sm-12">
+        <div class="card">
+            <div class="card-body">
+                <h4 class="card-title">Available Endpoints</h4>
+                <div class="table-responsive mt-5">
+                    <table class="table stylish-table no-wrap">
+                        <thead>
+                            <tr>
+                                <th class="border-top-0">Endpoint</th>
+                                <th class="border-top-0">Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for endpoint, description in endpoints.items() %}
+                            <tr>
+                                <td class="align-middle">{{ endpoint }}</td>
+                                <td class="align-middle">{{ description }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+                <!-- ============================================================== -->
+                <!-- ============================================================== -->
+                <!-- Table -->
+                <!-- ============================================================== -->
+                <!-- ============================================================== -->
+                <!-- Recent blogss -->
+                <!-- ============================================================== -->
+                <!-- ============================================================== -->
+                <!-- Recent blogss -->
+                <!-- ============================================================== -->
+            </div>
+            <!-- ============================================================== -->
+            <!-- End Container fluid  -->
+            <!-- ============================================================== -->
+            <!-- ============================================================== -->
+            <!-- footer -->
+            <!-- ============================================================== -->
+            <footer class="footer text-center">
+                © 2021 Monster Admin by <a href="https://www.wrappixel.com/">wrappixel.com</a> Distributed By <a href="https://themewagon.com">ThemeWagon</a>
+            </footer>
+            <!-- ============================================================== -->
+            <!-- End footer -->
+            <!-- ============================================================== -->
+        </div>
+        <!-- ============================================================== -->
+        <!-- End Page wrapper  -->
+        <!-- ============================================================== -->
+    </div>
+    <!-- ============================================================== -->
+    <!-- End Wrapper -->
+    <!-- ============================================================== -->
+    <!-- ============================================================== -->
+    <!-- All Jquery -->
+    <!-- ============================================================== -->
+    <script src="../static/assets/plugins/jquery/dist/jquery.min.js"></script>
+    <!-- Bootstrap tether Core JavaScript -->
+    <script src="../static/assets/plugins/bootstrap/dist/../static/js/bootstrap.bundle.min.js"></script>
+    <script src="../static/js/app-style-switcher.js"></script>
+    <!--Wave Effects -->
+    <script src="../static/js/waves.js"></script>
+    <!--Menu sidebar -->
+    <script src="../static/js/sidebarmenu.js"></script>
+    <!--Custom JavaScript -->
+    <script src="../static/js/custom.js"></script>
+    <!--This page JavaScript -->
+    <!--flot chart-->
+    <script src="../static/assets/plugins/flot/jquery.flot.js"></script>
+    <script src="../static/assets/plugins/flot.tooltip/../static/js/jquery.flot.tooltip.min.js"></script>
+    <script src="../static/js/pages/dashboards/dashboard1.js"></script>
+
+
+</body>
+
+</html>

@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html dir="ltr" lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="LinuxAV-Solutions EDR Firewall Management">
+    <title>Firewall Management - LinuxAV-Solutions EDR</title>
+    <!-- Favicon icon -->
+    <link rel="icon" type="image/png" sizes="16x16" href="../static/assets/images/favicon.png">
+    <!-- Custom CSS -->
+    <link href="../static/css/style.min.css" rel="stylesheet">
+    <style>
+        .status-card {
+            transition: all 0.3s ease;
+        }
+        .status-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .panic-btn {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+        }
+        .port-badge {
+            font-size: 0.85rem;
+            margin-right: 5px;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="preloader">
+        <div class="lds-ripple">
+            <div class="lds-pos"></div>
+            <div class="lds-pos"></div>
+        </div>
+    </div>
+    <div id="main-wrapper" data-layout="vertical" data-navbarbg="skin5" data-sidebartype="full"
+        data-sidebar-position="absolute" data-header-position="absolute" data-boxed-layout="full">
+        <header class="topbar" data-navbarbg="skin6">
+            <nav class="navbar top-navbar navbar-expand-md navbar-dark" style="background-color: rgba(0, 255, 34, 0.256);">
+                <div class="navbar-header" data-logobg="skin6">
+                    <a class="navbar-brand" href="index.html">
+                        <b class="logo-icon">
+                            <img src="../static/openSUSE.png" alt="homepage" class="dark-logo" height="120" width="180">
+                        </b>
+                    </a>
+                    <a class="nav-toggler waves-effect waves-light text-dark d-block d-md-none"
+                        href="javascript:void(0)"><i class="ti-menu ti-close"></i></a>
+                </div>
+
+                <br><br>
+                <div class="navbar-collapse collapse" id="navbarSupportedContent" data-navbarbg="skin5">
+                    <ul class="navbar-nav me-auto mt-md-0 ">
+                        <li class="nav-item hidden-sm-down">
+                            <form class="app-search ps-3">
+                                <input type="text" class="form-control" placeholder="Search for..."> <a
+                                    class="srh-btn"><i class="ti-search"></i></a>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+            <br><br>
+        </header>
+        <br><br>
+        <aside class="left-sidebar" data-sidebarbg="skin6">
+            <br><br>
+            <div class="scroll-sidebar">
+                <nav class="sidebar-nav">
+                    <ul id="sidebarnav">
+                        <!-- User Profile-->
+                        <li class="sidebar-item"> <a class="sidebar-link waves-effect waves-dark sidebar-link"
+                                href="/" aria-expanded="false"><i class="me-3 fa fa-home"
+                                aria-hidden="true"></i><span class="hide-menu">Dashboard</span></a></li>
+                        <li class="sidebar-item"> <a class="sidebar-link waves-effect waves-dark sidebar-link"
+                                href="/scan" aria-expanded="false">
+                                <i class="me-3 fa fa-bug" aria-hidden="true"></i><span
+                                    class="hide-menu">scan</span></a>
+                        </li>
+                        <li class="sidebar-item"> <a class="sidebar-link waves-effect waves-dark sidebar-link"
+                                href="/services" aria-expanded="false"><i class="me-3 fa fa-table"
+                                    aria-hidden="true"></i><span class="hide-menu">Services</span></a></li>
+                        <li class="sidebar-item"> <a class="sidebar-link waves-effect waves-dark sidebar-link"
+                                href="/firewall" aria-expanded="false"><i class="me-3 fa fa-fire"
+                                    aria-hidden="true"></i><span class="hide-menu">Firewall</span></a></li>
+                        <li class="sidebar-item"> <a class="sidebar-link waves-effect waves-dark sidebar-link"
+                                href="/ids" aria-expanded="false"><i class="me-3 fa fa-eye"
+                                    aria-hidden="true"></i><span class="hide-menu">IDS</span></a></li>
+                        <li class="sidebar-item"> <a class="sidebar-link waves-effect waves-dark sidebar-link"
+                                href="/process" aria-expanded="false"><i class="me-3 fa fa-table"
+                                    aria-hidden="true"></i><span class="hide-menu">Process</span></a></li>
+                        <li class="sidebar-item"> <a class="sidebar-link waves-effect waves-dark sidebar-link"
+                                        href="/ai_detection" aria-expanded="false"><i class="me-3 fa fa-columns"
+                                            aria-hidden="true"></i><span class="hide-menu">AI Detection</span></a></li>
+                        <li class="sidebar-item"> <a class="sidebar-link waves-effect waves-dark sidebar-link"
+                                href="/logout" aria-expanded="false"><i class="me-3 fa fa-user"
+                                    aria-hidden="true"></i><span class="hide-menu">Logout</span></a></li>
+    
+                    </ul>
+    
+                </nav>
+            </div>
+        </aside>
+        <div class="page-wrapper">
+            <div class="page-breadcrumb">
+                <div class="row align-items-center">
+                    <div class="col-md-6 col-8 align-self-center">
+                        <h3 class="page-title mb-0 p-0">Firewall Management</h3>
+                        <div class="d-flex align-items-center">
+                            <nav aria-label="breadcrumb">
+                                <ol class="breadcrumb">
+                                    <li class="breadcrumb-item"><a href="index.html">Home</a></li>
+                                    <li class="breadcrumb-item active" aria-current="page">Firewall</li>
+                                </ol>
+                            </nav>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-4 align-self-center">
+                        <div class="text-end">
+                            <span class="badge bg-light text-dark">v{{ version }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-body">
+                                <h4 class="card-title">Firewall Status</h4>
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="card status-card">
+                                            <div class="card-body text-center">
+                                                <h5 class="card-title">Firewalld Status</h5>
+                                                <div class="alert alert-{{ 'success' if status.active else 'danger' }} py-2">
+                                                    <i class="fas fa-{{ 'check-circle' if status.active else 'times-circle' }} me-2"></i>
+                                                    {{ 'Active' if status.active else 'Inactive' }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="card status-card">
+                                            <div class="card-body text-center">
+                                                <h5 class="card-title">Allowed Ports</h5>
+                                                <h2 class="text-primary">{{ status.ports|length }}</h2>
+                                                <p class="text-muted mb-0">Currently open</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="card status-card">
+                                            <div class="card-body text-center">
+                                                <h5 class="card-title">Panic Mode</h5>
+                                                <button id="panicBtn" class="btn btn-{{ 'danger panic-btn' if status.active else 'secondary' }} w-75">
+                                                    {{ 'Disable Panic Mode' if status.active else 'Enable Panic Mode' }}
+                                                </button>
+                                                <p class="text-muted mt-2 mb-0">Block all network traffic</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-body">
+                                <h4 class="card-title">Port Management</h4>
+                                <form id="addPortForm" class="mb-4">
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" placeholder="Port number" id="portNumber" required>
+                                        <select class="form-select" style="max-width: 120px;" id="portProtocol">
+                                            <option value="tcp">TCP</option>
+                                            <option value="udp">UDP</option>
+                                        </select>
+                                        <button class="btn btn-primary" type="submit">Add</button>
+                                    </div>
+                                </form>
+                                
+                                <form id="removePortForm" class="mb-4">
+                                    <div class="input-group">
+                                        <select class="form-select" id="portToRemove" required>
+                                            <option value="">Select port to remove</option>
+                                            {% for port in status.ports %}
+                                            <option value="{{ port }}">{{ port }}</option>
+                                            {% endfor %}
+                                        </select>
+                                        <button class="btn btn-danger" type="submit">Remove</button>
+                                    </div>
+                                </form>
+                                
+                                <h5 class="card-subtitle mb-2">Allowed Ports</h5>
+                                <div class="mb-3">
+                                    {% if status.ports %}
+                                        {% for port in status.ports %}
+                                        <span class="badge bg-primary port-badge">{{ port }}</span>
+                                        {% endfor %}
+                                    {% else %}
+                                        <div class="alert alert-warning py-2">No ports currently allowed</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-body">
+                                <h4 class="card-title">Service Management</h4>
+                                <form id="addServiceForm" class="mb-4">
+                                    <div class="input-group">
+                                        <select class="form-select" id="serviceToAdd" required>
+                                            <option value="">Select service to add</option>
+                                            {% for service in services %}
+                                            <option value="{{ service }}">{{ service }}</option>
+                                            {% endfor %}
+                                        </select>
+                                        <button class="btn btn-primary" type="submit">Add</button>
+                                    </div>
+                                </form>
+                                
+                                <form id="removeServiceForm" class="mb-4">
+                                    <div class="input-group">
+                                        <select class="form-select" id="serviceToRemove" required>
+                                            <option value="">Select service to remove</option>
+                                            {% for service in allowed_services %}
+                                            <option value="{{ service }}">{{ service }}</option>
+                                            {% endfor %}
+                                        </select>
+                                        <button class="btn btn-danger" type="submit">Remove</button>
+                                    </div>
+                                </form>
+                                
+                                <h5 class="card-subtitle mb-2">Allowed Services</h5>
+                                <div class="mb-3">
+                                    {% if allowed_services %}
+                                        <ul class="list-group">
+                                            {% for service in allowed_services %}
+                                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                {{ service }}
+                                                <span class="badge bg-primary rounded-pill">Allowed</span>
+                                            </li>
+                                            {% endfor %}
+                                        </ul>
+                                    {% else %}
+                                        <div class="alert alert-warning py-2">No services currently allowed</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <footer class="footer text-center">
+                &copy; {{ year }} LinuxAV-Solutions EDR
+            </footer>
+        </div>
+    </div>
+
+    <script src="../static/assets/plugins/jquery/dist/jquery.min.js"></script>
+    <script src="../static/assets/plugins/bootstrap/dist/../static/js/bootstrap.bundle.min.js"></script>
+    <script src="../static/js/app-style-switcher.js"></script>
+    <script src="../static/js/waves.js"></script>
+    <script src="../static/js/sidebarmenu.js"></script>
+    <script src="../static/js/custom.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        $(document).ready(function() {
+            // Handle panic mode toggle
+            $('#panicBtn').click(function() {
+                const action = $(this).text().includes('Enable') ? 'on' : 'off';
+                
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: `This will ${action === 'on' ? 'block ALL network traffic' : 'restore normal firewall rules'}`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    confirmButtonText: `Yes, ${action === 'on' ? 'enable' : 'disable'} panic mode`
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: '/firewall/panic',
+                            method: 'POST',
+                            data: { action: action },
+                            success: function(response) {
+                                Swal.fire({
+                                    title: 'Success',
+                                    text: response.message,
+                                    icon: 'success'
+                                }).then(() => {
+                                    location.reload();
+                                });
+                            },
+                            error: function(xhr) {
+                                Swal.fire({
+                                    title: 'Error',
+                                    text: xhr.responseJSON.message,
+                                    icon: 'error'
+                                });
+                            }
+                        });
+                    }
+                });
+            });
+
+            // Handle port forms
+            $('#addPortForm').submit(function(e) {
+                e.preventDefault();
+                const port = $('#portNumber').val();
+                const protocol = $('#portProtocol').val();
+                
+                $.ajax({
+                    url: '/firewall/add_port',
+                    method: 'POST',
+                    data: { port: port, protocol: protocol },
+                    success: function(response) {
+                        Swal.fire({
+                            title: 'Success',
+                            text: response.message,
+                            icon: 'success'
+                        }).then(() => {
+                            location.reload();
+                        });
+                    },
+                    error: function(xhr) {
+                        Swal.fire({
+                            title: 'Error',
+                            text: xhr.responseJSON.message,
+                            icon: 'error'
+                        });
+                    }
+                });
+            });
+
+            $('#removePortForm').submit(function(e) {
+                e.preventDefault();
+                const port = $('#portToRemove').val();
+                
+                if (!port) {
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'Please select a port to remove',
+                        icon: 'error'
+                    });
+                    return;
+                }
+                
+                $.ajax({
+                    url: '/firewall/remove_port',
+                    method: 'POST',
+                    data: { port: port },
+                    success: function(response) {
+                        Swal.fire({
+                            title: 'Success',
+                            text: response.message,
+                            icon: 'success'
+                        }).then(() => {
+                            location.reload();
+                        });
+                    },
+                    error: function(xhr) {
+                        Swal.fire({
+                            title: 'Error',
+                            text: xhr.responseJSON.message,
+                            icon: 'error'
+                        });
+                    }
+                });
+            });
+
+            // Handle service forms
+            $('#addServiceForm').submit(function(e) {
+                e.preventDefault();
+                const service = $('#serviceToAdd').val();
+                
+                if (!service) {
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'Please select a service to add',
+                        icon: 'error'
+                    });
+                    return;
+                }
+                
+                $.ajax({
+                    url: '/firewall/add_service',
+                    method: 'POST',
+                    data: { service: service },
+                    success: function(response) {
+                        Swal.fire({
+                            title: 'Success',
+                            text: response.message,
+                            icon: 'success'
+                        }).then(() => {
+                            location.reload();
+                        });
+                    },
+                    error: function(xhr) {
+                        Swal.fire({
+                            title: 'Error',
+                            text: xhr.responseJSON.message,
+                            icon: 'error'
+                        });
+                    }
+                });
+            });
+
+            $('#removeServiceForm').submit(function(e) {
+                e.preventDefault();
+                const service = $('#serviceToRemove').val();
+                
+                if (!service) {
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'Please select a service to remove',
+                        icon: 'error'
+                    });
+                    return;
+                }
+                
+                $.ajax({
+                    url: '/firewall/remove_service',
+                    method: 'POST',
+                    data: { service: service },
+                    success: function(response) {
+                        Swal.fire({
+                            title: 'Success',
+                            text: response.message,
+                            icon: 'success'
+                        }).then(() => {
+                            location.reload();
+                        });
+                    },
+                    error: function(xhr) {
+                        Swal.fire({
+                            title: 'Error',
+                            text: xhr.responseJSON.message,
+                            icon: 'error'
+                        });
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
