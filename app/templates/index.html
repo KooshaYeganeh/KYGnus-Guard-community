@@ -1,273 +1,721 @@
 <!DOCTYPE html>
-<html dir="ltr" lang="en">
-
-<head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <!-- Tell the browser to be responsive to screen width -->
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="keywords"
-        content="wrappixel, admin dashboard, html css dashboard, web dashboard, bootstrap 5 admin, bootstrap 5, css3 dashboard, bootstrap 5 dashboard, Monsterlite admin bootstrap 5 dashboard, frontend, responsive bootstrap 5 admin template, Monster admin lite design, Monster admin lite dashboard bootstrap 5 dashboard template">
-    <meta name="description"
-        content="Monster Lite is powerful and clean admin dashboard template, inpired from Bootstrap Framework">
-    <meta name="robots" content="noindex,nofollow">
-    <title>KYGnus myEDR</title>
-    <link rel="canonical" href="https://www.wrappixel.com/templates/monster-admin-lite/" />
-    <!-- Favicon icon -->
-    <!-- Custom CSS -->
-    <link href="../static/assets/plugins/chartist/dist/chartist.min.css" rel="stylesheet">
-    <!-- Custom CSS -->
-    <link href="../static/css/style.min.css" rel="stylesheet">
-    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
-    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
-    <!--[if lt IE 9]>
-    <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
-    <script src="https://oss.maxcdn.com/libs/respond.../static/js/1.4.2/respond.min.js"></script>
-<![endif]-->
-</head>
-
-<body>
-    <div class="preloader">
-        <div class="lds-ripple">
-            <div class="lds-pos"></div>
-            <div class="lds-pos"></div>
-        </div>
-    </div>
-    <div id="main-wrapper" data-layout="vertical" data-navbarbg="skin5" data-sidebartype="full"
-        data-sidebar-position="absolute" data-header-position="absolute" data-boxed-layout="full">
-        <header class="topbar" data-navbarbg="skin6">
-            <nav class="navbar top-navbar navbar-expand-md navbar-dark" style="background-color: rgba(0, 255, 34, 0.256);">
-                <div class="navbar-header" data-logobg="skin6">
-                    <a class="navbar-brand" href="index.html">
-                        <b class="logo-icon">
-                            <img src="../static/openSUSE.png" alt="homepage" class="dark-logo" height="120" width="180">
-                        </b>
-                    </a>
-                    <a class="nav-toggler waves-effect waves-light text-dark d-block d-md-none"
-                        href="javascript:void(0)"><i class="ti-menu ti-close"></i></a>
-                </div>
-
-                <br><br>
-                <div class="navbar-collapse collapse" id="navbarSupportedContent" data-navbarbg="skin5">
-                    <ul class="navbar-nav me-auto mt-md-0 ">
-                        <li class="nav-item hidden-sm-down">
-                            <form class="app-search ps-3">
-                                <input type="text" class="form-control" placeholder="Search for..."> <a
-                                    class="srh-btn"><i class="ti-search"></i></a>
-                            </form>
-                        </li>
-                    </ul>
-                </div>
-            </nav>
-            <br><br>
-        </header>
-        <br><br>
-        <aside class="left-sidebar" data-sidebarbg="skin6">
-            <br><br>
-            <!-- Sidebar scroll-->
-            <div class="scroll-sidebar">
-                <br>
-                <!-- Sidebar navigation-->
-                <nav class="sidebar-nav">
-                    <ul id="sidebarnav">
-                        <!-- User Profile-->
-                        <li class="sidebar-item"> <a class="sidebar-link waves-effect waves-dark sidebar-link"
-                                href="/" aria-expanded="false"><i class="me-3 fa fa-home"
-                                aria-hidden="true"></i><span class="hide-menu">Dashboard</span></a></li>
-                        <li class="sidebar-item"> <a class="sidebar-link waves-effect waves-dark sidebar-link"
-                                href="/scan" aria-expanded="false">
-                                <i class="me-3 fa fa-bug" aria-hidden="true"></i><span
-                                    class="hide-menu">scan</span></a>
-                        </li>
-                        <li class="sidebar-item"> <a class="sidebar-link waves-effect waves-dark sidebar-link"
-                                href="/services" aria-expanded="false"><i class="me-3 fa fa-table"
-                                    aria-hidden="true"></i><span class="hide-menu">Services</span></a></li>
-                        <li class="sidebar-item"> <a class="sidebar-link waves-effect waves-dark sidebar-link"
-                                href="/firewall" aria-expanded="false"><i class="me-3 fa fa-fire"
-                                    aria-hidden="true"></i><span class="hide-menu">Firewall</span></a></li>
-                        <li class="sidebar-item"> <a class="sidebar-link waves-effect waves-dark sidebar-link"
-                                href="/ids" aria-expanded="false"><i class="me-3 fa fa-eye"
-                                    aria-hidden="true"></i><span class="hide-menu">IDS</span></a></li>
-                        <li class="sidebar-item"> <a class="sidebar-link waves-effect waves-dark sidebar-link"
-                                href="/network" aria-expanded="false"><i class="me-3 fa fa-laptop"
-                                    aria-hidden="true"></i><span class="hide-menu">Network</span></a></li>
-                        <li class="sidebar-item"> <a class="sidebar-link waves-effect waves-dark sidebar-link"
-                                        href="/ai_detection" aria-expanded="false"><i class="me-3 fa fa-columns"
-                                            aria-hidden="true"></i><span class="hide-menu">AI Detection</span></a></li>
-                        <li class="sidebar-item"> <a class="sidebar-link waves-effect waves-dark sidebar-link"
-                                href="/logout" aria-expanded="false"><i class="me-3 fa fa-user"
-                                    aria-hidden="true"></i><span class="hide-menu">Logout</span></a></li>
-
-                    </ul>
-
-                </nav>
-                <!-- End Sidebar navigation -->
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+        <meta name="description" content="LinuxAV-Solutions EDR Dashboard" />
+        <meta name="author" content="LinuxAV-Solutions" />
+        <title>EDR Dashboard - LinuxAV-Solutions</title>
+        <link href="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/style.min.css" rel="stylesheet" />
+        <link href="../static/css/styles.css" rel="stylesheet" />
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+        <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
+        <style>
+            .security-card {
+                transition: transform 0.3s;
+            }
+            .security-card:hover {
+                transform: translateY(-5px);
+            }
+            .alert-badge {
+                font-size: 0.75rem;
+                padding: 0.35em 0.65em;
+            }
+            .system-health-card {
+                border-left: 4px solid;
+            }
+            .cpu-card {
+                border-left-color: #4e73df;
+            }
+            .memory-card {
+                border-left-color: #1cc88a;
+            }
+            .disk-card {
+                border-left-color: #f6c23e;
+            }
+            .network-card {
+                border-left-color: #e74a3b;
+            }
+            .process-pill {
+                font-size: 0.8rem;
+                padding: 0.2em 0.6em;
+            }
+        </style>
+    </head>
+    <body class="sb-nav-fixed">
+        <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
+            <!-- Navbar Brand-->
+            <a class="navbar-brand ps-3" href="index.html">
+                <i class="fas fa-shield-alt me-2"></i>LinuxAV-Solutions EDR
+            </a>
+            <!-- Sidebar Toggle-->
+            <button class="btn btn-link btn-sm order-1 order-lg-0 me-4 me-lg-0" id="sidebarToggle" href="#!">
+                <i class="fas fa-bars"></i>
+            </button>
+            
+            <!-- System Time Display -->
+            <div class="mx-auto text-white" id="system-time">
+                <i class="fas fa-clock me-2"></i>
+                <span id="current-time">{{ now.strftime('%Y-%m-%d %H:%M:%S') }}</span>
             </div>
-            <!-- End Sidebar scroll-->
-        </aside>
-        <!-- ============================================================== -->
-        <!-- End Left Sidebar - style you can find in sidebar.scss  -->
-        <!-- ============================================================== -->
-        <!-- ============================================================== -->
-        <!-- Page wrapper  -->
-        <!-- ============================================================== -->
-        <div class="page-wrapper">
-            <!-- ============================================================== -->
-            <!-- Bread crumb and right sidebar toggle -->
-            <!-- ============================================================== -->
-            <div class="page-breadcrumb">
-                <div class="row align-items-center">
-                    <div class="col-md-6 col-8 align-self-center">
-                        <h3 class="page-title mb-0 p-0">Dashboard</h3>
-                        <div class="d-flex align-items-center">
-                            <nav aria-label="breadcrumb">
-                                <ol class="breadcrumb">
-                                    <li class="breadcrumb-item"><a href="#">Home</a></li>
-                                    <li class="breadcrumb-item active" aria-current="page">Dashboard</li>
-                                </ol>
-                            </nav>
+            
+            <!-- Navbar-->
+            <ul class="navbar-nav ms-auto ms-md-0 me-3 me-lg-4">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-user fa-fw"></i>
+                        <span class="d-none d-lg-inline">Admin</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                        <li><a class="dropdown-item" href="#!"><i class="fas fa-cog fa-fw me-2"></i>Settings</a></li>
+                        <li><a class="dropdown-item" href="#!"><i class="fas fa-list fa-fw me-2"></i>Activity Log</a></li>
+                        <li><hr class="dropdown-divider" /></li>
+                        <li><a class="dropdown-item" href="#!"><i class="fas fa-sign-out-alt fa-fw me-2"></i>Logout</a></li>
+                    </ul>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link" id="alertsDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-bell fa-fw"></i>
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                            3+
+                            <span class="visually-hidden">unread alerts</span>
+                        </span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end p-2" aria-labelledby="alertsDropdown" style="min-width: 300px;">
+                        <li><h6 class="dropdown-header">Security Alerts</h6></li>
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center" href="#">
+                                <div class="me-3">
+                                    <div class="bg-danger icon-circle"><i class="fas fa-exclamation-triangle text-white"></i></div>
+                                </div>
+                                <div>
+                                    <span class="small text-gray-500">Just now</span>
+                                    <p class="mb-0 small">Malicious process detected</p>
+                                </div>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center" href="#">
+                                <div class="me-3">
+                                    <div class="bg-warning icon-circle"><i class="fas fa-exclamation text-white"></i></div>
+                                </div>
+                                <div>
+                                    <span class="small text-gray-500">5 min ago</span>
+                                    <p class="mb-0 small">Suspicious network activity</p>
+                                </div>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center" href="#">
+                                <div class="me-3">
+                                    <div class="bg-primary icon-circle"><i class="fas fa-info-circle text-white"></i></div>
+                                </div>
+                                <div>
+                                    <span class="small text-gray-500">1 hour ago</span>
+                                    <p class="mb-0 small">Firewall rule added</p>
+                                </div>
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider" /></li>
+                        <li><a class="dropdown-item text-center small" href="#">View All Alerts</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </nav>
+        <div id="layoutSidenav">
+            <div id="layoutSidenav_nav">
+                <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">
+                    <div class="sb-sidenav-menu">
+                        <div class="nav">
+                            <div class="sb-sidenav-menu-heading">Core</div>
+                            <a class="nav-link active" href="index.html">
+                                <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
+                                Dashboard
+                            </a>
+                            <div class="sb-sidenav-menu-heading">Security Modules</div>
+                            <a class="nav-link" href="/network">
+                                <div class="sb-nav-link-icon"><i class="fas fa-network-wired"></i></div>
+                                Network Monitoring
+                            </a>
+                            <a class="nav-link" href="/scan">
+                                <div class="sb-nav-link-icon"><i class="fas fa-search"></i></div>
+                                Scan Management
+                            </a>
+                            <a class="nav-link" href="/ids">
+                                <div class="sb-nav-link-icon"><i class="fas fa-shield-virus"></i></div>
+                                IDS/IPS
+                            </a>
+                            <a class="nav-link" href="/firewall">
+                                <div class="sb-nav-link-icon"><i class="fas fa-fire"></i></div>
+                                Firewall
+                            </a>
+                            <a class="nav-link" href="/services">
+                                <div class="sb-nav-link-icon"><i class="fas fa-server"></i></div>
+                                Services
+                            </a>
+
+                            <a class="nav-link" href="/process">    
+                                <div class="sb-nav-link-icon"><i class="fas fa-server"></i></div>
+                                Process
+                            </a>
+                            <div class="sb-sidenav-menu-heading">System</div>
+                            <a class="nav-link" href="/manage_users">
+                                <div class="sb-nav-link-icon"><i class="fas fa-users"></i></div>
+                                Manage Users
+                            </a>
+                            <a class="nav-link" href="/manage_kernel_modules">
+                                <div class="sb-nav-link-icon"><i class="fas fa-users"></i></div>
+                                Manage Kernel Modules
+                            </a>
+                            <a class="nav-link" href="#">
+                                <div class="sb-nav-link-icon"><i class="fas fa-file-alt"></i></div>
+                                Logs
+                            </a>
+                            <a class="nav-link" href="#">
+                                <div class="sb-nav-link-icon"><i class="fas fa-cog"></i></div>
+                                Settings
+                            </a>
                         </div>
                     </div>
-
-                </div>
+                    <div class="sb-sidenav-footer">
+                        <div class="small">Logged in as:</div>
+                        EDR Administrator
+                        <div class="small mt-1">Version: {{ version }}</div>
+                    </div>
+                </nav>
             </div>
-            <!-- ============================================================== -->
-            <!-- End Bread crumb and right sidebar toggle -->
-            <!-- ============================================================== -->
-            <!-- ============================================================== -->
-            <!-- Container fluid  -->
-            <!-- ============================================================== -->
-            <div class="container-fluid">
-                <!-- ============================================================== -->
-                <!-- Sales chart -->
-                <!-- ============================================================== -->
-<!-- ============================================================== -->
-<!-- Sales chart -->
-<!-- ============================================================== -->
-<div class="row">
-    <!-- Column -->
-    <div class="col-sm-6">
-        <div class="card">
-            <div class="card-body">
-                <h4 class="card-title">Application Status</h4>
-                <div class="text-end">
-                    <h2 class="font-light mb-0">{{ status }}</h2>
-                    <span class="text-muted">Current Status</span>
-                </div>
-                <span class="text-success">Running</span>
-                <div class="progress">
-                    <div class="progress-bar bg-success" role="progressbar"
-                        style="width: 100%; height: 6px;" aria-valuenow="25" aria-valuemin="0"
-                        aria-valuemax="100"></div>
-                </div>
+            <div id="layoutSidenav_content">
+                <main>
+                    <div class="container-fluid px-4">
+                        <h1 class="mt-4">Security Dashboard</h1>
+                        <ol class="breadcrumb mb-4">
+                            <li class="breadcrumb-item active">
+                                <i class="fas fa-home me-1"></i> Overview
+                            </li>
+                        </ol>
+                        
+                        <!-- Security Status Cards -->
+                        <div class="row">
+                            <div class="col-xl-3 col-md-6 mb-4">
+                                <div class="card security-card border-left-primary shadow h-100 py-2">
+                                    <div class="card-body">
+                                        <div class="row no-gutters align-items-center">
+                                            <div class="col me-2">
+                                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                                    Threats Detected</div>
+                                                <div class="h5 mb-0 font-weight-bold text-gray-800" id="threats-count">14</div>
+                                            </div>
+                                            <div class="col-auto">
+                                                <i class="fas fa-bug fa-2x text-gray-300"></i>
+                                            </div>
+                                        </div>
+                                        <div class="mt-2 text-xs text-muted">
+                                            <span class="text-danger me-2">
+                                                <i class="fas fa-arrow-up"></i> 3 new
+                                            </span>
+                                            Since last scan
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-xl-3 col-md-6 mb-4">
+                                <div class="card security-card border-left-success shadow h-100 py-2">
+                                    <div class="card-body">
+                                        <div class="row no-gutters align-items-center">
+                                            <div class="col me-2">
+                                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                                    Protected Ports</div>
+                                                <div class="h5 mb-0 font-weight-bold text-gray-800" id="ports-secured">42/45</div>
+                                            </div>
+                                            <div class="col-auto">
+                                                <i class="fas fa-lock fa-2x text-gray-300"></i>
+                                            </div>
+                                        </div>
+                                        <div class="mt-2 text-xs text-muted">
+                                            <span class="text-warning me-2">
+                                                <i class="fas fa-exclamation-circle"></i> 3 unsecured
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-xl-3 col-md-6 mb-4">
+                                <div class="card security-card border-left-warning shadow h-100 py-2">
+                                    <div class="card-body">
+                                        <div class="row no-gutters align-items-center">
+                                            <div class="col me-2">
+                                                <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                                    Active Scans</div>
+                                                <div class="h5 mb-0 font-weight-bold text-gray-800" id="active-scans">2</div>
+                                            </div>
+                                            <div class="col-auto">
+                                                <i class="fas fa-search fa-2x text-gray-300"></i>
+                                            </div>
+                                        </div>
+                                        <div class="mt-2 text-xs text-muted">
+                                            Last scan: <span id="last-scan">5 min ago</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-xl-3 col-md-6 mb-4">
+                                <div class="card security-card border-left-danger shadow h-100 py-2">
+                                    <div class="card-body">
+                                        <div class="row no-gutters align-items-center">
+                                            <div class="col me-2">
+                                                <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                                                    Malicious Processes</div>
+                                                <div class="h5 mb-0 font-weight-bold text-gray-800" id="malicious-processes">3</div>
+                                            </div>
+                                            <div class="col-auto">
+                                                <i class="fas fa-skull fa-2x text-gray-300"></i>
+                                            </div>
+                                        </div>
+                                        <div class="mt-2 text-xs text-muted">
+                                            <span class="text-danger me-2">
+                                                <i class="fas fa-circle"></i> Active
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- System Health and Security Overview -->
+                        <div class="row">
+                            <!-- System Health -->
+                            <div class="col-lg-6 mb-4">
+                                <div class="card shadow mb-4">
+                                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                                        <h6 class="m-0 font-weight-bold text-primary">
+                                            <i class="fas fa-heartbeat me-2"></i>System Health
+                                        </h6>
+                                        <div class="dropdown no-arrow">
+                                            <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-expanded="false">
+                                                <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                                            </a>
+                                            <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="dropdownMenuLink">
+                                                <li><a class="dropdown-item" href="#">Refresh</a></li>
+                                                <li><a class="dropdown-item" href="#">Detailed View</a></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-6 mb-4">
+                                                <div class="card system-health-card cpu-card h-100">
+                                                    <div class="card-body">
+                                                        <div class="d-flex justify-content-between align-items-center">
+                                                            <h6 class="mb-0">CPU Usage</h6>
+                                                            <span class="badge bg-primary">35%</span>
+                                                        </div>
+                                                        <div class="progress mt-2" style="height: 10px;">
+                                                            <div class="progress-bar bg-primary" role="progressbar" style="width: 35%" aria-valuenow="35" aria-valuemin="0" aria-valuemax="100"></div>
+                                                        </div>
+                                                        <small class="text-muted">4 cores @ 2.5GHz</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6 mb-4">
+                                                <div class="card system-health-card memory-card h-100">
+                                                    <div class="card-body">
+                                                        <div class="d-flex justify-content-between align-items-center">
+                                                            <h6 class="mb-0">Memory Usage</h6>
+                                                            <span class="badge bg-success">62%</span>
+                                                        </div>
+                                                        <div class="progress mt-2" style="height: 10px;">
+                                                            <div class="progress-bar bg-success" role="progressbar" style="width: 62%" aria-valuenow="62" aria-valuemin="0" aria-valuemax="100"></div>
+                                                        </div>
+                                                        <small class="text-muted">7.2GB / 12GB used</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6 mb-4">
+                                                <div class="card system-health-card disk-card h-100">
+                                                    <div class="card-body">
+                                                        <div class="d-flex justify-content-between align-items-center">
+                                                            <h6 class="mb-0">Disk Usage</h6>
+                                                            <span class="badge bg-warning">78%</span>
+                                                        </div>
+                                                        <div class="progress mt-2" style="height: 10px;">
+                                                            <div class="progress-bar bg-warning" role="progressbar" style="width: 78%" aria-valuenow="78" aria-valuemin="0" aria-valuemax="100"></div>
+                                                        </div>
+                                                        <small class="text-muted">156GB / 200GB used</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6 mb-4">
+                                                <div class="card system-health-card network-card h-100">
+                                                    <div class="card-body">
+                                                        <div class="d-flex justify-content-between align-items-center">
+                                                            <h6 class="mb-0">Network Activity</h6>
+                                                            <span class="badge bg-danger">1.2MB/s</span>
+                                                        </div>
+                                                        <div class="progress mt-2" style="height: 10px;">
+                                                            <div class="progress-bar bg-danger" role="progressbar" style="width: 45%" aria-valuenow="45" aria-valuemin="0" aria-valuemax="100"></div>
+                                                        </div>
+                                                        <small class="text-muted">eth0: 192.168.1.100</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Security Services Status -->
+                            <div class="col-lg-6 mb-4">
+                                <div class="card shadow mb-4">
+                                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                                        <h6 class="m-0 font-weight-bold text-primary">
+                                            <i class="fas fa-shield-alt me-2"></i>Security Services
+                                        </h6>
+                                        <div class="dropdown no-arrow">
+                                            <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-expanded="false">
+                                                <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                                            </a>
+                                            <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="dropdownMenuLink">
+                                                <li><a class="dropdown-item" href="#">Refresh</a></li>
+                                                <li><a class="dropdown-item" href="#">Manage Services</a></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="mb-3">
+                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                <span>ClamAV</span>
+                                                <span class="badge bg-success">Active</span>
+                                            </div>
+                                            <div class="progress" style="height: 5px;">
+                                                <div class="progress-bar bg-success" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                <span>Suricata IDS/IPS</span>
+                                                <span class="badge bg-success">Active</span>
+                                            </div>
+                                            <div class="progress" style="height: 5px;">
+                                                <div class="progress-bar bg-success" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                <span>Fail2Ban</span>
+                                                <span class="badge bg-success">Active</span>
+                                            </div>
+                                            <div class="progress" style="height: 5px;">
+                                                <div class="progress-bar bg-success" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                <span>Firewall</span>
+                                                <span class="badge bg-success">Active</span>
+                                            </div>
+                                            <div class="progress" style="height: 5px;">
+                                                <div class="progress-bar bg-success" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                <span>YARA Scanning</span>
+                                                <span class="badge bg-success">Active</span>
+                                            </div>
+                                            <div class="progress" style="height: 5px;">
+                                                <div class="progress-bar bg-success" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+                                            </div>
+                                        </div>
+                                        <button class="btn btn-sm btn-outline-primary w-100 mt-2">
+                                            <i class="fas fa-sync-alt me-1"></i> Refresh All
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Security Alerts and Firewall Rules -->
+                        <div class="row">
+                            <!-- Recent Security Alerts -->
+                            <div class="col-lg-6 mb-4">
+                                <div class="card shadow mb-4">
+                                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                                        <h6 class="m-0 font-weight-bold text-danger">
+                                            <i class="fas fa-exclamation-triangle me-2"></i>Recent Security Alerts
+                                        </h6>
+                                        <div class="dropdown no-arrow">
+                                            <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-expanded="false">
+                                                <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                                            </a>
+                                            <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="dropdownMenuLink">
+                                                <li><a class="dropdown-item" href="#">View All</a></li>
+                                                <li><a class="dropdown-item" href="#">Alert Settings</a></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="list-group list-group-flush">
+                                            <a href="#" class="list-group-item list-group-item-action">
+                                                <div class="d-flex w-100 justify-content-between">
+                                                    <h6 class="mb-1">
+                                                        <span class="badge bg-danger me-2">HIGH</span>
+                                                        Malicious process detected
+                                                    </h6>
+                                                    <small class="text-muted">2 min ago</small>
+                                                </div>
+                                                <p class="mb-1">Process "minerd" detected with PID 4578</p>
+                                                <small class="text-muted">Click for details</small>
+                                            </a>
+                                            <a href="#" class="list-group-item list-group-item-action">
+                                                <div class="d-flex w-100 justify-content-between">
+                                                    <h6 class="mb-1">
+                                                        <span class="badge bg-warning me-2">MEDIUM</span>
+                                                        Suspicious network connection
+                                                    </h6>
+                                                    <small class="text-muted">15 min ago</small>
+                                                </div>
+                                                <p class="mb-1">Connection to 185.143.223.42:6667</p>
+                                                <small class="text-muted">Click for details</small>
+                                            </a>
+                                            <a href="#" class="list-group-item list-group-item-action">
+                                                <div class="d-flex w-100 justify-content-between">
+                                                    <h6 class="mb-1">
+                                                        <span class="badge bg-primary me-2">LOW</span>
+                                                        Failed login attempt
+                                                    </h6>
+                                                    <small class="text-muted">1 hour ago</small>
+                                                </div>
+                                                <p class="mb-1">5 failed SSH attempts from 192.168.1.15</p>
+                                                <small class="text-muted">Click for details</small>
+                                            </a>
+                                        </div>
+                                        <a href="#" class="btn btn-block btn-light mt-3">
+                                            <i class="fas fa-list me-1"></i> View All Alerts
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Firewall Rules Summary -->
+                            <div class="col-lg-6 mb-4">
+                                <div class="card shadow mb-4">
+                                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                                        <h6 class="m-0 font-weight-bold text-primary">
+                                            <i class="fas fa-fire me-2"></i>Firewall Rules
+                                        </h6>
+                                        <div class="dropdown no-arrow">
+                                            <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-expanded="false">
+                                                <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                                            </a>
+                                            <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="dropdownMenuLink">
+                                                <li><a class="dropdown-item" href="#">Manage Rules</a></li>
+                                                <li><a class="dropdown-item" href="#">Add New Rule</a></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <h6 class="font-weight-bold mb-3">Allowed Services</h6>
+                                        <div class="mb-4">
+                                            <span class="badge bg-primary me-1 mb-1">SSH (22/tcp)</span>
+                                            <span class="badge bg-primary me-1 mb-1">HTTP (80/tcp)</span>
+                                            <span class="badge bg-primary me-1 mb-1">HTTPS (443/tcp)</span>
+                                            <span class="badge bg-primary me-1 mb-1">DNS (53/udp)</span>
+                                        </div>
+                                        
+                                        <h6 class="font-weight-bold mb-3">Allowed Ports</h6>
+                                        <div class="mb-4">
+                                            <span class="badge bg-secondary me-1 mb-1">8080/tcp</span>
+                                            <span class="badge bg-secondary me-1 mb-1">8443/tcp</span>
+                                            <span class="badge bg-secondary me-1 mb-1">3306/tcp</span>
+                                        </div>
+                                        
+                                        <h6 class="font-weight-bold mb-3">Blocked IPs</h6>
+                                        <div class="mb-3">
+                                            <span class="badge bg-danger me-1 mb-1">185.143.223.42</span>
+                                            <span class="badge bg-danger me-1 mb-1">23.21.45.67</span>
+                                            <span class="badge bg-danger me-1 mb-1">91.234.56.78</span>
+                                        </div>
+                                        
+                                        <button class="btn btn-sm btn-outline-primary w-100">
+                                            <i class="fas fa-plus me-1"></i> Add New Rule
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Malicious Processes and System Users -->
+                        <div class="row">
+                            <!-- Malicious Processes -->
+                            <div class="col-lg-6 mb-4">
+                                <div class="card shadow mb-4">
+                                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                                        <h6 class="m-0 font-weight-bold text-danger">
+                                            <i class="fas fa-skull me-2"></i>Malicious Processes
+                                        </h6>
+                                        <div class="dropdown no-arrow">
+                                            <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-expanded="false">
+                                                <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                                            </a>
+                                            <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="dropdownMenuLink">
+                                                <li><a class="dropdown-item" href="#">Terminate All</a></li>
+                                                <li><a class="dropdown-item" href="#">View Details</a></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered table-hover table-sm" width="100%" cellspacing="0">
+                                                <thead class="bg-light">
+                                                    <tr>
+                                                        <th>PID</th>
+                                                        <th>Name</th>
+                                                        <th>User</th>
+                                                        <th>Action</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <td>4578</td>
+                                                        <td>minerd</td>
+                                                        <td>www-data</td>
+                                                        <td>
+                                                            <button class="btn btn-sm btn-outline-danger">
+                                                                <i class="fas fa-skull me-1"></i> Kill
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>6723</td>
+                                                        <td>backdoor</td>
+                                                        <td>nobody</td>
+                                                        <td>
+                                                            <button class="btn btn-sm btn-outline-danger">
+                                                                <i class="fas fa-skull me-1"></i> Kill
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>8912</td>
+                                                        <td>suspicious.sh</td>
+                                                        <td>root</td>
+                                                        <td>
+                                                            <button class="btn btn-sm btn-outline-danger">
+                                                                <i class="fas fa-skull me-1"></i> Kill
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- System Users -->
+                            <div class="col-lg-6 mb-4">
+                                <div class="card shadow mb-4">
+                                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                                        <h6 class="m-0 font-weight-bold text-primary">
+                                            <i class="fas fa-users me-2"></i>System Users
+                                        </h6>
+                                        <div class="dropdown no-arrow">
+                                            <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-expanded="false">
+                                                <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                                            </a>
+                                            <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="dropdownMenuLink">
+                                                <li><a class="dropdown-item" href="#">Add User</a></li>
+                                                <li><a class="dropdown-item" href="#">Manage Users</a></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered table-hover table-sm" width="100%" cellspacing="0">
+                                                <thead class="bg-light">
+                                                    <tr>
+                                                        <th>Username</th>
+                                                        <th>UID</th>
+                                                        <th>Last Login</th>
+                                                        <th>Status</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <td>root</td>
+                                                        <td>0</td>
+                                                        <td>Today, 09:45</td>
+                                                        <td><span class="badge bg-success">Active</span></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>admin</td>
+                                                        <td>1000</td>
+                                                        <td>Today, 10:12</td>
+                                                        <td><span class="badge bg-success">Active</span></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>www-data</td>
+                                                        <td>33</td>
+                                                        <td>Yesterday</td>
+                                                        <td><span class="badge bg-warning">Inactive</span></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>mysql</td>
+                                                        <td>105</td>
+                                                        <td>2 days ago</td>
+                                                        <td><span class="badge bg-warning">Inactive</span></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>backup</td>
+                                                        <td>34</td>
+                                                        <td>Never</td>
+                                                        <td><span class="badge bg-secondary">Locked</span></td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+                <footer class="py-4 bg-light mt-auto">
+                    <div class="container-fluid px-4">
+                        <div class="d-flex align-items-center justify-content-between small">
+                            <div class="text-muted">Copyright &copy; LinuxAV-Solutions {{ year }}</div>
+                            <div>
+                                <span class="me-2">EDR Version: {{ version }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </footer>
             </div>
         </div>
-    </div>
-    <!-- Column -->
-    <!-- Column -->
-    <div class="col-sm-6">
-        <div class="card">
-            <div class="card-body">
-                <h4 class="card-title">Version Info</h4>
-                <div class="text-end">
-                    <h2 class="font-light mb-0">{{ version }}</h2>
-                    <span class="text-muted">App Version</span>
-                </div>
-                <span class="text-info">Up to Date</span>
-                <div class="progress">
-                    <div class="progress-bar bg-info" role="progressbar"
-                        style="width: 30%; height: 6px;" aria-valuenow="25" aria-valuemin="0"
-                        aria-valuemax="100"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <!-- Column -->
-</div>
-                <!-- ============================================================== -->
-                <!-- Sales chart -->
-                <!-- ============================================================== -->
-<!-- ============================================================== -->
-<!-- Endpoints Section -->
-<!-- ============================================================== -->
-<div class="row">
-    <div class="col-sm-12">
-        <div class="card">
-            <div class="card-body">
-                <h4 class="card-title">Available Endpoints</h4>
-                <div class="table-responsive mt-5">
-                    <table class="table stylish-table no-wrap">
-                        <thead>
-                            <tr>
-                                <th class="border-top-0">Endpoint</th>
-                                <th class="border-top-0">Description</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for endpoint, description in endpoints.items() %}
-                            <tr>
-                                <td class="align-middle">{{ endpoint }}</td>
-                                <td class="align-middle">{{ description }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-                <!-- ============================================================== -->
-                <!-- ============================================================== -->
-                <!-- Table -->
-                <!-- ============================================================== -->
-                <!-- ============================================================== -->
-                <!-- Recent blogss -->
-                <!-- ============================================================== -->
-                <!-- ============================================================== -->
-                <!-- Recent blogss -->
-                <!-- ============================================================== -->
-            </div>
-            <!-- ============================================================== -->
-            <!-- End Container fluid  -->
-            <!-- ============================================================== -->
-            <!-- ============================================================== -->
-            <!-- footer -->
-            <!-- ============================================================== -->
-            <footer class="footer text-center">
-                © 2021 Monster Admin by <a href="https://www.wrappixel.com/">wrappixel.com</a> Distributed By <a href="https://themewagon.com">ThemeWagon</a>
-            </footer>
-            <!-- ============================================================== -->
-            <!-- End footer -->
-            <!-- ============================================================== -->
-        </div>
-        <!-- ============================================================== -->
-        <!-- End Page wrapper  -->
-        <!-- ============================================================== -->
-    </div>
-    <!-- ============================================================== -->
-    <!-- End Wrapper -->
-    <!-- ============================================================== -->
-    <!-- ============================================================== -->
-    <!-- All Jquery -->
-    <!-- ============================================================== -->
-    <script src="../static/assets/plugins/jquery/dist/jquery.min.js"></script>
-    <!-- Bootstrap tether Core JavaScript -->
-    <script src="../static/assets/plugins/bootstrap/dist/../static/js/bootstrap.bundle.min.js"></script>
-    <script src="../static/js/app-style-switcher.js"></script>
-    <!--Wave Effects -->
-    <script src="../static/js/waves.js"></script>
-    <!--Menu sidebar -->
-    <script src="../static/js/sidebarmenu.js"></script>
-    <!--Custom JavaScript -->
-    <script src="../static/js/custom.js"></script>
-    <!--This page JavaScript -->
-    <!--flot chart-->
-    <script src="../static/assets/plugins/flot/jquery.flot.js"></script>
-    <script src="../static/assets/plugins/flot.tooltip/../static/js/jquery.flot.tooltip.min.js"></script>
-    <script src="../static/js/pages/dashboards/dashboard1.js"></script>
-
-
-</body>
-
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+        <script src="../static/js/scripts.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js" crossorigin="anonymous"></script>
+        <script src="../static/assets/demo/chart-area-demo.js"></script>
+        <script src="../static/assets/demo/chart-bar-demo.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/umd/simple-datatables.min.js" crossorigin="anonymous"></script>
+        <script src="../static/js/datatables-simple-demo.js"></script>
+        <script>
+            // Update system time every second
+            function updateSystemTime() {
+                const now = new Date();
+                const timeString = now.toISOString().replace('T', ' ').substr(0, 19);
+                document.getElementById('current-time').textContent = timeString;
+            }
+            setInterval(updateSystemTime, 1000);
+            
+            // Initialize tooltips
+            document.addEventListener('DOMContentLoaded', function() {
+                const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+                tooltipTriggerList.map(function (tooltipTriggerEl) {
+                    return new bootstrap.Tooltip(tooltipTriggerEl);
+                });
+            });
+        </script>
+    </body>
 </html>

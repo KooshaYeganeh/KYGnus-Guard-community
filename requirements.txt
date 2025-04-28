@@ -7,6 +7,7 @@ certifi==2025.1.31
 charset-normalizer==3.4.1
 click==8.1.8
 Flask==3.1.0
+Flask-Login==0.6.3
 frozenlist==1.6.0
 geoip2==5.0.1
 idna==3.10
@@ -19,6 +20,7 @@ propcache==0.3.1
 psutil==7.0.0
 pyinotify==0.9.6
 python-dotenv==1.1.0
+python-magic==0.4.27
 PyYAML==6.0.2
 requests==2.32.3
 urllib3==2.4.0

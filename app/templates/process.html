@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+        <meta name="description" content="LinuxAV-Solutions EDR Process Monitoring" />
+        <meta name="author" content="LinuxAV-Solutions" />
+        <title>Process Monitoring - LinuxAV-Solutions EDR</title>
+        <link href="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/style.min.css" rel="stylesheet" />
+        <link href="{{ url_for('static', filename='css/styles.css') }}" rel="stylesheet" />
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+        <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
+        <style>
+            .security-card {
+                transition: transform 0.3s;
+            }
+            .security-card:hover {
+                transform: translateY(-5px);
+            }
+            .alert-badge {
+                font-size: 0.75rem;
+                padding: 0.35em 0.65em;
+            }
+            .system-health-card {
+                border-left: 4px solid;
+            }
+            .cpu-card {
+                border-left-color: #4e73df;
+            }
+            .memory-card {
+                border-left-color: #1cc88a;
+            }
+            .disk-card {
+                border-left-color: #f6c23e;
+            }
+            .network-card {
+                border-left-color: #e74a3b;
+            }
+            .process-pill {
+                font-size: 0.8rem;
+                padding: 0.2em 0.6em;
+            }
+            .tooltip-details {
+                max-width: 300px;
+                font-size: 0.8rem;
+            }
+        </style>
+    </head>
+    <body class="sb-nav-fixed">
+        <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
+            <a class="navbar-brand ps-3" href="/">
+                <i class="fas fa-shield-alt me-2"></i>LinuxAV-Solutions EDR
+            </a>
+            <button class="btn btn-link btn-sm order-1 order-lg-0 me-4 me-lg-0" id="sidebarToggle" href="#!">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="mx-auto text-white" id="system-time">
+                <i class="fas fa-clock me-2"></i>
+                <span id="current-time">{{ now.strftime('%Y-%m-%d %H:%M:%S') }}</span>
+            </div>
+            <ul class="navbar-nav ms-auto ms-md-0 me-3 me-lg-4">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-user fa-fw"></i>
+                        <span class="d-none d-lg-inline">Admin</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                        <li><a class="dropdown-item" href="#!"><i class="fas fa-cog fa-fw me-2"></i>Settings</a></li>
+                        <li><a class="dropdown-item" href="#!"><i class="fas fa-list fa-fw me-2"></i>Activity Log</a></li>
+                        <li><hr class="dropdown-divider" /></li>
+                        <li><a class="dropdown-item" href="#!"><i class="fas fa-sign-out-alt fa-fw me-2"></i>Logout</a></li>
+                    </ul>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link" id="alertsDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-bell fa-fw"></i>
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                            3+
+                            <span class="visually-hidden">unread alerts</span>
+                        </span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end p-2" aria-labelledby="alertsDropdown" style="min-width: 300px;">
+                        <li><h6 class="dropdown-header">Security Alerts</h6></li>
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center" href="#">
+                                <div class="me-3">
+                                    <div class="bg-danger icon-circle"><i class="fas fa-exclamation-triangle text-white"></i></div>
+                                </div>
+                                <div>
+                                    <span class="small text-gray-500">Just now</span>
+                                    <p class="mb-0 small">Malicious process detected</p>
+                                </div>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center" href="#">
+                                <div class="me-3">
+                                    <div class="bg-warning icon-circle"><i class="fas fa-exclamation text-white"></i></div>
+                                </div>
+                                <div>
+                                    <span class="small text-gray-500">5 min ago</span>
+                                    <p class="mb-0 small">Suspicious network activity</p>
+                                </div>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center" href="#">
+                                <div class="me-3">
+                                    <div class="bg-primary icon-circle"><i class="fas fa-info-circle text-white"></i></div>
+                                </div>
+                                <div>
+                                    <span class="small text-gray-500">1 hour ago</span>
+                                    <p class="mb-0 small">Firewall rule added</p>
+                                </div>
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider" /></li>
+                        <li><a class="dropdown-item text-center small" href="#">View All Alerts</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </nav>
+        <div id="layoutSidenav">
+            <div id="layoutSidenav_nav">
+                <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">
+                    <div class="sb-sidenav-menu">
+                        <div class="nav">
+                            <div class="sb-sidenav-menu-heading">Core</div>
+                            <a class="nav-link" href="/">
+                                <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
+                                Dashboard
+                            </a>
+                            <div class="sb-sidenav-menu-heading">Security Modules</div>
+                            <a class="nav-link" href="/network">
+                                <div class="sb-nav-link-icon"><i class="fas fa-network-wired"></i></div>
+                                Network Monitoring
+                            </a>
+                            <a class="nav-link" href="/scan">
+                                <div class="sb-nav-link-icon"><i class="fas fa-search"></i></div>
+                                Scan Management
+                            </a>
+                            <a class="nav-link" href="/ids">
+                                <div class="sb-nav-link-icon"><i class="fas fa-shield-virus"></i></div>
+                                IDS/IPS
+                            </a>
+                            <a class="nav-link" href="/firewall">
+                                <div class="sb-nav-link-icon"><i class="fas fa-fire"></i></div>
+                                Firewall
+                            </a>
+                            <a class="nav-link" href="/services">
+                                <div class="sb-nav-link-icon"><i class="fas fa-server"></i></div>
+                                Services
+                            </a>
+                            <a class="nav-link active" href="/process">
+                                <div class="sb-nav-link-icon"><i class="fas fa-microchip"></i></div>
+                                Process Monitoring
+                            </a>
+                            <div class="sb-sidenav-menu-heading">System</div>
+                            <a class="nav-link" href="#">
+                                <div class="sb-nav-link-icon"><i class="fas fa-users"></i></div>
+                                Users
+                            </a>
+                            <a class="nav-link" href="#">
+                                <div class="sb-nav-link-icon"><i class="fas fa-file-alt"></i></div>
+                                Logs
+                            </a>
+                            <a class="nav-link" href="#">
+                                <div class="sb-nav-link-icon"><i class="fas fa-cog"></i></div>
+                                Settings
+                            </a>
+                        </div>
+                    </div>
+                    <div class="sb-sidenav-footer">
+                        <div class="small">Logged in as:</div>
+                        EDR Administrator
+                        <div class="small mt-1">Version: {{ version }}</div>
+                    </div>
+                </nav>
+            </div>
+            <div id="layoutSidenav_content">
+                <main>
+                    <div class="container-fluid px-4">
+                        <h1 class="mt-4">Process Monitoring</h1>
+                        <ol class="breadcrumb mb-4">
+                            <li class="breadcrumb-item"><a href="/">Dashboard</a></li>
+                            <li class="breadcrumb-item active">
+                                <i class="fas fa-microchip me-1"></i> Process Monitoring
+                            </li>
+                        </ol>
+
+                        {% if error %}
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            {{ error }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                        {% endif %}
+
+                        <!-- Malicious Processes -->
+                        <div class="card shadow mb-4">
+                            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                                <h6 class="m-0 font-weight-bold text-danger">
+                                    <i class="fas fa-skull me-2"></i>Malicious Processes
+                                </h6>
+                                <div class="dropdown no-arrow">
+                                    <a class="dropdown-toggle" href="#" role="button" id="maliciousDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                                    </a>
+                                    <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="maliciousDropdown">
+                                        <li><a class="dropdown-item" href="#" onclick="refreshMalicious()">Refresh</a></li>
+                                        <li><a class="dropdown-item" href="#">Export Data</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-hover table-sm" id="maliciousProcessesTable" width="100%" cellspacing="0">
+                                        <thead class="bg-light">
+                                            <tr>
+                                                <th>PID</th>
+                                                <th>Name</th>
+                                                <th>User</th>
+                                                <th>Suspicion Score</th>
+                                                <th>Reasons</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for proc in malicious_processes %}
+                                            <tr>
+                                                <td>{{ proc.pid }}</td>
+                                                <td>{{ proc.name }}</td>
+                                                <td>{{ proc.username }}</td>
+                                                <td>
+                                                    {% if proc.suspicion_score >= 70 %}
+                                                    <span class="badge bg-danger">{{ proc.suspicion_score }}</span>
+                                                    {% elif proc.suspicion_score >= 40 %}
+                                                    <span class="badge bg-warning">{{ proc.suspicion_score }}</span>
+                                                    {% else %}
+                                                    <span class="badge bg-info">{{ proc.suspicion_score }}</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    <span class="process-pill bg-light border text-dark" 
+                                                          data-bs-toggle="tooltip" 
+                                                          data-bs-placement="top"
+                                                          data-bs-html="true"
+                                                          title="<div class='tooltip-details'>{{ proc.reasons | join('<br>') }}</div>">
+                                                        {{ proc.reasons | join(', ') | truncate(50) }}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <form action="/api/process/kill" method="POST" onsubmit="return confirm('Are you sure you want to kill process {{ proc.pid }} ({{ proc.name }})?');">
+                                                        <input type="hidden" name="pid" value="{{ proc.pid }}">
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                            <i class="fas fa-skull me-1"></i> Kill
+                                                        </button>
+                                                    </form>
+                                                </td>
+                                            </tr>
+                                            {% else %}
+                                            <tr>
+                                                <td colspan="6" class="text-center text-muted">No malicious processes detected</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- High Resource Usage Processes -->
+                        <div class="card shadow mb-4">
+                            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                                <h6 class="m-0 font-weight-bold text-primary">
+                                    <i class="fas fa-microchip me-2"></i>High Resource Usage Processes
+                                </h6>
+                                <div class="dropdown no-arrow">
+                                    <a class="dropdown-toggle" href="#" role="button" id="resourceDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                                    </a>
+                                    <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="resourceDropdown">
+                                        <li><a class="dropdown-item" href="#" onclick="refreshResources()">Refresh</a></li>
+                                        <li><a class="dropdown-item" href="#">Export Data</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-hover table-sm" id="resourceProcessesTable" width="100%" cellspacing="0">
+                                        <thead class="bg-light">
+                                            <tr>
+                                                <th>PID</th>
+                                                <th>Name</th>
+                                                <th>User</th>
+                                                <th>CPU %</th>
+                                                <th>Memory %</th>
+                                                <th>Memory (MB)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for proc in high_resource_processes %}
+                                            <tr>
+                                                <td>{{ proc.pid }}</td>
+                                                <td>{{ proc.name }}</td>
+                                                <td>{{ proc.username }}</td>
+                                                <td>
+                                                    <div class="progress" style="height: 10px;">
+                                                        <div class="progress-bar 
+                                                            {% if proc.cpu_percent >= 80 %}bg-danger
+                                                            {% elif proc.cpu_percent >= 50 %}bg-warning
+                                                            {% else %}bg-primary{% endif %}"
+                                                            role="progressbar" 
+                                                            style="width: {{ proc.cpu_percent }}%"
+                                                            aria-valuenow="{{ proc.cpu_percent }}"
+                                                            aria-valuemin="0" 
+                                                            aria-valuemax="100">
+                                                        </div>
+                                                    </div>
+                                                    <small>{{ proc.cpu_percent | round(2) }}%</small>
+                                                </td>
+                                                <td>
+                                                    <div class="progress" style="height: 10px;">
+                                                        <div class="progress-bar 
+                                                            {% if proc.memory_percent >= 80 %}bg-danger
+                                                            {% elif proc.memory_percent >= 50 %}bg-warning
+                                                            {% else %}bg-primary{% endif %}"
+                                                            role="progressbar" 
+                                                            style="width: {{ proc.memory_percent }}%"
+                                                            aria-valuenow="{{ proc.memory_percent }}"
+                                                            aria-valuemin="0" 
+                                                            aria-valuemax="100">
+                                                        </div>
+                                                    </div>
+                                                    <small>{{ proc.memory_percent | round(2) }}%</small>
+                                                </td>
+                                                <td>{{ proc.memory_mb | round(2) }} MB</td>
+                                            </tr>
+                                            {% else %}
+                                            <tr>
+                                                <td colspan="6" class="text-center text-muted">No high resource processes detected</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+                <footer class="py-4 bg-light mt-auto">
+                    <div class="container-fluid px-4">
+                        <div class="d-flex align-items-center justify-content-between small">
+                            <div class="text-muted">Copyright © LinuxAV-Solutions {{ year }}</div>
+                            <div>
+                                <span class="me-2">EDR Version: {{ version }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </footer>
+            </div>
+        </div>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+        <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js" crossorigin="anonymous"></script>
+        <script src="{{ url_for('static', filename='assets/demo/chart-area-demo.js') }}"></script>
+        <script src="{{ url_for('static', filename='assets/demo/chart-bar-demo.js') }}"></script>
+        <script src="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/umd/simple-datatables.min.js" crossorigin="anonymous"></script>
+        <script src="{{ url_for('static', filename='js/datatables-simple-demo.js') }}"></script>
+        <script>
+            // Update system time every second
+            function updateSystemTime() {
+                const now = new Date();
+                const timeString = now.toISOString().replace('T', ' ').substr(0, 19);
+                document.getElementById('current-time').textContent = timeString;
+            }
+            setInterval(updateSystemTime, 1000);
+
+            // Initialize tooltips
+            document.addEventListener('DOMContentLoaded', function() {
+                const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+                tooltipTriggerList.map(function (tooltipTriggerEl) {
+                    return new bootstrap.Tooltip(tooltipTriggerEl);
+                });
+
+                // Initialize DataTables
+                new simpleDatatables.DataTable('#maliciousProcessesTable', {
+                    searchable: true,
+                    sortable: true,
+                    perPage: 10,
+                    perPageSelect: [5, 10, 20, 50]
+                });
+
+                new simpleDatatables.DataTable('#resourceProcessesTable', {
+                    searchable: true,
+                    sortable: true,
+                    perPage: 10,
+                    perPageSelect: [5, 10, 20, 50]
+                });
+            });
+
+            // Refresh functions for AJAX updates
+            async function refreshMalicious() {
+                try {
+                    const response = await fetch('/api/process/malicious');
+                    const data = await response.json();
+                    if (data.status === 'success') {
+                        updateMaliciousTable(data.processes);
+                    } else {
+                        alert('Failed to refresh malicious processes: ' + data.message);
+                    }
+                } catch (error) {
+                    alert('Error refreshing malicious processes: ' + error);
+                }
+            }
+
+            async function refreshResources() {
+                try {
+                    const response = await fetch('/api/process/resources');
+                    const data = await response.json();
+                    if (data.status === 'success') {
+                        updateResourceTable(data.processes);
+                    } else {
+                        alert('Failed to refresh resource processes: ' + data.message);
+                    }
+                } catch (error) {
+                    alert('Error refreshing resource processes: ' + error);
+                }
+            }
+
+            function updateMaliciousTable(processes) {
+                const tbody = document.querySelector('#maliciousProcessesTable tbody');
+                tbody.innerHTML = '';
+                if (processes.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No malicious processes detected</td></tr>';
+                    return;
+                }
+
+                processes.forEach(proc => {
+                    const scoreBadge = proc.suspicion_score >= 70 ? 'bg-danger' :
+                                     proc.suspicion_score >= 40 ? 'bg-warning' : 'bg-info';
+                    const row = `
+                        <tr>
+                            <td>${proc.pid}</td>
+                            <td>${proc.name}</td>
+                            <td>${proc.username}</td>
+                            <td><span class="badge ${scoreBadge}">${proc.suspicion_score}</span></td>
+                            <td>
+                                <span class="process-pill bg-light border text-dark" 
+                                      data-bs-toggle="tooltip" 
+                                      data-bs-placement="top"
+                                      data-bs-html="true"
+                                      title="<div class='tooltip-details'>${proc.reasons.join('<br>')}</div>">
+                                    ${proc.reasons.join(', ').substring(0, 50)}${proc.reasons.join(', ').length > 50 ? '...' : ''}
+                                </span>
+                            </td>
+                            <td>
+                                <form action="/api/process/kill" method="POST" onsubmit="return confirm('Are you sure you want to kill process ${proc.pid} (${proc.name})?');">
+                                    <input type="hidden" name="pid" value="${proc.pid}">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                        <i class="fas fa-skull me-1"></i> Kill
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    `;
+                    tbody.insertAdjacentHTML('beforeend', row);
+                });
+
+                // Reinitialize tooltips
+                const tooltipTriggerList = [].slice.call(tbody.querySelectorAll('[data-bs-toggle="tooltip"]'));
+                tooltipTriggerList.map(function (tooltipTriggerEl) {
+                    return new bootstrap.Tooltip(tooltipTriggerEl);
+                });
+            }
+
+            function updateResourceTable(processes) {
+                const tbody = document.querySelector('#resourceProcessesTable tbody');
+                tbody.innerHTML = '';
+                if (processes.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No high resource processes detected</td></tr>';
+                    return;
+                }
+
+                processes.forEach(proc => {
+                    const cpuClass = proc.cpu_percent >= 80 ? 'bg-danger' :
+                                    proc.cpu_percent >= 50 ? 'bg-warning' : 'bg-primary';
+                    const memClass = proc.memory_percent >= 80 ? 'bg-danger' :
+                                    proc.memory_percent >= 50 ? 'bg-warning' : 'bg-primary';
+                    const row = `
+                        <tr>
+                            <td>${proc.pid}</td>
+                            <td>${proc.name}</td>
+                            <td>${proc.username}</td>
+                            <td>
+                                <div class="progress" style="height: 10px;">
+                                    <div class="progress-bar ${cpuClass}" 
+                                         role="progressbar" 
+                                         style="width: ${proc.cpu_percent}%"
+                                         aria-valuenow="${proc.cpu_percent}"
+                                         aria-valuemin="0" 
+                                         aria-valuemax="100"></div>
+                                </div>
+                                <small>${proc.cpu_percent.toFixed(2)}%</small>
+                            </td>
+                            <td>
+                                <div class="progress" style="height: 10px;">
+                                    <div class="progress-bar ${memClass}" 
+                                         role="progressbar" 
+                                         style="width: ${proc.memory_percent}%"
+                                         aria-valuenow="${proc.memory_percent}"
+                                         aria-valuemin="0" 
+                                         aria-valuemax="100"></div>
+                                </div>
+                                <small>${proc.memory_percent.toFixed(2)}%</small>
+                            </td>
+                            <td>${proc.memory_mb.toFixed(2)} MB</td>
+                        </tr>
+                    `;
+                    tbody.insertAdjacentHTML('beforeend', row);
+                });
+            }
+        </script>
+    </body>
+</html>

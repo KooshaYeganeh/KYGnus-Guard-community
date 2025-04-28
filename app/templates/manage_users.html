@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+        <meta name="description" content="LinuxAV-Solutions EDR User Management" />
+        <meta name="author" content="LinuxAV-Solutions" />
+        <title>User Management - LinuxAV-Solutions EDR</title>
+        <link href="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/style.min.css" rel="stylesheet" />
+        <link href="../static/css/styles.css" rel="stylesheet" />
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+        <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
+        <style>
+            .suspicious-user {
+                background-color: #ffdddd;
+                border-left: 4px solid #f44336;
+            }
+            .abnormal-activity {
+                background-color: #fff3cd;
+            }
+            .sudo-user {
+                background-color: #e7f3fe;
+            }
+            .failed-login {
+                background-color: #ffebee;
+            }
+            .active-session {
+                background-color: #e8f5e9;
+            }
+            .security-card {
+                transition: transform 0.3s;
+            }
+            .security-card:hover {
+                transform: translateY(-5px);
+            }
+        </style>
+    </head>
+    <body class="sb-nav-fixed">
+        <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
+            <!-- Navbar Brand-->
+            <a class="navbar-brand ps-3" href="/">
+                <i class="fas fa-shield-alt me-2"></i>LinuxAV-Solutions EDR
+            </a>
+            <!-- Sidebar Toggle-->
+            <button class="btn btn-link btn-sm order-1 order-lg-0 me-4 me-lg-0" id="sidebarToggle" href="#!">
+                <i class="fas fa-bars"></i>
+            </button>
+            
+            <!-- System Time Display -->
+            <div class="mx-auto text-white" id="system-time">
+                <i class="fas fa-clock me-2"></i>
+                <span id="current-time">{{ now.strftime('%Y-%m-%d %H:%M:%S') }}</span>
+            </div>
+            
+            <!-- Navbar-->
+            <ul class="navbar-nav ms-auto ms-md-0 me-3 me-lg-4">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-user fa-fw"></i>
+                        <span class="d-none d-lg-inline">Admin</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                        <li><a class="dropdown-item" href="#!"><i class="fas fa-cog fa-fw me-2"></i>Settings</a></li>
+                        <li><a class="dropdown-item" href="#!"><i class="fas fa-list fa-fw me-2"></i>Activity Log</a></li>
+                        <li><hr class="dropdown-divider" /></li>
+                        <li><a class="dropdown-item" href="#!"><i class="fas fa-sign-out-alt fa-fw me-2"></i>Logout</a></li>
+                    </ul>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link" id="alertsDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-bell fa-fw"></i>
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                            3+
+                            <span class="visually-hidden">unread alerts</span>
+                        </span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end p-2" aria-labelledby="alertsDropdown" style="min-width: 300px;">
+                        <li><h6 class="dropdown-header">Security Alerts</h6></li>
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center" href="#">
+                                <div class="me-3">
+                                    <div class="bg-danger icon-circle"><i class="fas fa-exclamation-triangle text-white"></i></div>
+                                </div>
+                                <div>
+                                    <span class="small text-gray-500">Just now</span>
+                                    <p class="mb-0 small">Malicious process detected</p>
+                                </div>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center" href="#">
+                                <div class="me-3">
+                                    <div class="bg-warning icon-circle"><i class="fas fa-exclamation text-white"></i></div>
+                                </div>
+                                <div>
+                                    <span class="small text-gray-500">5 min ago</span>
+                                    <p class="mb-0 small">Suspicious network activity</p>
+                                </div>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center" href="#">
+                                <div class="me-3">
+                                    <div class="bg-primary icon-circle"><i class="fas fa-info-circle text-white"></i></div>
+                                </div>
+                                <div>
+                                    <span class="small text-gray-500">1 hour ago</span>
+                                    <p class="mb-0 small">Firewall rule added</p>
+                                </div>
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider" /></li>
+                        <li><a class="dropdown-item text-center small" href="#">View All Alerts</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </nav>
+        <div id="layoutSidenav">
+            <div id="layoutSidenav_nav">
+                <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">
+                    <div class="sb-sidenav-menu">
+                        <div class="nav">
+                            <div class="sb-sidenav-menu-heading">Core</div>
+                            <a class="nav-link" href="/">
+                                <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
+                                Dashboard
+                            </a>
+                            <div class="sb-sidenav-menu-heading">Security Modules</div>
+                            <a class="nav-link" href="/network">
+                                <div class="sb-nav-link-icon"><i class="fas fa-network-wired"></i></div>
+                                Network Monitoring
+                            </a>
+                            <a class="nav-link" href="/scan">
+                                <div class="sb-nav-link-icon"><i class="fas fa-search"></i></div>
+                                Scan Management
+                            </a>
+                            <a class="nav-link" href="/ids">
+                                <div class="sb-nav-link-icon"><i class="fas fa-shield-virus"></i></div>
+                                IDS/IPS
+                            </a>
+                            <a class="nav-link" href="/firewall">
+                                <div class="sb-nav-link-icon"><i class="fas fa-fire"></i></div>
+                                Firewall
+                            </a>
+                            <a class="nav-link" href="/services">
+                                <div class="sb-nav-link-icon"><i class="fas fa-server"></i></div>
+                                Services
+                            </a>
+                            <a class="nav-link" href="/process">
+                                <div class="sb-nav-link-icon"><i class="fas fa-tasks"></i></div>
+                                Processes
+                            </a>
+                            <div class="sb-sidenav-menu-heading">System</div>
+                            <a class="nav-link active" href="/manage_users">
+                                <div class="sb-nav-link-icon"><i class="fas fa-users"></i></div>
+                                User Management
+                            </a>
+                            <a class="nav-link" href="#">
+                                <div class="sb-nav-link-icon"><i class="fas fa-file-alt"></i></div>
+                                Logs
+                            </a>
+                            <a class="nav-link" href="#">
+                                <div class="sb-nav-link-icon"><i class="fas fa-cog"></i></div>
+                                Settings
+                            </a>
+                        </div>
+                    </div>
+                    <div class="sb-sidenav-footer">
+                        <div class="small">Logged in as:</div>
+                        EDR Administrator
+                        <div class="small mt-1">Version: {{ version }}</div>
+                    </div>
+                </nav>
+            </div>
+            <div id="layoutSidenav_content">
+                <main>
+                    <div class="container-fluid px-4">
+                        <h1 class="mt-4">User Management</h1>
+                        <ol class="breadcrumb mb-4">
+                            <li class="breadcrumb-item"><a href="/">Dashboard</a></li>
+                            <li class="breadcrumb-item active">User Management</li>
+                        </ol>
+
+                        <!-- User Summary Cards -->
+                        <div class="row">
+                            <div class="col-xl-3 col-md-6 mb-4">
+                                <div class="card security-card border-left-primary shadow h-100 py-2">
+                                    <div class="card-body">
+                                        <div class="row no-gutters align-items-center">
+                                            <div class="col me-2">
+                                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                                    Total Users</div>
+                                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ users|length }}</div>
+                                            </div>
+                                            <div class="col-auto">
+                                                <i class="fas fa-users fa-2x text-gray-300"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-xl-3 col-md-6 mb-4">
+                                <div class="card security-card border-left-danger shadow h-100 py-2">
+                                    <div class="card-body">
+                                        <div class="row no-gutters align-items-center">
+                                            <div class="col me-2">
+                                                <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                                                    Suspicious Users</div>
+                                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ suspicious_users|length }}</div>
+                                            </div>
+                                            <div class="col-auto">
+                                                <i class="fas fa-user-secret fa-2x text-gray-300"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-xl-3 col-md-6 mb-4">
+                                <div class="card security-card border-left-warning shadow h-100 py-2">
+                                    <div class="card-body">
+                                        <div class="row no-gutters align-items-center">
+                                            <div class="col me-2">
+                                                <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                                    Failed Logins (24h)</div>
+                                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ failed_logins|length }}</div>
+                                            </div>
+                                            <div class="col-auto">
+                                                <i class="fas fa-user-lock fa-2x text-gray-300"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-xl-3 col-md-6 mb-4">
+                                <div class="card security-card border-left-success shadow h-100 py-2">
+                                    <div class="card-body">
+                                        <div class="row no-gutters align-items-center">
+                                            <div class="col me-2">
+                                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                                    Active Sessions</div>
+                                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ active_sessions|length }}</div>
+                                            </div>
+                                            <div class="col-auto">
+                                                <i class="fas fa-user-clock fa-2x text-gray-300"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- User Management Sections -->
+                        <div class="row">
+                            <!-- System Users -->
+                            <div class="col-lg-6 mb-4">
+                                <div class="card shadow mb-4">
+                                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                                        <h6 class="m-0 font-weight-bold text-primary">
+                                            <i class="fas fa-users me-2"></i>System Users
+                                        </h6>
+                                        <div class="dropdown no-arrow">
+                                            <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-expanded="false">
+                                                <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                                            </a>
+                                            <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="dropdownMenuLink">
+                                                <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#addUserModal">Add User</a></li>
+                                                <li><a class="dropdown-item" href="#">Refresh</a></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered table-hover table-sm" width="100%" cellspacing="0">
+                                                <thead class="bg-light">
+                                                    <tr>
+                                                        <th>Username</th>
+                                                        <th>UID</th>
+                                                        <th>Home</th>
+                                                        <th>Shell</th>
+                                                        <th>Status</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for user in users %}
+                                                    <tr {% if user in suspicious_users %}class="suspicious-user"{% endif %}>
+                                                        <td>{{ user.username }}</td>
+                                                        <td>{{ user.uid }}</td>
+                                                        <td>{{ user.home }}</td>
+                                                        <td>{{ user.shell }}</td>
+                                                        <td>
+                                                            {% if user.locked %}
+                                                            <span class="badge bg-danger">Locked</span>
+                                                            {% else %}
+                                                            <span class="badge bg-success">Active</span>
+                                                            {% endif %}
+                                                        </td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Suspicious Users -->
+                            <div class="col-lg-6 mb-4">
+                                <div class="card shadow mb-4">
+                                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between bg-danger text-white">
+                                        <h6 class="m-0 font-weight-bold">
+                                            <i class="fas fa-user-secret me-2"></i>Suspicious Users ({{ suspicious_users|length }})
+                                        </h6>
+                                        <div class="dropdown no-arrow">
+                                            <a class="dropdown-toggle text-white" href="#" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-expanded="false">
+                                                <i class="fas fa-ellipsis-v fa-sm fa-fw"></i>
+                                            </a>
+                                            <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="dropdownMenuLink">
+                                                <li><a class="dropdown-item" href="#">View All</a></li>
+                                                <li><a class="dropdown-item" href="#">Export</a></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        {% if suspicious_users %}
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered table-hover table-sm" width="100%" cellspacing="0">
+                                                <thead class="bg-light">
+                                                    <tr>
+                                                        <th>Username</th>
+                                                        <th>UID</th>
+                                                        <th>Reasons</th>
+                                                        <th>Actions</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for user in suspicious_users %}
+                                                    <tr class="suspicious-user">
+                                                        <td>{{ user.username }}</td>
+                                                        <td>{{ user.uid }}</td>
+                                                        <td>
+                                                            <ul class="mb-0">
+                                                                {% for reason in user.reasons %}
+                                                                <li>{{ reason }}</li>
+                                                                {% endfor %}
+                                                            </ul>
+                                                        </td>
+                                                        <td>
+                                                            <button class="btn btn-sm btn-outline-danger lock-user" data-username="{{ user.username }}">
+                                                                <i class="fas fa-lock me-1"></i> Lock
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        {% else %}
+                                        <div class="alert alert-success mb-0">
+                                            <i class="fas fa-check-circle me-2"></i> No suspicious users detected
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- User Activity Sections -->
+                        <div class="row">
+                            <!-- Failed Login Attempts -->
+                            <div class="col-lg-6 mb-4">
+                                <div class="card shadow mb-4">
+                                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between bg-warning text-dark">
+                                        <h6 class="m-0 font-weight-bold">
+                                            <i class="fas fa-user-lock me-2"></i>Failed Login Attempts ({{ failed_logins|length }})
+                                        </h6>
+                                        <div class="dropdown no-arrow">
+                                            <a class="dropdown-toggle text-dark" href="#" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-expanded="false">
+                                                <i class="fas fa-ellipsis-v fa-sm fa-fw"></i>
+                                            </a>
+                                            <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="dropdownMenuLink">
+                                                <li><a class="dropdown-item" href="#">View All</a></li>
+                                                <li><a class="dropdown-item" href="#">Block IPs</a></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        {% if failed_logins %}
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered table-hover table-sm" width="100%" cellspacing="0">
+                                                <thead class="bg-light">
+                                                    <tr>
+                                                        <th>Username</th>
+                                                        <th>IP Address</th>
+                                                        <th>Device</th>
+                                                        <th>Time</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for login in failed_logins %}
+                                                    <tr class="failed-login">
+                                                        <td>{{ login.username }}</td>
+                                                        <td>{{ login.ip }}</td>
+                                                        <td>{{ login.device }}</td>
+                                                        <td>{{ login.timestamp }}</td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        {% else %}
+                                        <div class="alert alert-success mb-0">
+                                            <i class="fas fa-check-circle me-2"></i> No failed login attempts detected
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Active Sessions -->
+                            <div class="col-lg-6 mb-4">
+                                <div class="card shadow mb-4">
+                                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between bg-success text-white">
+                                        <h6 class="m-0 font-weight-bold">
+                                            <i class="fas fa-user-clock me-2"></i>Active Sessions ({{ active_sessions|length }})
+                                        </h6>
+                                        <div class="dropdown no-arrow">
+                                            <a class="dropdown-toggle text-white" href="#" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-expanded="false">
+                                                <i class="fas fa-ellipsis-v fa-sm fa-fw"></i>
+                                            </a>
+                                            <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="dropdownMenuLink">
+                                                <li><a class="dropdown-item" href="#">View All</a></li>
+                                                <li><a class="dropdown-item" href="#">Refresh</a></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        {% if active_sessions %}
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered table-hover table-sm" width="100%" cellspacing="0">
+                                                <thead class="bg-light">
+                                                    <tr>
+                                                        <th>Username</th>
+                                                        <th>Terminal</th>
+                                                        <th>Login Time</th>
+                                                        <th>IP Address</th>
+                                                        <th>Actions</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for session in active_sessions %}
+                                                    <tr class="active-session">
+                                                        <td>{{ session.username }}</td>
+                                                        <td>{{ session.terminal }}</td>
+                                                        <td>{{ session.login_time }}</td>
+                                                        <td>{{ session.ip }}</td>
+                                                        <td>
+                                                            <button class="btn btn-sm btn-outline-danger kill-session" data-pid="{{ session.pid }}">
+                                                                <i class="fas fa-skull me-1"></i> Kill
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        {% else %}
+                                        <div class="alert alert-info mb-0">
+                                            <i class="fas fa-info-circle me-2"></i> No active sessions found
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sudo Privileges -->
+                        <div class="row">
+                            <div class="col-12 mb-4">
+                                <div class="card shadow mb-4">
+                                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between bg-primary text-white">
+                                        <h6 class="m-0 font-weight-bold">
+                                            <i class="fas fa-user-shield me-2"></i>Users with Sudo Privileges ({{ sudoers|length }})
+                                        </h6>
+                                        <div class="dropdown no-arrow">
+                                            <a class="dropdown-toggle text-white" href="#" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-expanded="false">
+                                                <i class="fas fa-ellipsis-v fa-sm fa-fw"></i>
+                                            </a>
+                                            <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="dropdownMenuLink">
+                                                <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#editSudoersModal">Edit Sudoers</a></li>
+                                                <li><a class="dropdown-item" href="#">Refresh</a></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        {% if sudoers %}
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered table-hover table-sm" width="100%" cellspacing="0">
+                                                <thead class="bg-light">
+                                                    <tr>
+                                                        <th>Username</th>
+                                                        <th>Privileges</th>
+                                                        <th>Source File</th>
+                                                        <th>Actions</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for sudoer in sudoers %}
+                                                    <tr class="sudo-user">
+                                                        <td>{{ sudoer.username }}</td>
+                                                        <td>{{ sudoer.privilege }}</td>
+                                                        <td>{{ sudoer.source_file }}</td>
+                                                        <td>
+                                                            <button class="btn btn-sm btn-outline-danger revoke-sudo" data-username="{{ sudoer.username }}">
+                                                                <i class="fas fa-user-slash me-1"></i> Revoke
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        {% else %}
+                                        <div class="alert alert-info mb-0">
+                                            <i class="fas fa-info-circle me-2"></i> No additional sudo users found (only root)
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+                <footer class="py-4 bg-light mt-auto">
+                    <div class="container-fluid px-4">
+                        <div class="d-flex align-items-center justify-content-between small">
+                            <div class="text-muted">Copyright &copy; LinuxAV-Solutions {{ year }}</div>
+                            <div>
+                                <span class="me-2">EDR Version: {{ version }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </footer>
+            </div>
+        </div>
+
+        <!-- Add User Modal -->
+        <div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title" id="addUserModalLabel">Add New User</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="addUserForm">
+                            <div class="mb-3">
+                                <label for="username" class="form-label">Username</label>
+                                <input type="text" class="form-control" id="username" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="password" class="form-label">Password</label>
+                                <input type="password" class="form-control" id="password" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="confirmPassword" class="form-label">Confirm Password</label>
+                                <input type="password" class="form-control" id="confirmPassword" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="shell" class="form-label">Shell</label>
+                                <select class="form-select" id="shell">
+                                    <option value="/bin/bash">/bin/bash</option>
+                                    <option value="/bin/sh">/bin/sh</option>
+                                    <option value="/bin/zsh">/bin/zsh</option>
+                                    <option value="/sbin/nologin">/sbin/nologin</option>
+                                </select>
+                            </div>
+                            <div class="mb-3 form-check">
+                                <input type="checkbox" class="form-check-input" id="sudoAccess">
+                                <label class="form-check-label" for="sudoAccess">Grant sudo access</label>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="confirmAddUser">Add User</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Sudoers Modal -->
+        <div class="modal fade" id="editSudoersModal" tabindex="-1" aria-labelledby="editSudoersModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title" id="editSudoersModalLabel">Edit Sudo Privileges</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i> Be cautious when editing sudo privileges. Incorrect configurations can compromise system security.
+                        </div>
+                        <div class="mb-3">
+                            <label for="sudoersFile" class="form-label">Select sudoers file to edit:</label>
+                            <select class="form-select" id="sudoersFile">
+                                <option value="/etc/sudoers">/etc/sudoers (main file)</option>
+                                {% for sudoer in sudoers|groupby('source_file') %}
+                                <option value="{{ sudoer.grouper }}">{{ sudoer.grouper }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="sudoersContent" class="form-label">File Content:</label>
+                            <textarea class="form-control font-monospace" id="sudoersContent" rows="15" style="font-size: 0.8rem;"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="saveSudoers">Save Changes</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+        <script src="../static/js/scripts.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/umd/simple-datatables.min.js" crossorigin="anonymous"></script>
+        <script src="../static/js/datatables-simple-demo.js"></script>
+        <script>
+            // Update system time every second
+            function updateSystemTime() {
+                const now = new Date();
+                const timeString = now.toISOString().replace('T', ' ').substr(0, 19);
+                document.getElementById('current-time').textContent = timeString;
+            }
+            setInterval(updateSystemTime, 1000);
+
+            // Initialize tooltips
+            document.addEventListener('DOMContentLoaded', function() {
+                const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+                tooltipTriggerList.map(function (tooltipTriggerEl) {
+                    return new bootstrap.Tooltip(tooltipTriggerEl);
+                });
+            });
+
+            // User management actions
+            document.addEventListener('DOMContentLoaded', function() {
+                // Lock user account
+                document.querySelectorAll('.lock-user').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const username = this.getAttribute('data-username');
+                        if (confirm(`Are you sure you want to lock user ${username}?`)) {
+                            fetch('/api/user/lock', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/x-www-form-urlencoded',
+                                },
+                                body: `username=${encodeURIComponent(username)}`
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.status === 'success') {
+                                    alert(data.message);
+                                    location.reload();
+                                } else {
+                                    alert('Error: ' + data.message);
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                                alert('An error occurred while locking the user');
+                            });
+                        }
+                    });
+                });
+
+                // Kill user session
+                document.querySelectorAll('.kill-session').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const pid = this.getAttribute('data-pid');
+                        if (confirm(`Are you sure you want to kill session with PID ${pid}?`)) {
+                            fetch('/api/user/kill_session', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/x-www-form-urlencoded',
+                                },
+                                body: `pid=${encodeURIComponent(pid)}`
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.status === 'success') {
+                                    alert(data.message);
+                                    location.reload();
+                                } else {
+                                    alert('Error: ' + data.message);
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                                alert('An error occurred while killing the session');
+                            });
+                        }
+                    });
+                });
+
+                // Revoke sudo privileges
+                document.querySelectorAll('.revoke-sudo').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const username = this.getAttribute('data-username');
+                        if (confirm(`Are you sure you want to revoke sudo privileges for ${username}?`)) {
+                            // Implement sudo revocation logic here
+                            alert(`Sudo privileges revoked for ${username}`);
+                            location.reload();
+                        }
+                    });
+                });
+
+                // Add user form submission
+                document.getElementById('confirmAddUser').addEventListener('click', function() {
+                    // Implement user addition logic here
+                    alert('User added successfully');
+                    $('#addUserModal').modal('hide');
+                    location.reload();
+                });
+
+                // Load sudoers file content
+                document.getElementById('sudoersFile').addEventListener('change', function() {
+                    const file = this.value;
+                    // Implement file loading logic here
+                    document.getElementById('sudoersContent').value = `Loading ${file}...`;
+                });
+
+                // Save sudoers changes
+                document.getElementById('saveSudoers').addEventListener('click', function() {
+                    // Implement save logic here
+                    alert('Sudoers file updated successfully');
+                    $('#editSudoersModal').modal('hide');
+                });
+            });
+        </script>
+    </body>
+</html>

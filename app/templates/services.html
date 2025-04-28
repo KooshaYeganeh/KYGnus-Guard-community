@@ -1,144 +1,208 @@
 <!DOCTYPE html>
-<html dir="ltr" lang="en">
-
-<head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="keywords" content="linuxav, edr, security, dashboard">
-    <meta name="description" content="LinuxAV-Solutions Enterprise EDR Dashboard">
-    <title>LinuxAV-Solutions | Services</title>
-    <link rel="icon" type="image/png" sizes="16x16" href="../static/assets/images/favicon.png">
-    <!-- Custom CSS -->
-    <link href="../static/css/style.min.css" rel="stylesheet">
-    <!-- Toastr CSS -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
-    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
-    <!--[if lt IE 9]>
-    <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
-    <script src="https://oss.maxcdn.com/libs/respond.../static/js/1.4.2/respond.min.js"></script>
-    <![endif]-->
-</head>
-
-<body>
-    <div class="preloader">
-        <div class="lds-ripple">
-            <div class="lds-pos"></div>
-            <div class="lds-pos"></div>
-        </div>
-    </div>
-    <div id="main-wrapper" data-layout="vertical" data-navbarbg="skin5" data-sidebartype="full"
-        data-sidebar-position="absolute" data-header-position="absolute" data-boxed-layout="full">
-        <header class="topbar" data-navbarbg="skin6">
-            <nav class="navbar top-navbar navbar-expand-md navbar-dark" style="background-color: rgba(0, 255, 34, 0.256);">
-                <div class="navbar-header" data-logobg="skin6">
-                    <a class="navbar-brand" href="index.html">
-                        <b class="logo-icon">
-                            <img src="../static/openSUSE.png" alt="homepage" class="dark-logo" height="120" width="180">
-                        </b>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+        <meta name="description" content="LinuxAV-Solutions EDR Services Management" />
+        <meta name="author" content="LinuxAV-Solutions" />
+        <title>Services Management - LinuxAV-Solutions EDR</title>
+        <link href="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/style.min.css" rel="stylesheet" />
+        <link href="../static/css/styles.css" rel="stylesheet" />
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet">
+        <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
+        <style>
+            .service-card {
+                transition: transform 0.3s;
+            }
+            .service-card:hover {
+                transform: translateY(-5px);
+            }
+            .service-active {
+                border-left: 4px solid #1cc88a;
+            }
+            .service-inactive {
+                border-left: 4px solid #e74a3b;
+            }
+            .service-failed {
+                border-left: 4px solid #f6c23e;
+            }
+            .service-actions .btn {
+                padding: 0.25rem 0.5rem;
+                font-size: 0.875rem;
+            }
+        </style>
+    </head>
+    <body class="sb-nav-fixed">
+        <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
+            <!-- Navbar Brand-->
+            <a class="navbar-brand ps-3" href="index.html">
+                <i class="fas fa-shield-alt me-2"></i>LinuxAV-Solutions EDR
+            </a>
+            <!-- Sidebar Toggle-->
+            <button class="btn btn-link btn-sm order-1 order-lg-0 me-4 me-lg-0" id="sidebarToggle" href="#!">
+                <i class="fas fa-bars"></i>
+            </button>
+            
+            <!-- System Time Display -->
+            <div class="mx-auto text-white" id="system-time">
+                <i class="fas fa-clock me-2"></i>
+                <span id="current-time">{{ now.strftime('%Y-%m-%d %H:%M:%S') }}</span>
+            </div>
+            
+            <!-- Navbar-->
+            <ul class="navbar-nav ms-auto ms-md-0 me-3 me-lg-4">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-user fa-fw"></i>
+                        <span class="d-none d-lg-inline">Admin</span>
                     </a>
-                    <a class="nav-toggler waves-effect waves-light text-dark d-block d-md-none"
-                        href="javascript:void(0)"><i class="ti-menu ti-close"></i></a>
-                </div>
-
-                <br><br>
-                <div class="navbar-collapse collapse" id="navbarSupportedContent" data-navbarbg="skin5">
-                    <ul class="navbar-nav me-auto mt-md-0 ">
-                        <li class="nav-item hidden-sm-down">
-                            <form class="app-search ps-3">
-                                <input type="text" class="form-control" placeholder="Search for..."> <a
-                                    class="srh-btn"><i class="ti-search"></i></a>
-                            </form>
-                        </li>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                        <li><a class="dropdown-item" href="#!"><i class="fas fa-cog fa-fw me-2"></i>Settings</a></li>
+                        <li><a class="dropdown-item" href="#!"><i class="fas fa-list fa-fw me-2"></i>Activity Log</a></li>
+                        <li><hr class="dropdown-divider" /></li>
+                        <li><a class="dropdown-item" href="/logout"><i class="fas fa-sign-out-alt fa-fw me-2"></i>Logout</a></li>
                     </ul>
-                </div>
-            </nav>
-            <br><br>
-        </header>
-        <br><br>
-        <aside class="left-sidebar" data-sidebarbg="skin6">
-            <br><br>
-            <br><br>
-            <div class="scroll-sidebar">
-                <nav class="sidebar-nav">
-                    <ul id="sidebarnav">
-                        <!-- User Profile-->
-                        <li class="sidebar-item"> <a class="sidebar-link waves-effect waves-dark sidebar-link"
-                                href="/" aria-expanded="false"><i class="me-3 fa fa-home"
-                                aria-hidden="true"></i><span class="hide-menu">Dashboard</span></a></li>
-                        <li class="sidebar-item"> <a class="sidebar-link waves-effect waves-dark sidebar-link"
-                                href="/scan" aria-expanded="false">
-                                <i class="me-3 fa fa-bug" aria-hidden="true"></i><span
-                                    class="hide-menu">scan</span></a>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link" id="alertsDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-bell fa-fw"></i>
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                            3+
+                            <span class="visually-hidden">unread alerts</span>
+                        </span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end p-2" aria-labelledby="alertsDropdown" style="min-width: 300px;">
+                        <li><h6 class="dropdown-header">Security Alerts</h6></li>
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center" href="#">
+                                <div class="me-3">
+                                    <div class="bg-danger icon-circle"><i class="fas fa-exclamation-triangle text-white"></i></div>
+                                </div>
+                                <div>
+                                    <span class="small text-gray-500">Just now</span>
+                                    <p class="mb-0 small">Malicious process detected</p>
+                                </div>
+                            </a>
                         </li>
-                        <li class="sidebar-item"> <a class="sidebar-link waves-effect waves-dark sidebar-link"
-                                href="/services" aria-expanded="false"><i class="me-3 fa fa-table"
-                                    aria-hidden="true"></i><span class="hide-menu">Services</span></a></li>
-                        <li class="sidebar-item"> <a class="sidebar-link waves-effect waves-dark sidebar-link"
-                                href="/firewall" aria-expanded="false"><i class="me-3 fa fa-fire"
-                                    aria-hidden="true"></i><span class="hide-menu">Firewall</span></a></li>
-                        <li class="sidebar-item"> <a class="sidebar-link waves-effect waves-dark sidebar-link"
-                                href="/ids" aria-expanded="false"><i class="me-3 fa fa-eye"
-                                    aria-hidden="true"></i><span class="hide-menu">IDS</span></a></li>
-                        <li class="sidebar-item"> <a class="sidebar-link waves-effect waves-dark sidebar-link"
-                                href="/process" aria-expanded="false"><i class="me-3 fa fa-table"
-                                    aria-hidden="true"></i><span class="hide-menu">Process</span></a></li>
-                        <li class="sidebar-item"> <a class="sidebar-link waves-effect waves-dark sidebar-link"
-                                        href="/ai_detection" aria-expanded="false"><i class="me-3 fa fa-columns"
-                                            aria-hidden="true"></i><span class="hide-menu">AI Detection</span></a></li>
-                        <li class="sidebar-item"> <a class="sidebar-link waves-effect waves-dark sidebar-link"
-                                href="/logout" aria-expanded="false"><i class="me-3 fa fa-user"
-                                    aria-hidden="true"></i><span class="hide-menu">Logout</span></a></li>
-
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center" href="#">
+                                <div class="me-3">
+                                    <div class="bg-warning icon-circle"><i class="fas fa-exclamation text-white"></i></div>
+                                </div>
+                                <div>
+                                    <span class="small text-gray-500">5 min ago</span>
+                                    <p class="mb-0 small">Suspicious network activity</p>
+                                </div>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center" href="#">
+                                <div class="me-3">
+                                    <div class="bg-primary icon-circle"><i class="fas fa-info-circle text-white"></i></div>
+                                </div>
+                                <div>
+                                    <span class="small text-gray-500">1 hour ago</span>
+                                    <p class="mb-0 small">Service restarted</p>
+                                </div>
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider" /></li>
+                        <li><a class="dropdown-item text-center small" href="#">View All Alerts</a></li>
                     </ul>
-
+                </li>
+            </ul>
+        </nav>
+        <div id="layoutSidenav">
+            <div id="layoutSidenav_nav">
+                <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">
+                    <div class="sb-sidenav-menu">
+                        <div class="nav">
+                            <div class="sb-sidenav-menu-heading">Core</div>
+                            <a class="nav-link" href="/">
+                                <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
+                                Dashboard
+                            </a>
+                            <div class="sb-sidenav-menu-heading">Security Modules</div>
+                            <a class="nav-link" href="/scan">
+                                <div class="sb-nav-link-icon"><i class="fas fa-search"></i></div>
+                                Scan Management
+                            </a>
+                            <a class="nav-link active" href="/services">
+                                <div class="sb-nav-link-icon"><i class="fas fa-server"></i></div>
+                                Services
+                            </a>
+                            <a class="nav-link" href="/firewall">
+                                <div class="sb-nav-link-icon"><i class="fas fa-fire"></i></div>
+                                Firewall
+                            </a>
+                            <a class="nav-link" href="/ids">
+                                <div class="sb-nav-link-icon"><i class="fas fa-shield-virus"></i></div>
+                                IDS/IPS
+                            </a>
+                            <a class="nav-link" href="/process">
+                                <div class="sb-nav-link-icon"><i class="fas fa-tasks"></i></div>
+                                Processes
+                            </a>
+                            <a class="nav-link" href="/ai_detection">
+                                <div class="sb-nav-link-icon"><i class="fas fa-brain"></i></div>
+                                AI Detection
+                            </a>
+                            <div class="sb-sidenav-menu-heading">System</div>
+                            <a class="nav-link" href="#">
+                                <div class="sb-nav-link-icon"><i class="fas fa-users"></i></div>
+                                Users
+                            </a>
+                            <a class="nav-link" href="#">
+                                <div class="sb-nav-link-icon"><i class="fas fa-file-alt"></i></div>
+                                Logs
+                            </a>
+                            <a class="nav-link" href="#">
+                                <div class="sb-nav-link-icon"><i class="fas fa-cog"></i></div>
+                                Settings
+                            </a>
+                        </div>
+                    </div>
+                    <div class="sb-sidenav-footer">
+                        <div class="small">Logged in as:</div>
+                        EDR Administrator
+                        <div class="small mt-1">Version: {{ version }}</div>
+                    </div>
                 </nav>
             </div>
-        </aside>
-        <div class="page-wrapper">
-            <div class="page-breadcrumb">
-                <div class="row align-items-center">
-                    <div class="col-md-6 col-8 align-self-center">
-                        <h3 class="page-title mb-0 p-0">System Services</h3>
-                        <div class="d-flex align-items-center">
-                            <nav aria-label="breadcrumb">
-                                <ol class="breadcrumb">
-                                    <li class="breadcrumb-item"><a href="index.html">Home</a></li>
-                                    <li class="breadcrumb-item active" aria-current="page">Services</li>
-                                </ol>
-                            </nav>
-                        </div>
-                    </div>
-                    <div class="col-md-6 col-4 align-self-center">
-                        <div class="text-end">
-                            <button class="btn btn-info refresh-services">
-                                <i class="fas fa-sync-alt"></i> Refresh
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="container-fluid">
-                <div class="row">
-                    <div class="col-12">
-                        <div class="card">
-                            <div class="card-body">
-                                <div class="d-md-flex mb-4">
-                                    <h4 class="card-title col-md-10 mb-md-0 mb-3 align-self-center">System Services Management</h4>
-                                    <div class="col-md-2 ms-auto">
-                                        <select class="form-select shadow-none" id="serviceStatusFilter">
+            <div id="layoutSidenav_content">
+                <main>
+                    <div class="container-fluid px-4">
+                        <h1 class="mt-4">Services Management</h1>
+                        <ol class="breadcrumb mb-4">
+                            <li class="breadcrumb-item"><a href="/">Dashboard</a></li>
+                            <li class="breadcrumb-item active">Services</li>
+                        </ol>
+                        
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h5 class="m-0 font-weight-bold text-primary">
+                                        <i class="fas fa-server me-2"></i>System Services
+                                    </h5>
+                                    <div class="d-flex">
+                                        <select class="form-select form-select-sm me-2" id="serviceStatusFilter" style="width: 150px;">
                                             <option value="all">All Services</option>
                                             <option value="active">Active</option>
                                             <option value="inactive">Inactive</option>
                                             <option value="failed">Failed</option>
                                         </select>
+                                        <button class="btn btn-sm btn-primary refresh-services">
+                                            <i class="fas fa-sync-alt me-1"></i> Refresh
+                                        </button>
                                     </div>
                                 </div>
+                            </div>
+                            <div class="card-body">
                                 <div class="table-responsive">
-                                    <table class="table table-hover" id="servicesTable">
-                                        <thead>
+                                    <table class="table table-bordered table-hover" id="servicesTable" width="100%" cellspacing="0">
+                                        <thead class="bg-light">
                                             <tr>
                                                 <th>Service Name</th>
                                                 <th>Status</th>
@@ -148,20 +212,21 @@
                                         </thead>
                                         <tbody>
                                             {% for service in services %}
-                                            <tr class="service-row" data-status="{{ service.active.lower() }}">
+                                            <tr class="service-row {{ 'service-active' if service.active == 'active' else 'service-inactive' if service.active == 'inactive' else 'service-failed' }}" 
+                                                data-status="{{ service.active.lower() }}">
                                                 <td>
                                                     <strong>{{ service.name }}</strong><br>
                                                     <small class="text-muted">Loaded: {{ service.loaded }}</small>
                                                 </td>
                                                 <td>
-                                                    <span class="badge bg-{{ 'success' if service.active == 'active' else 'danger' }}">
+                                                    <span class="badge bg-{{ 'success' if service.active == 'active' else 'danger' if service.active == 'inactive' else 'warning' }}">
                                                         {{ service.active|capitalize }}
                                                     </span>
                                                     <br>
                                                     <small class="text-muted">{{ service.status }}</small>
                                                 </td>
                                                 <td>{{ service.description|default('No description', true) }}</td>
-                                                <td>
+                                                <td class="service-actions">
                                                     <div class="btn-group btn-group-sm" role="group">
                                                         {% if service.active == 'active' %}
                                                         <button class="btn btn-outline-danger stop-service" data-service="{{ service.name }}" title="Stop">
@@ -188,103 +253,118 @@
                             </div>
                         </div>
                     </div>
-                </div>
+                </main>
+                <footer class="py-4 bg-light mt-auto">
+                    <div class="container-fluid px-4">
+                        <div class="d-flex align-items-center justify-content-between small">
+                            <div class="text-muted">Copyright &copy; LinuxAV-Solutions {{ year }}</div>
+                            <div>
+                                <span class="me-2">EDR Version: {{ version }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </footer>
             </div>
-            <footer class="footer text-center">
-                LinuxAV-Solutions Enterprise EDR v{{ version }} &copy; {{ year }}
-            </footer>
         </div>
-    </div>
-
-    <!-- All Jquery -->
-    <script src="../static/assets/plugins/jquery/dist/jquery.min.js"></script>
-    <script src="../static/assets/plugins/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="../static/js/app-style-switcher.js"></script>
-    <script src="../static/js/waves.js"></script>
-    <script src="../static/js/sidebarmenu.js"></script>
-    <script src="../static/js/custom.js"></script>
-    <!-- Toastr JS -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
-    
-    <script>
-    $(document).ready(function() {
-        // Initialize toastr
-        toastr.options = {
-            "closeButton": true,
-            "progressBar": true,
-            "positionClass": "toast-top-right",
-            "timeOut": "5000"
-        };
-
-        // Filter services by status
-        $('#serviceStatusFilter').change(function() {
-            const status = $(this).val();
-            $('.service-row').hide();
-            
-            if (status === 'all') {
-                $('.service-row').show();
-            } else {
-                $(`.service-row[data-status="${status}"]`).show();
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+        <script src="../static/js/scripts.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/umd/simple-datatables.min.js" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+        <script>
+            // Update system time every second
+            function updateSystemTime() {
+                const now = new Date();
+                const timeString = now.toISOString().replace('T', ' ').substr(0, 19);
+                document.getElementById('current-time').textContent = timeString;
             }
-        });
+            setInterval(updateSystemTime, 1000);
+            
+            // Initialize toastr
+            toastr.options = {
+                "closeButton": true,
+                "progressBar": true,
+                "positionClass": "toast-top-right",
+                "timeOut": "5000"
+            };
 
-        // Refresh services list
-        $('.refresh-services').click(function() {
-            $.ajax({
-                url: '/services',
-                method: 'GET',
-                success: function(data) {
-                    toastr.success('Services list refreshed');
-                    setTimeout(function() {
-                        location.reload();
-                    }, 1000);
-                },
-                error: function(xhr) {
-                    toastr.error('Failed to refresh services');
+            // Filter services by status
+            $('#serviceStatusFilter').change(function() {
+                const status = $(this).val();
+                $('.service-row').hide();
+                
+                if (status === 'all') {
+                    $('.service-row').show();
+                } else {
+                    $(`.service-row[data-status="${status}"]`).show();
                 }
             });
-        });
 
-        // Service actions
-        $(document).on('click', '.start-service', function() {
-            const serviceName = $(this).data('service');
-            manageService(serviceName, 'start');
-        });
-
-        $(document).on('click', '.stop-service', function() {
-            const serviceName = $(this).data('service');
-            manageService(serviceName, 'stop');
-        });
-
-        $(document).on('click', '.restart-service', function() {
-            const serviceName = $(this).data('service');
-            manageService(serviceName, 'restart');
-        });
-
-        $(document).on('click', '.service-details', function() {
-            const serviceName = $(this).data('service');
-            window.location.href = `/services/status/${serviceName}`;
-        });
-
-        function manageService(serviceName, action) {
-            $.ajax({
-                url: `/services/${serviceName}/${action}`,
-                method: 'POST',
-                beforeSend: function() {
-                    toastr.info(`Processing ${action} request for ${serviceName}...`);
-                },
-                success: function(response) {
-                    toastr.success(response.message);
-                    setTimeout(function() {
-                        location.reload();
-                    }, 1500);
-                },
-                error: function(xhr) {
-                    toastr.error(xhr.responseJSON.message || `Failed to ${action} service`);
-                }
+            // Refresh services list
+            $('.refresh-services').click(function() {
+                $.ajax({
+                    url: '/services',
+                    method: 'GET',
+                    success: function(data) {
+                        toastr.success('Services list refreshed');
+                        setTimeout(function() {
+                            location.reload();
+                        }, 1000);
+                    },
+                    error: function(xhr) {
+                        toastr.error('Failed to refresh services');
+                    }
+                });
             });
-        }
-    });
-    </script>
-</body>
+
+            // Service actions
+            $(document).on('click', '.start-service', function() {
+                const serviceName = $(this).data('service');
+                manageService(serviceName, 'start');
+            });
+
+            $(document).on('click', '.stop-service', function() {
+                const serviceName = $(this).data('service');
+                manageService(serviceName, 'stop');
+            });
+
+            $(document).on('click', '.restart-service', function() {
+                const serviceName = $(this).data('service');
+                manageService(serviceName, 'restart');
+            });
+
+            $(document).on('click', '.service-details', function() {
+                const serviceName = $(this).data('service');
+                window.location.href = `/services/status/${serviceName}`;
+            });
+
+            function manageService(serviceName, action) {
+                $.ajax({
+                    url: `/services/${serviceName}/${action}`,
+                    method: 'POST',
+                    beforeSend: function() {
+                        toastr.info(`Processing ${action} request for ${serviceName}...`);
+                    },
+                    success: function(response) {
+                        toastr.success(response.message);
+                        setTimeout(function() {
+                            location.reload();
+                        }, 1500);
+                    },
+                    error: function(xhr) {
+                        toastr.error(xhr.responseJSON.message || `Failed to ${action} service`);
+                    }
+                });
+            }
+
+            // Initialize DataTable
+            document.addEventListener('DOMContentLoaded', function() {
+                const dataTable = new simpleDatatables.DataTable("#servicesTable", {
+                    searchable: true,
+                    fixedHeight: true,
+                    perPage: 10
+                });
+            });
+        </script>
+    </body>
 </html>

@@ -14,6 +14,9 @@ sudo ln -s ~/.myEDR/config/myEDR.conf /etc/myEDR/myEDR.conf
 # Create app directory
 sudo mkdir -p /var/lib/myEDR/{quarantine,signatures,rules,baseline}
 
+
+
+
 # Install systemd service
 sudo cp myEDR.service /etc/systemd/system/
 sudo systemctl daemon-reload
@@ -24,5 +27,8 @@ sudo /usr/local/bin/myEDR --edr-baseline
 # Start service
 sudo systemctl enable myEDR
 sudo systemctl start myEDR
+
+
+# 0 2 * * * /path/to/your/edr/update_local_threat_dbs.sh
 
 echo "LinuxAV-Solutions EDR installed and started"

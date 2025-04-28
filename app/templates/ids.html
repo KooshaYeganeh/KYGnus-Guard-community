@@ -1,658 +1,704 @@
 <!DOCTYPE html>
-<html dir="ltr" lang="en">
-
-<head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="LinuxAV-Solutions EDR IDS/IPS Management">
-    <title>IDS/IPS Management - LinuxAV-Solutions EDR</title>
-    <!-- Favicon icon -->
-    <link rel="icon" type="image/png" sizes="16x16" href="../static/assets/images/favicon.png">
-    <!-- Custom CSS -->
-    <link href="../static/css/style.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet">
-    <style>
-        .status-card {
-            transition: all 0.3s ease;
-        }
-        .status-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-        }
-        .scan-btn {
-            min-width: 120px;
-            margin-bottom: 5px;
-        }
-        .severity-critical { background-color: #dc3545; }
-        .severity-high { background-color: #fd7e14; }
-        .severity-medium { background-color: #ffc107; }
-        .severity-low { background-color: #28a745; }
-        .alert-row:hover {
-            background-color: rgba(0,0,0,0.03);
-            cursor: pointer;
-        }
-        .rule-textarea {
-            font-family: monospace;
-            font-size: 0.9rem;
-        }
-
-        .terminal-container {
-            position: relative;
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+        <meta name="description" content="LinuxAV-Solutions EDR IDS/IPS Management" />
+        <meta name="author" content="LinuxAV-Solutions" />
+        <title>IDS/IPS Management - LinuxAV-Solutions EDR</title>
+        <link href="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/style.min.css" rel="stylesheet" />
+        <link href="../static/css/styles.css" rel="stylesheet" />
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet">
+        <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
+        <style>
+            .status-card {
+                transition: transform 0.3s;
             }
-
-        #liveLogsDisplay {
-            font-family: 'Courier New', monospace;
-            font-size: 0.85rem;
-            white-space: pre-wrap;
-            word-break: break-all;
-            background-color: #1e1e1e;
-            border: 1px solid #444;
-        }
-
-        #liveLogsDisplay::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        #liveLogsDisplay::-webkit-scrollbar-track {
-            background: #2d2d2d;
-        }
-
-        #liveLogsDisplay::-webkit-scrollbar-thumb {
-            background: #666;
-            border-radius: 4px;
-        }
-    </style>
-</head>
-
-<body>
-    <div class="preloader">
-        <div class="lds-ripple">
-            <div class="lds-pos"></div>
-            <div class="lds-pos"></div>
-        </div>
-    </div>
-    <div id="main-wrapper" data-layout="vertical" data-navbarbg="skin5" data-sidebartype="full"
-        data-sidebar-position="absolute" data-header-position="absolute" data-boxed-layout="full">
-        <header class="topbar" data-navbarbg="skin6">
-            <nav class="navbar top-navbar navbar-expand-md navbar-dark" style="background-color: rgba(0, 255, 34, 0.256);">
-                <div class="navbar-header" data-logobg="skin6">
-                    <a class="navbar-brand" href="index.html">
-                        <b class="logo-icon">
-                            <img src="../static/openSUSE.png" alt="homepage" class="dark-logo" height="120" width="180">
-                        </b>
+            .status-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            }
+            .scan-btn {
+                min-width: 120px;
+                margin-bottom: 5px;
+            }
+            .severity-critical { background-color: #dc3545; }
+            .severity-high { background-color: #fd7e14; }
+            .severity-medium { background-color: #ffc107; }
+            .severity-low { background-color: #28a745; }
+            .alert-row:hover {
+                background-color: rgba(0,0,0,0.03);
+                cursor: pointer;
+            }
+            .rule-textarea {
+                font-family: monospace;
+                font-size: 0.9rem;
+            }
+            .terminal-container {
+                position: relative;
+            }
+            #liveLogsDisplay {
+                font-family: 'Courier New', monospace;
+                font-size: 0.85rem;
+                white-space: pre-wrap;
+                word-break: break-all;
+                background-color: #1e1e1e;
+                border: 1px solid #444;
+            }
+            #liveLogsDisplay::-webkit-scrollbar {
+                width: 8px;
+            }
+            #liveLogsDisplay::-webkit-scrollbar-track {
+                background: #2d2d2d;
+            }
+            #liveLogsDisplay::-webkit-scrollbar-thumb {
+                background: #666;
+                border-radius: 4px;
+            }
+            .card-header-tabs .nav-link {
+                padding: 0.75rem 1rem;
+            }
+        </style>
+    </head>
+    <body class="sb-nav-fixed">
+        <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
+            <!-- Navbar Brand-->
+            <a class="navbar-brand ps-3" href="index.html">
+                <i class="fas fa-shield-alt me-2"></i>LinuxAV-Solutions EDR
+            </a>
+            <!-- Sidebar Toggle-->
+            <button class="btn btn-link btn-sm order-1 order-lg-0 me-4 me-lg-0" id="sidebarToggle" href="#!">
+                <i class="fas fa-bars"></i>
+            </button>
+            
+            <!-- System Time Display -->
+            <div class="mx-auto text-white" id="system-time">
+                <i class="fas fa-clock me-2"></i>
+                <span id="current-time">{{ now.strftime('%Y-%m-%d %H:%M:%S') }}</span>
+            </div>
+            
+            <!-- Navbar-->
+            <ul class="navbar-nav ms-auto ms-md-0 me-3 me-lg-4">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-user fa-fw"></i>
+                        <span class="d-none d-lg-inline">Admin</span>
                     </a>
-                    <a class="nav-toggler waves-effect waves-light text-dark d-block d-md-none"
-                        href="javascript:void(0)"><i class="ti-menu ti-close"></i></a>
-                </div>
-
-                <br><br>
-                <div class="navbar-collapse collapse" id="navbarSupportedContent" data-navbarbg="skin5">
-                    <ul class="navbar-nav me-auto mt-md-0 ">
-                        <li class="nav-item hidden-sm-down">
-                            <form class="app-search ps-3">
-                                <input type="text" class="form-control" placeholder="Search for..."> <a
-                                    class="srh-btn"><i class="ti-search"></i></a>
-                            </form>
-                        </li>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                        <li><a class="dropdown-item" href="#!"><i class="fas fa-cog fa-fw me-2"></i>Settings</a></li>
+                        <li><a class="dropdown-item" href="#!"><i class="fas fa-list fa-fw me-2"></i>Activity Log</a></li>
+                        <li><hr class="dropdown-divider" /></li>
+                        <li><a class="dropdown-item" href="/logout"><i class="fas fa-sign-out-alt fa-fw me-2"></i>Logout</a></li>
                     </ul>
-                </div>
-            </nav>
-            <br><br>
-        </header>
-        <br><br>
-        <aside class="left-sidebar" data-sidebarbg="skin6">
-            <br><br>
-            <div class="scroll-sidebar">
-                <nav class="sidebar-nav">
-                    <ul id="sidebarnav">
-                        <!-- User Profile-->
-                        <li class="sidebar-item"> <a class="sidebar-link waves-effect waves-dark sidebar-link"
-                                href="/" aria-expanded="false"><i class="me-3 fa fa-home"
-                                aria-hidden="true"></i><span class="hide-menu">Dashboard</span></a></li>
-                        <li class="sidebar-item"> <a class="sidebar-link waves-effect waves-dark sidebar-link"
-                                href="/scan" aria-expanded="false">
-                                <i class="me-3 fa fa-bug" aria-hidden="true"></i><span
-                                    class="hide-menu">scan</span></a>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link" id="alertsDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-bell fa-fw"></i>
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                            3+
+                            <span class="visually-hidden">unread alerts</span>
+                        </span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end p-2" aria-labelledby="alertsDropdown" style="min-width: 300px;">
+                        <li><h6 class="dropdown-header">Security Alerts</h6></li>
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center" href="#">
+                                <div class="me-3">
+                                    <div class="bg-danger icon-circle"><i class="fas fa-exclamation-triangle text-white"></i></div>
+                                </div>
+                                <div>
+                                    <span class="small text-gray-500">Just now</span>
+                                    <p class="mb-0 small">Malicious process detected</p>
+                                </div>
+                            </a>
                         </li>
-                        <li class="sidebar-item"> <a class="sidebar-link waves-effect waves-dark sidebar-link"
-                                href="/services" aria-expanded="false"><i class="me-3 fa fa-table"
-                                    aria-hidden="true"></i><span class="hide-menu">Services</span></a></li>
-                        <li class="sidebar-item"> <a class="sidebar-link waves-effect waves-dark sidebar-link"
-                                href="/firewall" aria-expanded="false"><i class="me-3 fa fa-fire"
-                                    aria-hidden="true"></i><span class="hide-menu">Firewall</span></a></li>
-                        <li class="sidebar-item"> <a class="sidebar-link waves-effect waves-dark sidebar-link"
-                                href="/ids" aria-expanded="false"><i class="me-3 fa fa-eye"
-                                    aria-hidden="true"></i><span class="hide-menu">IDS</span></a></li>
-                        <li class="sidebar-item"> <a class="sidebar-link waves-effect waves-dark sidebar-link"
-                                href="/process" aria-expanded="false"><i class="me-3 fa fa-table"
-                                    aria-hidden="true"></i><span class="hide-menu">Process</span></a></li>
-                        <li class="sidebar-item"> <a class="sidebar-link waves-effect waves-dark sidebar-link"
-                                        href="/ai_detection" aria-expanded="false"><i class="me-3 fa fa-columns"
-                                            aria-hidden="true"></i><span class="hide-menu">AI Detection</span></a></li>
-                        <li class="sidebar-item"> <a class="sidebar-link waves-effect waves-dark sidebar-link"
-                                href="/logout" aria-expanded="false"><i class="me-3 fa fa-user"
-                                    aria-hidden="true"></i><span class="hide-menu">Logout</span></a></li>
-    
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center" href="#">
+                                <div class="me-3">
+                                    <div class="bg-warning icon-circle"><i class="fas fa-exclamation text-white"></i></div>
+                                </div>
+                                <div>
+                                    <span class="small text-gray-500">5 min ago</span>
+                                    <p class="mb-0 small">Suspicious network activity</p>
+                                </div>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center" href="#">
+                                <div class="me-3">
+                                    <div class="bg-primary icon-circle"><i class="fas fa-info-circle text-white"></i></div>
+                                </div>
+                                <div>
+                                    <span class="small text-gray-500">1 hour ago</span>
+                                    <p class="mb-0 small">Firewall rule added</p>
+                                </div>
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider" /></li>
+                        <li><a class="dropdown-item text-center small" href="#">View All Alerts</a></li>
                     </ul>
-    
+                </li>
+            </ul>
+        </nav>
+        <div id="layoutSidenav">
+            <div id="layoutSidenav_nav">
+                <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">
+                    <div class="sb-sidenav-menu">
+                        <div class="nav">
+                            <div class="sb-sidenav-menu-heading">Core</div>
+                            <a class="nav-link" href="/">
+                                <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
+                                Dashboard
+                            </a>
+                            <div class="sb-sidenav-menu-heading">Security Modules</div>
+                            <a class="nav-link" href="/scan">
+                                <div class="sb-nav-link-icon"><i class="fas fa-search"></i></div>
+                                Scan Management
+                            </a>
+                            <a class="nav-link active" href="/ids">
+                                <div class="sb-nav-link-icon"><i class="fas fa-shield-virus"></i></div>
+                                IDS/IPS
+                            </a>
+                            <a class="nav-link" href="/firewall">
+                                <div class="sb-nav-link-icon"><i class="fas fa-fire"></i></div>
+                                Firewall
+                            </a>
+                            <a class="nav-link" href="/services">
+                                <div class="sb-nav-link-icon"><i class="fas fa-server"></i></div>
+                                Services
+                            </a>
+                            <a class="nav-link" href="/ai_detection">
+                                <div class="sb-nav-link-icon"><i class="fas fa-robot"></i></div>
+                                AI Detection
+                            </a>
+                        </div>
+                    </div>
+                    <div class="sb-sidenav-footer">
+                        <div class="small">Logged in as:</div>
+                        EDR Administrator
+                        <div class="small mt-1">Version: {{ version }}</div>
+                    </div>
                 </nav>
             </div>
-        </aside>
-        <div class="page-wrapper">
-            <div class="page-breadcrumb">
-                <div class="row align-items-center">
-                    <div class="col-md-6 col-8 align-self-center">
-                        <h3 class="page-title mb-0 p-0">IDS/IPS Management</h3>
-                        <div class="d-flex align-items-center">
-                            <nav aria-label="breadcrumb">
-                                <ol class="breadcrumb">
-                                    <li class="breadcrumb-item"><a href="index.html">Home</a></li>
-                                    <li class="breadcrumb-item active" aria-current="page">IDS/IPS</li>
-                                </ol>
-                            </nav>
-                        </div>
-                    </div>
-                    <div class="col-md-6 col-4 align-self-center">
-                        <div class="text-end">
-                            <span class="badge bg-light text-dark">v{{ version }}</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="container-fluid">
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-body">
-                                <h4 class="card-title">Suricata Status</h4>
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="card status-card">
-                                            <div class="card-body text-center">
-                                                <h5 class="card-title">Service Status</h5>
-                                                <div class="alert alert-{{ 'success' if status.running else 'danger' }} py-2">
-                                                    <i class="fas fa-{{ 'play-circle' if status.running else 'stop-circle' }} me-2"></i>
-                                                    {{ 'RUNNING' if status.running else 'STOPPED' }}
-                                                </div>
-                                            </div>
+            <div id="layoutSidenav_content">
+                <main>
+                    <div class="container-fluid px-4">
+                        <h1 class="mt-4">IDS/IPS Management</h1>
+                        <ol class="breadcrumb mb-4">
+                            <li class="breadcrumb-item"><a href="/">Dashboard</a></li>
+                            <li class="breadcrumb-item active">IDS/IPS</li>
+                        </ol>
+                        
+                        <div class="row">
+       
+
+                            <div class="col-md-12">
+                                <div class="card mb-4">
+                                    <div class="card-header">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <h5 class="mb-0"><i class="fas fa-bell me-2"></i>Live Alerts</h5>
+                                            <button class="btn btn-sm btn-outline-secondary" id="refreshAlerts">
+                                                <i class="fas fa-sync-alt"></i> Refresh
+                                            </button>
                                         </div>
                                     </div>
-                                    <div class="col-md-6">
-                                        <div class="card status-card">
-                                            <div class="card-body text-center">
-                                                <h5 class="card-title">Operation Mode</h5>
-                                                <div class="alert alert-{{ 'primary' if status.mode == 'ips' else 'info' }} py-2">
-                                                    <i class="fas fa-{{ 'shield-alt' if status.mode == 'ips' else 'eye' }} me-2"></i>
-                                                    {{ status.mode|upper }}
-                                                </div>
-                                            </div>
+                                    <div class="card-body">
+                                        <div class="table-responsive">
+                                            <table class="table table-hover" id="alertsTable">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Timestamp</th>
+                                                        <th>Severity</th>
+                                                        <th>Signature</th>
+                                                        <th>Source</th>
+                                                        <th>Destination</th>
+                                                        <th>Actions</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% if status.alerts %}
+                                                        {% for alert in status.alerts %}
+                                                        <tr class="alert-row" data-severity="{{ alert.alert.severity }}">
+                                                            <td>{{ alert.timestamp }}</td>
+                                                            <td>
+                                                                <span class="badge severity-{{ ['critical','high','medium','low'][alert.alert.severity-1] }}">
+                                                                    {{ alert.alert.severity }}
+                                                                </span>
+                                                            </td>
+                                                            <td>{{ alert.alert.signature }}</td>
+                                                            <td>{{ alert.src_ip }}:{{ alert.src_port }}</td>
+                                                            <td>{{ alert.dest_ip }}:{{ alert.dest_port }}</td>
+                                                            <td>
+                                                                <button class="btn btn-sm btn-outline-info view-alert" 
+                                                                        data-alert="{{ alert | tojson | forceescape }}">
+                                                                    <i class="fas fa-eye"></i>
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                        {% endfor %}
+                                                    {% else %}
+                                                        <tr>
+                                                            <td colspan="6" class="text-center text-muted">
+                                                                No alerts to display. Suricata may not be running or no events detected.
+                                                            </td>
+                                                        </tr>
+                                                    {% endif %}
+                                                </tbody>
+                                            </table>
                                         </div>
                                     </div>
                                 </div>
-                                
-                                <div class="d-flex flex-wrap gap-2 mt-3">
-                                    <button class="btn btn-success" id="startIds">
-                                        <i class="fas fa-play"></i> Start IDS
-                                    </button>
-                                    <button class="btn btn-primary" id="startIps">
-                                        <i class="fas fa-shield-alt"></i> Start IPS
-                                    </button>
-                                    <button class="btn btn-warning" id="restartSuricata">
-                                        <i class="fas fa-redo"></i> Restart
-                                    </button>
-                                    <button class="btn btn-danger" id="stopSuricata">
-                                        <i class="fas fa-stop"></i> Stop
-                                    </button>
-                                </div>
-                                
-                                <div class="alert alert-info mt-3">
-                                    <i class="fas fa-info-circle me-2"></i>
-                                    <strong>Interface:</strong> {{ status.interface }} | 
-                                    <strong>Rules Loaded:</strong> {{ status.rules_count }}
-                                </div>
+
                             </div>
-                        </div>
 
-                        <div class="card mt-4">
-                            <div class="card-body">
-                                <h4 class="card-title">Custom Rules</h4>
-                                <form id="customRuleForm">
-                                    <div class="mb-3">
-                                        <label class="form-label">Rule Name</label>
-                                        <input type="text" class="form-control" name="rule_name" value="custom.rules" required>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label">Rule Content</label>
-                                        <textarea class="form-control rule-textarea" name="rule_content" rows="8" required
-                                            placeholder="alert http any any -> any any (msg:\"Custom Rule\"; content:\"malicious\"; sid:1000001;)"></textarea>
-                                    </div>
-                                    <button type="submit" class="btn btn-primary">
-                                        <i class="fas fa-save"></i> Add Rule
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
+                            <div class="col-md-12">
 
-                    <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <h4 class="card-title mb-0">Live Alerts</h4>
-                                    <div>
-                                        <button class="btn btn-sm btn-outline-secondary" id="refreshAlerts">
-                                            <i class="fas fa-sync-alt"></i> Refresh
-                                        </button>
-                                    </div>
-                                </div>
-                                
-                                <div class="table-responsive">
-                                    <table class="table table-hover" id="alertsTable">
-                                        <thead>
-                                            <tr>
-                                                <th>Timestamp</th>
-                                                <th>Severity</th>
-                                                <th>Signature</th>
-                                                <th>Source</th>
-                                                <th>Destination</th>
-                                                <th>Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {% if status.alerts %}
-                                                {% for alert in status.alerts %}
-                                                <tr class="alert-row" data-severity="{{ alert.alert.severity }}">
-                                                    <td>{{ alert.timestamp }}</td>
-                                                    <td>
-                                                        <span class="badge severity-{{ ['critical','high','medium','low'][alert.alert.severity-1] }}">
-                                                            {{ alert.alert.severity }}
-                                                        </span>
-                                                    </td>
-                                                    <td>{{ alert.alert.signature }}</td>
-                                                    <td>{{ alert.src_ip }}:{{ alert.src_port }}</td>
-                                                    <td>{{ alert.dest_ip }}:{{ alert.dest_port }}</td>
-                                                    <td>
-                                                        <button class="btn btn-sm btn-outline-info view-alert" 
-                                                                data-alert="{{ alert | tojson | forceescape }}">
-                                                            <i class="fas fa-eye"></i>
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                                {% endfor %}
-                                            {% else %}
-                                                <tr>
-                                                    <td colspan="6" class="text-center text-muted">
-                                                        No alerts to display. Suricata may not be running or no events detected.
-                                                    </td>
-                                                </tr>
-                                            {% endif %}
-                                        </tbody>
-                                    </table>
-
-
-                                    <div class="card mt-4">
+                                    <div class="card mb-4">
+                                        <div class="card-header">
+                                            <h5 class="mb-0"><i class="fas fa-shield-alt me-2"></i>Suricata Status</h5>
+                                        </div>
                                         <div class="card-body">
-                                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                                <h4 class="card-title mb-0">Live JSON Logs</h4>
-                                                <div>
-                                                    <button class="btn btn-sm btn-outline-success" id="startLiveLogs">
-                                                        <i class="fas fa-play"></i> Start
-                                                    </button>
-                                                    <button class="btn btn-sm btn-outline-danger" id="stopLiveLogs">
-                                                        <i class="fas fa-stop"></i> Stop
-                                                    </button>
-                                                    <button class="btn btn-sm btn-outline-secondary" id="clearLogs">
-                                                        <i class="fas fa-trash"></i> Clear
-                                                    </button>
+                                            <div class="row">
+                                                <div class="col-md-6 mb-3">
+                                                    <div class="card status-card h-100">
+                                                        <div class="card-body text-center">
+                                                            <h5 class="card-title">Service Status</h5>
+                                                            <div class="alert alert-{{ 'success' if status.running else 'danger' }} py-2">
+                                                                <i class="fas fa-{{ 'play-circle' if status.running else 'stop-circle' }} me-2"></i>
+                                                                {{ 'RUNNING' if status.running else 'STOPPED' }}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6 mb-3">
+                                                    <div class="card status-card h-100">
+                                                        <div class="card-body text-center">
+                                                            <h5 class="card-title">Operation Mode</h5>
+                                                            <div class="alert alert-{{ 'primary' if status.mode == 'ips' else 'info' }} py-2">
+                                                                <i class="fas fa-{{ 'shield-alt' if status.mode == 'ips' else 'eye' }} me-2"></i>
+                                                                {{ status.mode|upper }}
+                                                            </div>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                             
-                                            <div class="terminal-container">
-                                                <pre id="liveLogsDisplay" class="bg-dark text-light p-3 rounded" 
-                                                     style="height: 300px; overflow-y: auto;"></pre>
+                                            <div class="d-flex flex-wrap gap-2 mt-3">
+                                                <button class="btn btn-success" id="startIds">
+                                                    <i class="fas fa-play"></i> Start IDS
+                                                </button>
+                                                <button class="btn btn-primary" id="startIps">
+                                                    <i class="fas fa-shield-alt"></i> Start IPS
+                                                </button>
+                                                <button class="btn btn-warning" id="restartSuricata">
+                                                    <i class="fas fa-redo"></i> Restart
+                                                </button>
+                                                <button class="btn btn-danger" id="stopSuricata">
+                                                    <i class="fas fa-stop"></i> Stop
+                                                </button>
                                             </div>
                                             
-                                            <div class="form-check form-switch mt-2">
-                                                <input class="form-check-input" type="checkbox" id="autoScroll" checked>
-                                                <label class="form-check-label" for="autoScroll">Auto-scroll</label>
+                                            <div class="alert alert-info mt-3">
+                                                <i class="fas fa-info-circle me-2"></i>
+                                                <strong>Interface:</strong> {{ status.interface }} | 
+                                                <strong>Rules Loaded:</strong> {{ status.rules_count }}
                                             </div>
                                         </div>
                                     </div>
+    
+                                    <div class="card mb-4">
+                                        <div class="card-header">
+                                            <h5 class="mb-0"><i class="fas fa-edit me-2"></i>Custom Rules</h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <form id="customRuleForm">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Rule Name</label>
+                                                    <input type="text" class="form-control" name="rule_name" value="custom.rules" required>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label">Rule Content</label>
+                                                    <textarea class="form-control rule-textarea" name="rule_content" rows="8" required
+                                                        placeholder="alert http any any -> any any (msg:\"Custom Rule\"; content:\"malicious\"; sid:1000001;)"></textarea>
+                                                </div>
+                                                <button type="submit" class="btn btn-primary">
+                                                    <i class="fas fa-save"></i> Add Rule
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
                                 </div>
+                        </div>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+                
+                <!-- Alert Details Modal -->
+                <div class="modal fade" id="alertDetailsModal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title"><i class="fas fa-info-circle me-2"></i>Alert Details</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body" id="alertDetailsContent">
+                                <!-- Details will be inserted here by JavaScript -->
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                    <i class="fas fa-times me-1"></i> Close
+                                </button>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-            
-            <!-- Alert Details Modal -->
-            <div class="modal fade" id="alertDetailsModal" tabindex="-1" aria-hidden="true">
-                <div class="modal-dialog modal-lg">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title"><i class="fas fa-info-circle me-2"></i>Alert Details</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body" id="alertDetailsContent">
-                            <!-- Details will be inserted here by JavaScript -->
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                                <i class="fas fa-times me-1"></i> Close
-                            </button>
+                
+                <footer class="py-4 bg-light mt-auto">
+                    <div class="container-fluid px-4">
+                        <div class="d-flex align-items-center justify-content-between small">
+                            <div class="text-muted">Copyright &copy; LinuxAV-Solutions {{ year }}</div>
+                            <div>
+                                <span class="me-2">EDR Version: {{ version }}</span>
+                            </div>
                         </div>
                     </div>
-                </div>
+                </footer>
             </div>
-            
-            <footer class="footer text-center">
-                &copy; {{ year }} LinuxAV-Solutions EDR v{{ version }}
-            </footer>
         </div>
-    </div>
 
-    <script src="../static/assets/plugins/jquery/dist/jquery.min.js"></script>
-    <script src="../static/assets/plugins/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="../static/js/app-style-switcher.js"></script>
-    <script src="../static/js/waves.js"></script>
-    <script src="../static/js/sidebarmenu.js"></script>
-    <script src="../static/js/custom.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+        <script src="../static/js/scripts.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <script>
-    $(document).ready(function() {
-        toastr.options = {
-            "closeButton": true,
-            "progressBar": true,
-            "positionClass": "toast-top-right",
-            "timeOut": "5000"
-        };
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            toastr.options = {
+                "closeButton": true,
+                "progressBar": true,
+                "positionClass": "toast-top-right",
+                "timeOut": "5000"
+            };
 
-        // Load initial alerts
-        loadAlerts();
-
-        // Set up auto-refresh every 10 seconds
-        const alertRefresh = setInterval(loadAlerts, 10000);
-
-        // Manual refresh button
-        $('#refreshAlerts').click(function() {
-            loadAlerts();
-        });
-
-        // Suricata control buttons
-        $('#startIds').click(function() {
-            controlSuricata('start', 'ids');
-        });
-
-        $('#startIps').click(function() {
-            controlSuricata('start', 'ips');
-        });
-
-        $('#stopSuricata').click(function() {
-            controlSuricata('stop');
-        });
-
-        $('#restartSuricata').click(function() {
-            controlSuricata('restart');
-        });
-
-        // Custom rule form
-        $('#customRuleForm').submit(function(e) {
-            e.preventDefault();
-            const formData = $(this).serialize();
-            
-            Swal.fire({
-                title: 'Add Custom Rule',
-                text: 'Are you sure you want to add this rule?',
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonText: 'Add Rule',
-                cancelButtonText: 'Cancel'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    $.ajax({
-                        url: '/ids/rules',
-                        method: 'POST',
-                        data: formData,
-                        beforeSend: function() {
-                            toastr.info('Adding custom rule...');
-                        },
-                        success: function(response) {
-                            toastr.success('Rule added successfully');
-                            $('#customRuleForm')[0].reset();
-                            // Optionally refresh the page to show new rule status
-                            setTimeout(() => location.reload(), 1500);
-                        },
-                        error: function(xhr) {
-                            toastr.error(xhr.responseJSON.message || 'Failed to add rule');
-                        }
-                    });
-                }
-            });
-        });
-
-        // View alert details
-        $(document).on('click', '.view-alert, .alert-row', function() {
-            const alertData = $(this).data('alert') || $(this).closest('tr').data('alert');
-            showAlertDetails(alertData);
-        });
-
-        function loadAlerts() {
-            $.ajax({
-                url: '/ids/alerts',
-                method: 'GET',
-                success: function(response) {
-                    updateAlertsTable(response.alerts);
-                },
-                error: function() {
-                    toastr.error('Failed to load alerts');
-                }
-            });
-        }
-
-        function updateAlertsTable(alerts) {
-            const $tbody = $('#alertsTable tbody');
-            $tbody.empty();
-            
-            if (alerts.length === 0) {
-                $tbody.append(`
-                    <tr>
-                        <td colspan="6" class="text-center text-muted">
-                            No alerts to display. Suricata may not be running or no events detected.
-                        </td>
-                    </tr>
-                `);
-                return;
+            // Update system time every second
+            function updateSystemTime() {
+                const now = new Date();
+                const timeString = now.toISOString().replace('T', ' ').substr(0, 19);
+                document.getElementById('current-time').textContent = timeString;
             }
-            
-            alerts.forEach(alert => {
-                const timestamp = new Date(alert.timestamp).toLocaleString();
-                const severity = alert.alert?.severity || 3;
-                let severityClass = 'severity-medium';
-                
-                if (severity === 1) severityClass = 'severity-critical';
-                else if (severity === 2) severityClass = 'severity-high';
-                else if (severity === 4) severityClass = 'severity-low';
-                
-                $tbody.append(`
-                    <tr class="alert-row" data-severity="${severity}" data-alert='${JSON.stringify(alert)}'>
-                        <td>${timestamp}</td>
-                        <td><span class="badge ${severityClass}">${severity}</span></td>
-                        <td>${alert.alert?.signature || 'Unknown'}</td>
-                        <td>${alert.src_ip}:${alert.src_port || 'any'}</td>
-                        <td>${alert.dest_ip}:${alert.dest_port || 'any'}</td>
-                        <td>
-                            <button class="btn btn-sm btn-outline-info view-alert">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                        </td>
-                    </tr>
-                `);
-            });
-        }
+            setInterval(updateSystemTime, 1000);
 
-        function showAlertDetails(alert) {
-            let details = `
-                <div class="row">
-                    <div class="col-md-6">
-                        <h6><i class="fas fa-info-circle me-2"></i>Alert Information</h6>
-                        <p><strong>Signature:</strong> ${alert.alert?.signature || 'Unknown'}</p>
-                        <p><strong>Severity:</strong> <span class="badge ${getSeverityClass(alert.alert?.severity)}">
-                            ${alert.alert?.severity || 'Unknown'}
-                        </span></p>
-                        <p><strong>Category:</strong> ${alert.alert?.category || 'Unknown'}</p>
-                        <p><strong>Timestamp:</strong> ${new Date(alert.timestamp).toLocaleString()}</p>
-                    </div>
-                    <div class="col-md-6">
-                        <h6><i class="fas fa-network-wired me-2"></i>Flow Information</h6>
-                        <p><strong>Source:</strong> ${alert.src_ip}:${alert.src_port || 'any'}</p>
-                        <p><strong>Destination:</strong> ${alert.dest_ip}:${alert.dest_port || 'any'}</p>
-                        <p><strong>Protocol:</strong> ${alert.proto || 'Unknown'}</p>
-                    </div>
-                </div>
-            `;
-            
-            if (alert.http) {
-                details += `
-                    <hr>
-                    <h6><i class="fas fa-globe me-2"></i>HTTP Details</h6>
+            // Load initial alerts
+            loadAlerts();
+
+            // Set up auto-refresh every 10 seconds
+            const alertRefresh = setInterval(loadAlerts, 10000);
+
+            // Manual refresh button
+            $('#refreshAlerts').click(function() {
+                loadAlerts();
+            });
+
+            // Suricata control buttons
+            $('#startIds').click(function() {
+                controlSuricata('start', 'ids');
+            });
+
+            $('#startIps').click(function() {
+                controlSuricata('start', 'ips');
+            });
+
+            $('#stopSuricata').click(function() {
+                controlSuricata('stop');
+            });
+
+            $('#restartSuricata').click(function() {
+                controlSuricata('restart');
+            });
+
+            // Custom rule form
+            $('#customRuleForm').submit(function(e) {
+                e.preventDefault();
+                const formData = $(this).serialize();
+                
+                Swal.fire({
+                    title: 'Add Custom Rule',
+                    text: 'Are you sure you want to add this rule?',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Add Rule',
+                    cancelButtonText: 'Cancel'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: '/ids/rules',
+                            method: 'POST',
+                            data: formData,
+                            beforeSend: function() {
+                                toastr.info('Adding custom rule...');
+                            },
+                            success: function(response) {
+                                toastr.success('Rule added successfully');
+                                $('#customRuleForm')[0].reset();
+                                setTimeout(() => location.reload(), 1500);
+                            },
+                            error: function(xhr) {
+                                toastr.error(xhr.responseJSON.message || 'Failed to add rule');
+                            }
+                        });
+                    }
+                });
+            });
+
+            // View alert details
+            $(document).on('click', '.view-alert, .alert-row', function() {
+                const alertData = $(this).data('alert') || $(this).closest('tr').data('alert');
+                showAlertDetails(alertData);
+            });
+
+            function loadAlerts() {
+                $.ajax({
+                    url: '/ids/alerts',
+                    method: 'GET',
+                    success: function(response) {
+                        updateAlertsTable(response.alerts);
+                    },
+                    error: function() {
+                        toastr.error('Failed to load alerts');
+                    }
+                });
+            }
+
+            function updateAlertsTable(alerts) {
+                const $tbody = $('#alertsTable tbody');
+                $tbody.empty();
+                
+                if (alerts.length === 0) {
+                    $tbody.append(`
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">
+                                No alerts to display. Suricata may not be running or no events detected.
+                            </td>
+                        </tr>
+                    `);
+                    return;
+                }
+                
+                alerts.forEach(alert => {
+                    const timestamp = new Date(alert.timestamp).toLocaleString();
+                    const severity = alert.alert?.severity || 3;
+                    let severityClass = 'severity-medium';
+                    
+                    if (severity === 1) severityClass = 'severity-critical';
+                    else if (severity === 2) severityClass = 'severity-high';
+                    else if (severity === 4) severityClass = 'severity-low';
+                    
+                    $tbody.append(`
+                        <tr class="alert-row" data-severity="${severity}" data-alert='${JSON.stringify(alert)}'>
+                            <td>${timestamp}</td>
+                            <td><span class="badge ${severityClass}">${severity}</span></td>
+                            <td>${alert.alert?.signature || 'Unknown'}</td>
+                            <td>${alert.src_ip}:${alert.src_port || 'any'}</td>
+                            <td>${alert.dest_ip}:${alert.dest_port || 'any'}</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-info view-alert">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `);
+                });
+            }
+
+            function showAlertDetails(alert) {
+                let details = `
                     <div class="row">
                         <div class="col-md-6">
-                            <p><strong>Hostname:</strong> ${alert.http.hostname || 'N/A'}</p>
-                            <p><strong>URL:</strong> ${alert.http.url || 'N/A'}</p>
+                            <h6><i class="fas fa-info-circle me-2"></i>Alert Information</h6>
+                            <p><strong>Signature:</strong> ${alert.alert?.signature || 'Unknown'}</p>
+                            <p><strong>Severity:</strong> <span class="badge ${getSeverityClass(alert.alert?.severity)}">
+                                ${alert.alert?.severity || 'Unknown'}
+                            </span></p>
+                            <p><strong>Category:</strong> ${alert.alert?.category || 'Unknown'}</p>
+                            <p><strong>Timestamp:</strong> ${new Date(alert.timestamp).toLocaleString()}</p>
                         </div>
                         <div class="col-md-6">
-                            <p><strong>Method:</strong> ${alert.http.http_method || 'N/A'}</p>
-                            <p><strong>User Agent:</strong> ${alert.http.http_user_agent || 'N/A'}</p>
+                            <h6><i class="fas fa-network-wired me-2"></i>Flow Information</h6>
+                            <p><strong>Source:</strong> ${alert.src_ip}:${alert.src_port || 'any'}</p>
+                            <p><strong>Destination:</strong> ${alert.dest_ip}:${alert.dest_port || 'any'}</p>
+                            <p><strong>Protocol:</strong> ${alert.proto || 'Unknown'}</p>
                         </div>
                     </div>
                 `;
-            }
-            
-            $('#alertDetailsContent').html(details);
-            $('#alertDetailsModal').modal('show');
-        }
-
-        function getSeverityClass(severity) {
-            severity = severity || 3;
-            if (severity === 1) return 'severity-critical';
-            if (severity === 2) return 'severity-high';
-            if (severity === 4) return 'severity-low';
-            return 'severity-medium';
-        }
-
-        function controlSuricata(action, mode) {
-            Swal.fire({
-                title: `Confirm ${action.charAt(0).toUpperCase() + action.slice(1)}`,
-                text: `Are you sure you want to ${action} Suricata in ${mode || 'current'} mode?`,
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonText: `Yes, ${action}`,
-                cancelButtonText: 'Cancel'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    $.ajax({
-                        url: '/ids/control',
-                        method: 'POST',
-                        data: {
-                            action: action,
-                            mode: mode || 'ids'
-                        },
-                        beforeSend: function() {
-                            toastr.info(`Processing ${action} request...`);
-                        },
-                        success: function(response) {
-                            toastr.success(`Suricata ${action}ed successfully`);
-                            setTimeout(() => location.reload(), 1500);
-                        },
-                        error: function(xhr) {
-                            toastr.error(`Failed to ${action} Suricata: ${xhr.responseJSON?.message || ''}`);
-                        }
-                    });
+                
+                if (alert.http) {
+                    details += `
+                        <hr>
+                        <h6><i class="fas fa-globe me-2"></i>HTTP Details</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Hostname:</strong> ${alert.http.hostname || 'N/A'}</p>
+                                <p><strong>URL:</strong> ${alert.http.url || 'N/A'}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Method:</strong> ${alert.http.http_method || 'N/A'}</p>
+                                <p><strong>User Agent:</strong> ${alert.http.http_user_agent || 'N/A'}</p>
+                            </div>
+                        </div>
+                    `;
                 }
-            });
-        }
-    });
-    </script>
-
-    <script>
-
-
-
-// Live logs functionality
-let logEventSource;
-
-function startLiveLogs() {
-    if (logEventSource) return;
-    
-    const logDisplay = $('#liveLogsDisplay');
-    logDisplay.append('[+] Starting live log stream...\n');
-    
-    logEventSource = new EventSource('/ids/logs/live');
-    
-    logEventSource.onmessage = function(e) {
-        try {
-            const logEntry = JSON.parse(e.data);
-            logDisplay.append(logEntry + '\n');
-            
-            if ($('#autoScroll').is(':checked')) {
-                logDisplay.scrollTop(logDisplay[0].scrollHeight);
+                
+                $('#alertDetailsContent').html(details);
+                $('#alertDetailsModal').modal('show');
             }
-        } catch (err) {
-            console.error('Error parsing log entry:', err);
-        }
-    };
-    
-    logEventSource.onerror = function() {
-        logDisplay.append('[!] Error in log stream, reconnecting...\n');
-        setTimeout(startLiveLogs, 5000);
-    };
-}
 
-function stopLiveLogs() {
-    if (logEventSource) {
-        logEventSource.close();
-        logEventSource = null;
-        $('#liveLogsDisplay').append('[+] Stopped live log stream\n');
-    }
-}
+            function getSeverityClass(severity) {
+                severity = severity || 3;
+                if (severity === 1) return 'severity-critical';
+                if (severity === 2) return 'severity-high';
+                if (severity === 4) return 'severity-low';
+                return 'severity-medium';
+            }
 
-function clearLogs() {
-    $('#liveLogsDisplay').empty();
-}
+            function controlSuricata(action, mode) {
+                Swal.fire({
+                    title: `Confirm ${action.charAt(0).toUpperCase() + action.slice(1)}`,
+                    text: `Are you sure you want to ${action} Suricata in ${mode || 'current'} mode?`,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: `Yes, ${action}`,
+                    cancelButtonText: 'Cancel'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: '/ids/control',
+                            method: 'POST',
+                            data: {
+                                action: action,
+                                mode: mode || 'ids'
+                            },
+                            beforeSend: function() {
+                                toastr.info(`Processing ${action} request...`);
+                            },
+                            success: function(response) {
+                                toastr.success(`Suricata ${action}ed successfully`);
+                                setTimeout(() => location.reload(), 1500);
+                            },
+                            error: function(xhr) {
+                                toastr.error(`Failed to ${action} Suricata: ${xhr.responseJSON?.message || ''}`);
+                            }
+                        });
+                    }
+                });
+            }
 
-// Button event handlers
-$('#startLiveLogs').click(startLiveLogs);
-$('#stopLiveLogs').click(stopLiveLogs);
-$('#clearLogs').click(clearLogs);
+            // Live logs functionality
+            let logEventSource;
 
-// Start automatically if desired
-// startLiveLogs();
+            function startLiveLogs() {
+                if (logEventSource) return;
+                
+                const logDisplay = $('#liveLogsDisplay');
+                logDisplay.append('[+] Starting live log stream...\n');
+                
+                logEventSource = new EventSource('/ids/logs/live');
+                
+                logEventSource.onmessage = function(e) {
+                    try {
+                        const logEntry = JSON.parse(e.data);
+                        logDisplay.append(formatLogEntry(logEntry) + '\n');
+                        
+                        if ($('#autoScroll').is(':checked')) {
+                            logDisplay.scrollTop(logDisplay[0].scrollHeight);
+                        }
+                    } catch (err) {
+                        console.error('Error parsing log entry:', err);
+                    }
+                };
+                
+                logEventSource.onerror = function() {
+                    logDisplay.append('[!] Error in log stream, reconnecting...\n');
+                    setTimeout(startLiveLogs, 5000);
+                };
+            }
 
+            function stopLiveLogs() {
+                if (logEventSource) {
+                    logEventSource.close();
+                    logEventSource = null;
+                    $('#liveLogsDisplay').append('[+] Stopped live log stream\n');
+                }
+            }
 
+            function clearLogs() {
+                $('#liveLogsDisplay').empty();
+            }
 
+// Update the formatLogEntry function to properly handle the JSON
+            function formatLogEntry(entry) {
+                try {
+                    const data = JSON.parse(entry);
+                    if (data.event_type === 'alert') {
+                        return `[ALERT] ${data.timestamp} - ${data.alert?.signature || 'Unknown'} ` +
+                            `(${data.src_ip}:${data.src_port || 'any'} -> ${data.dest_ip}:${data.dest_port || 'any'})`;
+                    }
+                    return entry;
+                } catch {
+                    return entry;
+                }
+            }
 
-function formatLogEntry(rawJson) {
-    try {
-        const entry = JSON.parse(rawJson);
-        if (entry.event_type === 'alert') {
-            return `[ALERT] ${entry.alert.signature} (${entry.src_ip} -> ${entry.dest_ip})`;
-        }
-        return rawJson; // Fallback to raw display
-    } catch {
-        return rawJson;
-    }
-}
+            // Update the alerts table rendering
+            function updateAlertsTable(alerts) {
+                const $tbody = $('#alertsTable tbody');
+                $tbody.empty();
+                
+                if (alerts.length === 0) {
+                    $tbody.append(`
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">
+                                No alerts to display. Suricata may not be running or no events detected.
+                            </td>
+                        </tr>
+                    `);
+                    return;
+                }
+                
+                alerts.forEach(alert => {
+                    const timestamp = new Date(alert.timestamp).toLocaleString();
+                    const severity = alert.alert?.severity || 3;
+                    let severityClass = 'severity-medium';
+                    
+                    if (severity === 1) severityClass = 'severity-critical';
+                    else if (severity === 2) severityClass = 'severity-high';
+                    else if (severity === 4) severityClass = 'severity-low';
+                    
+                    $tbody.append(`
+                        <tr class="alert-row" data-severity="${severity}" data-alert='${JSON.stringify(alert)}'>
+                            <td>${timestamp}</td>
+                            <td><span class="badge ${severityClass}">${severity}</span></td>
+                            <td>${alert.alert?.signature || 'Unknown'}</td>
+                            <td>${alert.src_ip}:${alert.src_port || 'any'}</td>
+                            <td>${alert.dest_ip}:${alert.dest_port || 'any'}</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-info view-alert">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `);
+                });
+            }
 
-// Then update the onmessage handler:
-logEventSource.onmessage = function(e) {
-    const formatted = formatLogEntry(e.data);
-    logDisplay.append(formatted + '\n');
-    // ... rest of the code
-};
-    </script>
-</body>
+            // Button event handlers
+            $('#startLiveLogs').click(startLiveLogs);
+            $('#stopLiveLogs').click(stopLiveLogs);
+            $('#clearLogs').click(clearLogs);
+        });
+        </script>
+    </body>
 </html>

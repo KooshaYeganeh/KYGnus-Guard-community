@@ -1,243 +1,287 @@
 <!DOCTYPE html>
-<html dir="ltr" lang="en">
-
-<head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Security Scans - LinuxAV-Solutions EDR</title>
-    <link rel="icon" type="image/png" sizes="16x16" href="../static/assets/images/favicon.png">
-    <link href="../static/css/style.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet">
-    <style>
-        .scan-card {
-            transition: all 0.3s ease;
-            height: 100%;
-        }
-        .scan-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-        }
-        .scan-btn {
-            min-width: 120px;
-            margin-bottom: 5px;
-        }
-        .status-badge {
-            font-size: 0.8rem;
-            padding: 5px 8px;
-        }
-        .scan-icon {
-            font-size: 1.5rem;
-            margin-right: 8px;
-        }
-    </style>
-</head>
-
-<body>
-    <div class="preloader">
-        <div class="lds-ripple">
-            <div class="lds-pos"></div>
-            <div class="lds-pos"></div>
-        </div>
-    </div>
-    <div id="main-wrapper" data-layout="vertical" data-navbarbg="skin5" data-sidebartype="full"
-        data-sidebar-position="absolute" data-header-position="absolute" data-boxed-layout="full">
-        <header class="topbar" data-navbarbg="skin6">
-            <nav class="navbar top-navbar navbar-expand-md navbar-dark" style="background-color: rgba(0, 255, 34, 0.256);">
-                <div class="navbar-header" data-logobg="skin6">
-                    <a class="navbar-brand" href="index.html">
-                        <b class="logo-icon">
-                            <img src="../static/openSUSE.png" alt="homepage" class="dark-logo" height="120" width="180">
-                        </b>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+        <meta name="description" content="LinuxAV-Solutions EDR Security Scans" />
+        <meta name="author" content="LinuxAV-Solutions" />
+        <title>Security Scans - LinuxAV-Solutions EDR</title>
+        <link href="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/style.min.css" rel="stylesheet" />
+        <link href="../static/css/styles.css" rel="stylesheet" />
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet">
+        <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
+        <style>
+            .scan-card {
+                transition: transform 0.3s;
+                height: 100%;
+            }
+            .scan-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            }
+            .scan-btn {
+                min-width: 120px;
+                margin-bottom: 5px;
+            }
+            .status-badge {
+                font-size: 0.8rem;
+                padding: 5px 8px;
+            }
+            .scan-icon {
+                font-size: 1.5rem;
+                margin-right: 8px;
+            }
+            .card-header-tabs .nav-link {
+                padding: 0.75rem 1rem;
+            }
+        </style>
+    </head>
+    <body class="sb-nav-fixed">
+        <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
+            <!-- Navbar Brand-->
+            <a class="navbar-brand ps-3" href="index.html">
+                <i class="fas fa-shield-alt me-2"></i>myEDR
+            </a>
+            <!-- Sidebar Toggle-->
+            <button class="btn btn-link btn-sm order-1 order-lg-0 me-4 me-lg-0" id="sidebarToggle" href="#!">
+                <i class="fas fa-bars"></i>
+            </button>
+            
+            <!-- System Time Display -->
+            <div class="mx-auto text-white" id="system-time">
+                <i class="fas fa-clock me-2"></i>
+                <span id="current-time">{{ now.strftime('%Y-%m-%d %H:%M:%S') }}</span>
+            </div>
+            
+            <!-- Navbar-->
+            <ul class="navbar-nav ms-auto ms-md-0 me-3 me-lg-4">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-user fa-fw"></i>
+                        <span class="d-none d-lg-inline">Admin</span>
                     </a>
-                    <a class="nav-toggler waves-effect waves-light text-dark d-block d-md-none"
-                        href="javascript:void(0)"><i class="ti-menu ti-close"></i></a>
-                </div>
-
-                <br><br>
-                <div class="navbar-collapse collapse" id="navbarSupportedContent" data-navbarbg="skin5">
-                    <ul class="navbar-nav me-auto mt-md-0 ">
-                        <li class="nav-item hidden-sm-down">
-                            <form class="app-search ps-3">
-                                <input type="text" class="form-control" placeholder="Search for..."> <a
-                                    class="srh-btn"><i class="ti-search"></i></a>
-                            </form>
-                        </li>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                        <li><a class="dropdown-item" href="#!"><i class="fas fa-cog fa-fw me-2"></i>Settings</a></li>
+                        <li><a class="dropdown-item" href="#!"><i class="fas fa-list fa-fw me-2"></i>Activity Log</a></li>
+                        <li><hr class="dropdown-divider" /></li>
+                        <li><a class="dropdown-item" href="/logout"><i class="fas fa-sign-out-alt fa-fw me-2"></i>Logout</a></li>
                     </ul>
-                </div>
-            </nav>
-            <br><br>
-        </header>
-        <br><br>
-        <aside class="left-sidebar" data-sidebarbg="skin6">
-            <br><br>
-            <div class="scroll-sidebar">
-                <nav class="sidebar-nav">
-                    <ul id="sidebarnav">
-                        <!-- User Profile-->
-                        <li class="sidebar-item"> <a class="sidebar-link waves-effect waves-dark sidebar-link"
-                                href="/" aria-expanded="false"><i class="me-3 fa fa-home"
-                                aria-hidden="true"></i><span class="hide-menu">Dashboard</span></a></li>
-                        <li class="sidebar-item"> <a class="sidebar-link waves-effect waves-dark sidebar-link"
-                                href="/scan" aria-expanded="false">
-                                <i class="me-3 fa fa-bug" aria-hidden="true"></i><span
-                                    class="hide-menu">scan</span></a>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link" id="alertsDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-bell fa-fw"></i>
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                            3+
+                            <span class="visually-hidden">unread alerts</span>
+                        </span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end p-2" aria-labelledby="alertsDropdown" style="min-width: 300px;">
+                        <li><h6 class="dropdown-header">Security Alerts</h6></li>
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center" href="#">
+                                <div class="me-3">
+                                    <div class="bg-danger icon-circle"><i class="fas fa-exclamation-triangle text-white"></i></div>
+                                </div>
+                                <div>
+                                    <span class="small text-gray-500">Just now</span>
+                                    <p class="mb-0 small">Malicious process detected</p>
+                                </div>
+                            </a>
                         </li>
-                        <li class="sidebar-item"> <a class="sidebar-link waves-effect waves-dark sidebar-link"
-                                href="/services" aria-expanded="false"><i class="me-3 fa fa-table"
-                                    aria-hidden="true"></i><span class="hide-menu">Services</span></a></li>
-                        <li class="sidebar-item"> <a class="sidebar-link waves-effect waves-dark sidebar-link"
-                                href="/firewall" aria-expanded="false"><i class="me-3 fa fa-fire"
-                                    aria-hidden="true"></i><span class="hide-menu">Firewall</span></a></li>
-                        <li class="sidebar-item"> <a class="sidebar-link waves-effect waves-dark sidebar-link"
-                                href="/ids" aria-expanded="false"><i class="me-3 fa fa-eye"
-                                    aria-hidden="true"></i><span class="hide-menu">IDS</span></a></li>
-                        <li class="sidebar-item"> <a class="sidebar-link waves-effect waves-dark sidebar-link"
-                                href="/process" aria-expanded="false"><i class="me-3 fa fa-table"
-                                    aria-hidden="true"></i><span class="hide-menu">Process</span></a></li>
-                        <li class="sidebar-item"> <a class="sidebar-link waves-effect waves-dark sidebar-link"
-                                        href="/ai_detection" aria-expanded="false"><i class="me-3 fa fa-columns"
-                                            aria-hidden="true"></i><span class="hide-menu">AI Detection</span></a></li>
-                        <li class="sidebar-item"> <a class="sidebar-link waves-effect waves-dark sidebar-link"
-                                href="/logout" aria-expanded="false"><i class="me-3 fa fa-user"
-                                    aria-hidden="true"></i><span class="hide-menu">Logout</span></a></li>
-
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center" href="#">
+                                <div class="me-3">
+                                    <div class="bg-warning icon-circle"><i class="fas fa-exclamation text-white"></i></div>
+                                </div>
+                                <div>
+                                    <span class="small text-gray-500">5 min ago</span>
+                                    <p class="mb-0 small">Suspicious network activity</p>
+                                </div>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center" href="#">
+                                <div class="me-3">
+                                    <div class="bg-primary icon-circle"><i class="fas fa-info-circle text-white"></i></div>
+                                </div>
+                                <div>
+                                    <span class="small text-gray-500">1 hour ago</span>
+                                    <p class="mb-0 small">Firewall rule added</p>
+                                </div>
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider" /></li>
+                        <li><a class="dropdown-item text-center small" href="#">View All Alerts</a></li>
                     </ul>
-
+                </li>
+            </ul>
+        </nav>
+        <div id="layoutSidenav">
+            <div id="layoutSidenav_nav">
+                <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">
+                    <div class="sb-sidenav-menu">
+                        <div class="nav">
+                            <div class="sb-sidenav-menu-heading">Core</div>
+                            <a class="nav-link" href="/">
+                                <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
+                                Dashboard
+                            </a>
+                            <div class="sb-sidenav-menu-heading">Security Modules</div>
+                            <a class="nav-link active" href="/scan">
+                                <div class="sb-nav-link-icon"><i class="fas fa-search"></i></div>
+                                Scan Management
+                            </a>
+                            <a class="nav-link" href="/network">
+                                <div class="sb-nav-link-icon"><i class="fas fa-network-wired"></i></div>
+                                Network Monitoring
+                            </a>
+                            <a class="nav-link" href="/ids">
+                                <div class="sb-nav-link-icon"><i class="fas fa-shield-virus"></i></div>
+                                IDS/IPS
+                            </a>
+                            <a class="nav-link" href="/firewall">
+                                <div class="sb-nav-link-icon"><i class="fas fa-fire"></i></div>
+                                Firewall
+                            </a>
+                            <a class="nav-link" href="/services">
+                                <div class="sb-nav-link-icon"><i class="fas fa-server"></i></div>
+                                Services
+                            </a>
+                        </div>
+                    </div>
+                    <div class="sb-sidenav-footer">
+                        <div class="small">Logged in as:</div>
+                        EDR Administrator
+                        <div class="small mt-1">Version: {{ version }}</div>
+                    </div>
                 </nav>
             </div>
-        </aside>
-        <div class="page-wrapper">
-            <div class="page-breadcrumb">
-                <div class="row align-items-center">
-                    <div class="col-md-6 col-8 align-self-center">
-                        <h3 class="page-title mb-0 p-0">Security Scans</h3>
-                        <div class="d-flex align-items-center">
-                            <nav aria-label="breadcrumb">
-                                <ol class="breadcrumb">
-                                    <li class="breadcrumb-item"><a href="index.html">Home</a></li>
-                                    <li class="breadcrumb-item active" aria-current="page">Scans</li>
-                                </ol>
-                            </nav>
-                        </div>
-                    </div>
-                    <div class="col-md-6 col-4 align-self-center">
-                        <div class="text-end">
-                            <span class="badge bg-light text-dark">v{{ version }}</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="container-fluid">
-                <div class="row">
-                    <div class="col-12">
-                        <div class="card">
-                            <div class="card-body">
-                                <h4 class="card-title">Run Security Scans</h4>
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="card scan-card">
-                                            <div class="card-body">
-                                                <h5 class="card-title"><i class="fas fa-bolt scan-icon"></i>Quick Scans</h5>
-                                                <div class="mb-3">
-                                                    <label class="form-label">Scan Path</label>
-                                                    <select class="form-select" id="scanPath">
-                                                        {% for path in scan_paths %}
-                                                        <option value="{{ path }}">{{ path }}</option>
-                                                        {% endfor %}
-                                                    </select>
+            <div id="layoutSidenav_content">
+                <main>
+                    <div class="container-fluid px-4">
+                        <h1 class="mt-4">Security Scans</h1>
+                        <ol class="breadcrumb mb-4">
+                            <li class="breadcrumb-item"><a href="/">Dashboard</a></li>
+                            <li class="breadcrumb-item active">Scan Management</li>
+                        </ol>
+                        
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="card mb-4">
+                                    <div class="card-header">
+                                        <h5 class="mb-0"><i class="fas fa-search me-2"></i>Run Security Scans</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="card scan-card h-100">
+                                                    <div class="card-body">
+                                                        <h5 class="card-title"><i class="fas fa-bolt scan-icon"></i>Quick Scans</h5>
+                                                        <div class="mb-3">
+                                                            <label class="form-label">Scan Path</label>
+                                                            <select class="form-select" id="scanPath">
+                                                                {% for path in scan_paths %}
+                                                                <option value="{{ path }}">{{ path }}</option>
+                                                                {% endfor %}
+                                                            </select>
+                                                        </div>
+                                                        <div class="d-flex flex-wrap gap-2">
+                                                            <button class="btn btn-primary run-scan scan-btn" data-type="clamav">
+                                                                <i class="fas fa-shield-virus"></i> ClamAV
+                                                            </button>
+                                                            <button class="btn btn-info run-scan scan-btn" data-type="maldet">
+                                                                <i class="fas fa-biohazard"></i> Maldet
+                                                            </button>
+                                                            <button class="btn btn-warning run-scan scan-btn" data-type="rkhunter">
+                                                                <i class="fas fa-search"></i> Rkhunter
+                                                            </button>
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                                <div class="d-flex flex-wrap gap-2">
-                                                    <button class="btn btn-primary run-scan scan-btn" data-type="clamav">
-                                                        <i class="fas fa-shield-virus"></i> ClamAV
-                                                    </button>
-                                                    <button class="btn btn-info run-scan scan-btn" data-type="maldet">
-                                                        <i class="fas fa-biohazard"></i> Maldet
-                                                    </button>
-                                                    <button class="btn btn-warning run-scan scan-btn" data-type="rkhunter">
-                                                        <i class="fas fa-search"></i> Rkhunter
-                                                    </button>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="card scan-card h-100">
+                                                    <div class="card-body">
+                                                        <h5 class="card-title"><i class="fas fa-file-code scan-icon"></i>YARA Scans</h5>
+                                                        <div class="mb-3">
+                                                            <label class="form-label">YARA Rule</label>
+                                                            <select class="form-select" id="yaraRule">
+                                                                {% for rule in yara_rules %}
+                                                                <option value="{{ rule }}">{{ rule }}</option>
+                                                                {% endfor %}
+                                                            </select>
+                                                        </div>
+                                                        <div class="d-flex flex-wrap gap-2">
+                                                            <button class="btn btn-danger run-scan scan-btn" data-type="yara">
+                                                                <i class="fas fa-play"></i> Run Scan
+                                                            </button>
+                                                            <button class="btn btn-secondary scan-btn" data-bs-toggle="modal" data-bs-target="#uploadYaraModal">
+                                                                <i class="fas fa-upload"></i> Upload Rule
+                                                            </button>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="card scan-card">
-                                            <div class="card-body">
-                                                <h5 class="card-title"><i class="fas fa-file-code scan-icon"></i>YARA Scans</h5>
-                                                <div class="mb-3">
-                                                    <label class="form-label">YARA Rule</label>
-                                                    <select class="form-select" id="yaraRule">
-                                                        {% for rule in yara_rules %}
-                                                        <option value="{{ rule }}">{{ rule }}</option>
-                                                        {% endfor %}
-                                                    </select>
-                                                </div>
-                                                <div class="d-flex flex-wrap gap-2">
-                                                    <button class="btn btn-danger run-scan scan-btn" data-type="yara">
-                                                        <i class="fas fa-play"></i> Run Scan
-                                                    </button>
-                                                    <button class="btn btn-secondary scan-btn" data-bs-toggle="modal" data-bs-target="#uploadYaraModal">
-                                                        <i class="fas fa-upload"></i> Upload Rule
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="row mt-4">
-                                    <div class="col-12">
-                                        <div class="card">
-                                            <div class="card-body">
-                                                <h4 class="card-title"><i class="fas fa-list-alt me-2"></i>Scan Results</h4>
-                                                <div class="table-responsive">
-                                                    <table class="table table-hover" id="scanResultsTable">
-                                                        <thead>
-                                                            <tr>
-                                                                <th>Timestamp</th>
-                                                                <th>Scan Type</th>
-                                                                <th>Path</th>
-                                                                <th>Findings</th>
-                                                                <th>Status</th>
-                                                                <th>Actions</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody>
-                                                            {% for scan in last_scans %}
-                                                            <tr>
-                                                                <td>{{ scan.timestamp | datetimeformat }}</td>
-                                                                <td><span class="badge bg-primary">{{ scan.type | upper }}</span></td>
-                                                                <td><code>{{ scan.path | truncate(30) }}</code></td>
-                                                                <td>
-                                                                    {% if scan.results %}
-                                                                        <span class="badge bg-{{ 'danger' if scan.results|length > 0 else 'success' }}">
-                                                                            {{ scan.results | length }} finding(s)
-                                                                        </span>
+                                        
+                                        <div class="row mt-4">
+                                            <div class="col-12">
+                                                <div class="card">
+                                                    <div class="card-header">
+                                                        <h5 class="mb-0"><i class="fas fa-list-alt me-2"></i>Scan Results</h5>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <div class="table-responsive">
+                                                            <table class="table table-hover" id="scanResultsTable">
+                                                                <thead>
+                                                                    <tr>
+                                                                        <th>Timestamp</th>
+                                                                        <th>Scan Type</th>
+                                                                        <th>Path</th>
+                                                                        <th>Findings</th>
+                                                                        <th>Status</th>
+                                                                        <th>Actions</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    {% for scan in last_scans %}
+                                                                    <tr>
+                                                                        <td>{{ scan.timestamp | datetimeformat }}</td>
+                                                                        <td><span class="badge bg-primary">{{ scan.type | upper }}</span></td>
+                                                                        <td><code>{{ scan.path | truncate(30) }}</code></td>
+                                                                        <td>
+                                                                            {% if scan.results %}
+                                                                                <span class="badge bg-{{ 'danger' if scan.results|length > 0 else 'success' }}">
+                                                                                    {{ scan.results | length }} finding(s)
+                                                                                </span>
+                                                                            {% else %}
+                                                                                <span class="badge bg-success">0 findings</span>
+                                                                            {% endif %}
+                                                                        </td>
+                                                                        <td>
+                                                                            <span class="badge bg-{{ 'success' if scan.status == 'clean' else 'danger' }} status-badge">
+                                                                                {{ scan.status | capitalize }}
+                                                                            </span>
+                                                                        </td>
+                                                                        <td>
+                                                                            <button class="btn btn-sm btn-outline-info view-details" 
+                                                                                    data-scan="{{ scan | tojson | forceescape }}">
+                                                                                <i class="fas fa-eye"></i> Details
+                                                                            </button>
+                                                                        </td>
+                                                                    </tr>
                                                                     {% else %}
-                                                                        <span class="badge bg-success">0 findings</span>
-                                                                    {% endif %}
-                                                                </td>
-                                                                <td>
-                                                                    <span class="badge bg-{{ 'success' if scan.status == 'clean' else 'danger' }} status-badge">
-                                                                        {{ scan.status | capitalize }}
-                                                                    </span>
-                                                                </td>
-                                                                <td>
-                                                                    <button class="btn btn-sm btn-outline-info view-details" 
-                                                                            data-scan="{{ scan | tojson | forceescape }}">
-                                                                        <i class="fas fa-eye"></i> Details
-                                                                    </button>
-                                                                </td>
-                                                            </tr>
-                                                            {% else %}
-                                                            <tr>
-                                                                <td colspan="6" class="text-center text-muted">No scan results available</td>
-                                                            </tr>
-                                                            {% endfor %}
-                                                        </tbody>
-                                                    </table>
+                                                                    <tr>
+                                                                        <td colspan="6" class="text-center text-muted">No scan results available</td>
+                                                                    </tr>
+                                                                    {% endfor %}
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -246,217 +290,227 @@
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
-            
-            <!-- YARA Rule Upload Modal -->
-            <div class="modal fade" id="uploadYaraModal" tabindex="-1" aria-hidden="true">
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title"><i class="fas fa-upload me-2"></i>Upload YARA Rule</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body">
-                            <form id="yaraUploadForm" enctype="multipart/form-data">
-                                <div class="mb-3">
-                                    <label for="yaraFile" class="form-label">Select YARA rule file (.yar or .yara)</label>
-                                    <input class="form-control" type="file" id="yaraFile" name="yara_file" accept=".yar,.yara" required>
-                                    <div class="form-text">Max file size: 1MB</div>
-                                </div>
-                            </form>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                            <button type="button" class="btn btn-primary" id="uploadYaraBtn">
-                                <i class="fas fa-upload me-1"></i> Upload
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Scan Details Modal -->
-            <div class="modal fade" id="scanDetailsModal" tabindex="-1" aria-hidden="true">
-                <div class="modal-dialog modal-lg">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title"><i class="fas fa-info-circle me-2"></i>Scan Details</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body" id="scanDetailsContent">
-                            <!-- Details will be inserted here by JavaScript -->
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                                <i class="fas fa-times me-1"></i> Close
-                            </button>
+                </main>
+                
+                <!-- YARA Rule Upload Modal -->
+                <div class="modal fade" id="uploadYaraModal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title"><i class="fas fa-upload me-2"></i>Upload YARA Rule</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <form id="yaraUploadForm" enctype="multipart/form-data">
+                                    <div class="mb-3">
+                                        <label for="yaraFile" class="form-label">Select YARA rule file (.yar or .yara)</label>
+                                        <input class="form-control" type="file" id="yaraFile" name="yara_file" accept=".yar,.yara" required>
+                                        <div class="form-text">Max file size: 1MB</div>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button type="button" class="btn btn-primary" id="uploadYaraBtn">
+                                    <i class="fas fa-upload me-1"></i> Upload
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
+                
+                <!-- Scan Details Modal -->
+                <div class="modal fade" id="scanDetailsModal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title"><i class="fas fa-info-circle me-2"></i>Scan Details</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body" id="scanDetailsContent">
+                                <!-- Details will be inserted here by JavaScript -->
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                    <i class="fas fa-times me-1"></i> Close
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <footer class="py-4 bg-light mt-auto">
+                    <div class="container-fluid px-4">
+                        <div class="d-flex align-items-center justify-content-between small">
+                            <div class="text-muted">Copyright &copy; LinuxAV-Solutions {{ year }}</div>
+                            <div>
+                                <span class="me-2">EDR Version: {{ version }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </footer>
             </div>
-            
-            <footer class="footer text-center">
-                &copy; {{ year }} LinuxAV-Solutions EDR v{{ version }}
-            </footer>
         </div>
-    </div>
 
-    <script src="../static/assets/plugins/jquery/dist/jquery.min.js"></script>
-    <script src="../static/assets/plugins/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="../static/js/app-style-switcher.js"></script>
-    <script src="../static/js/waves.js"></script>
-    <script src="../static/js/sidebarmenu.js"></script>
-    <script src="../static/js/custom.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    
-    <script>
-    $(document).ready(function() {
-        toastr.options = {
-            "closeButton": true,
-            "progressBar": true,
-            "positionClass": "toast-top-right",
-            "timeOut": "5000"
-        };
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+        <script src="../static/js/scripts.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            toastr.options = {
+                "closeButton": true,
+                "progressBar": true,
+                "positionClass": "toast-top-right",
+                "timeOut": "5000"
+            };
 
-        // Run scan button handler
-        $('.run-scan').click(function() {
-            const scanType = $(this).data('type');
-            const scanPath = $('#scanPath').val();
-            const yaraRule = $('#yaraRule').val();
-            
-            Swal.fire({
-                title: 'Confirm Scan',
-                text: `Run ${scanType.toUpperCase()} scan on ${scanPath}?`,
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonText: 'Run Scan',
-                cancelButtonText: 'Cancel'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    toastr.info(`Starting ${scanType} scan...`);
-                    
-                    $.ajax({
-                        url: '/scan/run',
-                        method: 'POST',
-                        data: {
-                            scan_type: scanType,
-                            scan_path: scanPath,
-                            yara_rule: scanType === 'yara' ? yaraRule : ''
-                        },
-                        success: function(response) {
-                            toastr.success(`${scanType} scan completed`);
-                            setTimeout(function() {
-                                location.reload();
-                            }, 1500);
-                        },
-                        error: function(xhr) {
-                            toastr.error(`Scan failed: ${xhr.responseJSON.message}`);
-                        }
-                    });
-                }
-            });
-        });
-
-        // YARA rule upload
-        $('#uploadYaraBtn').click(function() {
-            const fileInput = $('#yaraFile')[0];
-            if (!fileInput.files.length) {
-                toastr.error('Please select a file to upload');
-                return;
+            // Update system time every second
+            function updateSystemTime() {
+                const now = new Date();
+                const timeString = now.toISOString().replace('T', ' ').substr(0, 19);
+                document.getElementById('current-time').textContent = timeString;
             }
-            
-            const formData = new FormData($('#yaraUploadForm')[0]);
-            
-            Swal.fire({
-                title: 'Upload YARA Rule',
-                text: 'Are you sure you want to upload this rule file?',
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonText: 'Upload',
-                cancelButtonText: 'Cancel'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    $.ajax({
-                        url: '/scan/yara/rules',
-                        method: 'POST',
-                        data: formData,
-                        processData: false,
-                        contentType: false,
-                        beforeSend: function() {
-                            $('#uploadYaraBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i> Uploading...');
-                        },
-                        success: function(response) {
-                            toastr.success(response.message);
-                            $('#uploadYaraModal').modal('hide');
-                            setTimeout(function() {
-                                location.reload();
-                            }, 1500);
-                        },
-                        error: function(xhr) {
-                            toastr.error(xhr.responseJSON.message);
-                            $('#uploadYaraBtn').prop('disabled', false).html('<i class="fas fa-upload me-1"></i> Upload');
-                        }
-                    });
-                }
+            setInterval(updateSystemTime, 1000);
+
+            // Run scan button handler
+            $('.run-scan').click(function() {
+                const scanType = $(this).data('type');
+                const scanPath = $('#scanPath').val();
+                const yaraRule = $('#yaraRule').val();
+                
+                Swal.fire({
+                    title: 'Confirm Scan',
+                    text: `Run ${scanType.toUpperCase()} scan on ${scanPath}?`,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Run Scan',
+                    cancelButtonText: 'Cancel'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        toastr.info(`Starting ${scanType} scan...`);
+                        
+                        $.ajax({
+                            url: '/scan/run',
+                            method: 'POST',
+                            data: {
+                                scan_type: scanType,
+                                scan_path: scanPath,
+                                yara_rule: scanType === 'yara' ? yaraRule : ''
+                            },
+                            success: function(response) {
+                                toastr.success(`${scanType} scan completed`);
+                                setTimeout(function() {
+                                    location.reload();
+                                }, 1500);
+                            },
+                            error: function(xhr) {
+                                toastr.error(`Scan failed: ${xhr.responseJSON.message}`);
+                            }
+                        });
+                    }
+                });
             });
-        });
 
-        // View scan details
-        $(document).on('click', '.view-details', function() {
-            const scanData = $(this).data('scan');
-            let detailsHtml = `
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <p><strong><i class="fas fa-shield-alt me-2"></i>Scan Type:</strong> ${scanData.type.toUpperCase()}</p>
-                        <p><strong><i class="fas fa-folder-open me-2"></i>Path:</strong> ${scanData.path}</p>
-                    </div>
-                    <div class="col-md-6">
-                        <p><strong><i class="fas fa-clock me-2"></i>Timestamp:</strong> ${scanData.timestamp}</p>
-                        <p><strong><i class="fas fa-check-circle me-2"></i>Status:</strong> 
-                            <span class="badge bg-${scanData.status === 'clean' ? 'success' : 'danger'}">
-                                ${scanData.status.charAt(0).toUpperCase() + scanData.status.slice(1)}
-                            </span>
-                        </p>
-                    </div>
-                </div>
-                <hr>
-                <h5><i class="fas fa-search me-2"></i>Findings</h5>
-            `;
-
-            if (scanData.results && scanData.results.length > 0) {
-                detailsHtml += '<div class="table-responsive"><table class="table table-sm table-hover"><thead><tr><th>Item</th><th>Details</th><th>Severity</th></tr></thead><tbody>';
-                
-                if (scanData.type === 'clamav') {
-                    scanData.results.forEach(item => {
-                        detailsHtml += `<tr><td>${item.split('/').pop()}</td><td>${item}</td><td><span class="badge bg-danger">High</span></td></tr>`;
-                    });
-                } else if (scanData.type === 'maldet') {
-                    detailsHtml += `<tr><td colspan="3">${scanData.results} threats detected</td></tr>`;
-                } else if (scanData.type === 'rkhunter') {
-                    scanData.results.forEach(item => {
-                        detailsHtml += `<tr><td colspan="3"><i class="fas fa-exclamation-triangle text-warning me-2"></i>${item}</td></tr>`;
-                    });
-                } else if (scanData.type === 'yara') {
-                    scanData.results.forEach(item => {
-                        detailsHtml += `<tr><td>${item.file.split('/').pop()}</td><td>${item.matches.join(', ')}</td><td><span class="badge bg-warning">Medium</span></td></tr>`;
-                    });
+            // YARA rule upload
+            $('#uploadYaraBtn').click(function() {
+                const fileInput = $('#yaraFile')[0];
+                if (!fileInput.files.length) {
+                    toastr.error('Please select a file to upload');
+                    return;
                 }
                 
-                detailsHtml += '</tbody></table></div>';
-            } else {
-                detailsHtml += `
-                    <div class="alert alert-success">
-                        <i class="fas fa-check-circle me-2"></i>No threats detected in this scan
+                const formData = new FormData($('#yaraUploadForm')[0]);
+                
+                Swal.fire({
+                    title: 'Upload YARA Rule',
+                    text: 'Are you sure you want to upload this rule file?',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Upload',
+                    cancelButtonText: 'Cancel'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: '/scan/yara/rules',
+                            method: 'POST',
+                            data: formData,
+                            processData: false,
+                            contentType: false,
+                            beforeSend: function() {
+                                $('#uploadYaraBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i> Uploading...');
+                            },
+                            success: function(response) {
+                                toastr.success(response.message);
+                                $('#uploadYaraModal').modal('hide');
+                                setTimeout(function() {
+                                    location.reload();
+                                }, 1500);
+                            },
+                            error: function(xhr) {
+                                toastr.error(xhr.responseJSON.message);
+                                $('#uploadYaraBtn').prop('disabled', false).html('<i class="fas fa-upload me-1"></i> Upload');
+                            }
+                        });
+                    }
+                });
+            });
+
+            // View scan details
+            $(document).on('click', '.view-details', function() {
+                const scanData = $(this).data('scan');
+                let detailsHtml = `
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p><strong><i class="fas fa-shield-alt me-2"></i>Scan Type:</strong> ${scanData.type.toUpperCase()}</p>
+                            <p><strong><i class="fas fa-folder-open me-2"></i>Path:</strong> ${scanData.path}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong><i class="fas fa-clock me-2"></i>Timestamp:</strong> ${scanData.timestamp}</p>
+                            <p><strong><i class="fas fa-check-circle me-2"></i>Status:</strong> 
+                                <span class="badge bg-${scanData.status === 'clean' ? 'success' : 'danger'}">
+                                    ${scanData.status.charAt(0).toUpperCase() + scanData.status.slice(1)}
+                                </span>
+                            </p>
+                        </div>
                     </div>
+                    <hr>
+                    <h5><i class="fas fa-search me-2"></i>Findings</h5>
                 `;
-            }
 
-            $('#scanDetailsContent').html(detailsHtml);
-            $('#scanDetailsModal').modal('show');
+                if (scanData.results && scanData.results.length > 0) {
+                    detailsHtml += '<div class="table-responsive"><table class="table table-sm table-hover"><thead><tr><th>Item</th><th>Details</th><th>Severity</th></tr></thead><tbody>';
+                    
+                    if (scanData.type === 'clamav') {
+                        scanData.results.forEach(item => {
+                            detailsHtml += `<tr><td>${item.split('/').pop()}</td><td>${item}</td><td><span class="badge bg-danger">High</span></td></tr>`;
+                        });
+                    } else if (scanData.type === 'maldet') {
+                        detailsHtml += `<tr><td colspan="3">${scanData.results} threats detected</td></tr>`;
+                    } else if (scanData.type === 'rkhunter') {
+                        scanData.results.forEach(item => {
+                            detailsHtml += `<tr><td colspan="3"><i class="fas fa-exclamation-triangle text-warning me-2"></i>${item}</td></tr>`;
+                        });
+                    } else if (scanData.type === 'yara') {
+                        scanData.results.forEach(item => {
+                            detailsHtml += `<tr><td>${item.file.split('/').pop()}</td><td>${item.matches.join(', ')}</td><td><span class="badge bg-warning">Medium</span></td></tr>`;
+                        });
+                    }
+                    
+                    detailsHtml += '</tbody></table></div>';
+                } else {
+                    detailsHtml += `
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle me-2"></i>No threats detected in this scan
+                        </div>
+                    `;
+                }
+
+                $('#scanDetailsContent').html(detailsHtml);
+                $('#scanDetailsModal').modal('show');
+            });
         });
-    });
-    </script>
-</body>
+        </script>
+    </body>
 </html>
