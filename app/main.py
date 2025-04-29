@@ -14,7 +14,7 @@ Enhanced Features:
 
 import re
 from werkzeug.utils import secure_filename as werkzeug_secure_filename
-from flask import Flask, jsonify, request, render_template , Response
+from flask import Flask, jsonify, request, render_template , Response , redirect , url_for
 import os
 import subprocess
 import json
@@ -50,6 +50,7 @@ config.init_directories()
 
 
 app = Flask(__name__)
+
 
 
 
@@ -280,143 +281,273 @@ def setup_logging():
 # Enhanced Scanning Functions
 # =============================================
 
-def run_clamav_scan(path):
-    """Run ClamAV scan on specified path"""
-    try:
-        cmd = ['clamscan', '-r', '--infected', '--log=' + os.path.join(config.LOG_DIR, 'clamav.log')]
-        cmd.extend(path.split())
-        result = subprocess.run(cmd, capture_output=True, text=True)
-        
-        if result.returncode == 1:
-            infected = re.findall(r': (.+) FOUND', result.stdout)
-            for file in infected:
-                log_event("SCAN", "high", f"ClamAV detected malware: {file}")
-                quarantine_file(file)
-            return infected
-        return []
-    except Exception as e:
-        log_event("ERROR", "high", "ClamAV scan failed", {'error': str(e)})
-        return []
+def validate_scan_path(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        scan_path = request.form.get('scan_path', '')
+        if scan_path and not os.path.exists(scan_path):
+            flash('Scan path does not exist', 'error')
+            return redirect(url_for('scan_page'))
+        return f(*args, **kwargs)
+    return decorated_function
 
-def run_maldet_scan(path):
-    """Run Linux Malware Detect scan"""
+def rate_limit_scan(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        # Implement your rate limiting logic here
+        # Example: Check if user has exceeded scan limit
+        return f(*args, **kwargs)
+    return decorated_function
+
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
+# Scan functions
+from datetime import datetime
+
+def run_clamav_scan(scan_path):
+    """Run ClamAV scan and return results"""
     try:
-        cmd = ['/usr/local/sbin/maldet', '-a', path]
-        result = subprocess.run(cmd, capture_output=True, text=True)
+        logger.info(f"Starting ClamAV scan on {scan_path}")
         
-        if result.returncode == 1:
-            infected = re.findall(r'SCAN SUMMARY: (.+) hits', result.stdout)
-            if infected and infected[0].isdigit() and int(infected[0]) > 0:
-                log_event("SCAN", "high", f"Maldet detected {infected[0]} threats")
-                return int(infected[0])
-        return 0
+        # Build the command
+        cmd = ['clamscan', '-r', '--infected', '--no-summary']
+        if scan_path:
+            cmd.append(scan_path)
+        
+        # Execute the scan
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=config.SCAN_TIMEOUT
+        )
+        
+        # Parse results
+        infected_files = []
+        if result.returncode == 1:  # Found viruses
+            for line in result.stdout.split('\n'):
+                if 'FOUND' in line:
+                    parts = line.split(':', 1)
+                    if len(parts) == 2:
+                        infected_files.append({
+                            'file': parts[0].strip(),
+                            'detection': parts[1].strip()
+                        })
+        
+        status = 'clean' if result.returncode == 0 else 'infected'
+        num_infected = len(infected_files)
+        
+        return {
+            'status': status,
+            'infected_files': infected_files,
+            'infected_count': num_infected,  # Numeric value
+            'output': result.stdout,
+            'message': f"Found {num_infected} infected files" if num_infected else "No threats found",
+            'timestamp': now.isoformat()  # Fixed timestamp
+        }
+        
+    except subprocess.TimeoutExpired:
+        logger.warning("ClamAV scan timed out")
+        return {
+            'status': 'error',
+            'message': 'Scan timed out',
+            'timestamp': now.isoformat()
+        }
     except Exception as e:
-        log_event("ERROR", "high", "Maldet scan failed", {'error': str(e)})
-        return 0
+        logger.error(f"ClamAV scan failed: {str(e)}")
+        return {
+            'status': 'error',
+            'message': str(e),
+            'timestamp': now.isoformat()
+        }
+
+def run_maldet_scan(scan_path):
+    """Run Maldet scan and return results"""
+    try:
+        logger.info(f"Starting Maldet scan on {scan_path}")
+        
+        # Build the command
+        cmd = ['/usr/local/sbin/maldet', '--scan-all', '--report']
+        if scan_path:
+            cmd.extend(['--scan-path', scan_path])
+        
+        # Execute the scan
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=config.SCAN_TIMEOUT
+        )
+        
+        # Parse results
+        infected_files = []
+        summary = "Scan completed"
+        if 'infected files found' in result.stdout.lower():
+            for line in result.stdout.split('\n'):
+                if 'SCAN SUMMARY' in line:
+                    summary = line.split(':', 1)[1].strip()
+                    break
+        
+        status = 'clean' if '0 hits' in result.stdout else 'infected'
+        
+        return {
+            'status': status,
+            'infected_files': infected_files,
+            'output': result.stdout,
+            'message': summary,
+            'timestamp': now.isoformat()
+        }
+        
+    except subprocess.TimeoutExpired:
+        logger.warning("Maldet scan timed out")
+        return {
+            'status': 'error',
+            'message': 'Scan timed out',
+            'timestamp': now.isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Maldet scan failed: {str(e)}")
+        return {
+            'status': 'error',
+            'message': str(e),
+            'timestamp': now.isoformat()
+        }
 
 def run_rkhunter_scan():
-    """Run Rootkit Hunter scan"""
+    """Run Rkhunter scan and return results"""
     try:
-        cmd = ['rkhunter', '--check', '--sk', '--rwo']
-        result = subprocess.run(cmd, capture_output=True, text=True)
+        logger.info("Starting Rkhunter scan")
         
-        warnings = re.findall(r'Warning: (.+)', result.stdout)
-        for warning in warnings:
-            log_event("SCAN", "high", f"Rkhunter warning: {warning}")
-        return warnings
-    except Exception as e:
-        log_event("ERROR", "high", "Rkhunter scan failed", {'error': str(e)})
-        return []
-
-def run_chkrootkit_scan():
-    """Run chkrootkit scan"""
-    try:
-        cmd = ['chkrootkit']
-        result = subprocess.run(cmd, capture_output=True, text=True)
+        # Execute the scan
+        result = subprocess.run(
+            ['rkhunter', '--check', '--sk', '--nocolors'],
+            capture_output=True,
+            text=True,
+            timeout=config.SCAN_TIMEOUT
+        )
         
-        infected = re.findall(r'INFECTED: (.+)', result.stdout)
-        for file in infected:
-            log_event("SCAN", "critical", f"chkrootkit detected infection: {file}")
-        return infected
-    except Exception as e:
-        log_event("ERROR", "high", "chkrootkit scan failed", {'error': str(e)})
-        return []
-
-def compile_yara_rules():
-    """Compile YARA rules from rule files"""
-    try:
-        rule_files = []
-        for rule_file in config.YARA_RULE_FILES:
-            rule_path = os.path.join(config.YARA_RULES, rule_file)
-            if os.path.exists(rule_path):
-                rule_files.append(rule_path)
+        # Parse results
+        warnings = []
+        if 'Warning:' in result.stdout:
+            warnings = [line.strip() for line in result.stdout.split('\n') if 'Warning:' in line]
         
-        if rule_files:
-            rules = yara.compile(filepaths={
-                os.path.basename(f): f for f in rule_files
-            })
-            return rules
-        return None
+        status = 'clean' if not warnings else 'warnings'
+        num_warnings = len(warnings)
+        
+        return {
+            'status': status,
+            'warnings': warnings,
+            'warning_count': num_warnings,  # Numeric value
+            'output': result.stdout,
+            'message': f"Found {num_warnings} warnings" if num_warnings else "No warnings found",
+            'timestamp': now.isoformat()
+        }
+        
+    except subprocess.TimeoutExpired:
+        logger.warning("Rkhunter scan timed out")
+        return {
+            'status': 'error',
+            'message': 'Scan timed out',
+            'timestamp': now.isoformat()
+        }
     except Exception as e:
-        log_event("ERROR", "high", "YARA rule compilation failed", {'error': str(e)})
-        return None
+        logger.error(f"Rkhunter scan failed: {str(e)}")
+        return {
+            'status': 'error',
+            'message': str(e),
+            'timestamp': now.isoformat()
+        }
 
-def yara_scan_file(file_path, yara_rules):
-    """Scan a file with YARA rules"""
+def run_yara_scan(scan_path, rule_name):
+    """Run YARA scan with specified rule and return results"""
     try:
-        matches = yara_rules.match(file_path)
-        if matches:
-            for match in matches:
-                log_event("SCAN", "high", f"YARA rule match: {match.rule}", {
-                    'file': file_path,
+        logger.info(f"Starting YARA scan with rule {rule_name} on {scan_path}")
+        
+        # Validate rule exists
+        rule_path = os.path.join(config.YARA_RULES, rule_name)
+        if not os.path.isfile(rule_path):
+            raise ValueError(f"YARA rule file not found: {rule_name}")
+        
+        # Compile the rule
+        rules = yara.compile(filepath=rule_path)
+        
+        # Scan the path
+        matches = []
+        if os.path.isdir(scan_path):
+            for root, _, files in os.walk(scan_path):
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    try:
+                        for match in rules.match(file_path):
+                            matches.append({
+                                'file': file_path,
+                                'rule': match.rule,
+                                'tags': match.tags,
+                                'meta': match.meta
+                            })
+                    except Exception as e:
+                        logger.warning(f"Error scanning {file_path}: {str(e)}")
+        elif os.path.isfile(scan_path):
+            for match in rules.match(scan_path):
+                matches.append({
+                    'file': scan_path,
+                    'rule': match.rule,
                     'tags': match.tags,
                     'meta': match.meta
                 })
-            return matches
-        return []
+        
+        status = 'clean' if not matches else 'matches'
+        num_matches = len(matches)
+        
+        return {
+            'status': status,
+            'matches': matches,
+            'match_count': num_matches,  # Numeric value
+            'rule': rule_name,
+            'message': f"Found {num_matches} matches" if num_matches else "No matches found",
+            'timestamp': now.isoformat()
+        }
+        
+    except yara.SyntaxError as e:
+        logger.error(f"YARA syntax error: {str(e)}")
+        return {
+            'status': 'error',
+            'message': f"YARA rule syntax error: {str(e)}",
+            'timestamp': now.isoformat()
+        }
     except Exception as e:
-        log_event("ERROR", "medium", f"YARA scan failed for {file_path}", {'error': str(e)})
-        return []
+        logger.error(f"YARA scan failed: {str(e)}")
+        return {
+            'status': 'error',
+            'message': str(e),
+            'timestamp': now.isoformat()
+        }
 
-def full_system_scan():
-    """Run comprehensive system scan with all tools"""
-    scan_results = {
-        'clamav': [],
-        'maldet': 0,
-        'rkhunter': [],
-        'chkrootkit': [],
-        'yara': []
-    }
-    
-    # Run ClamAV scan
-    for path in config.SCAN_PATHS:
-        if os.path.exists(path):
-            scan_results['clamav'].extend(run_clamav_scan(path))
-    
-    # Run Maldet scan
-    scan_results['maldet'] = run_maldet_scan(' '.join(config.SCAN_PATHS))
-    
-    # Run rkhunter and chkrootkit
-    scan_results['rkhunter'] = run_rkhunter_scan()
-    scan_results['chkrootkit'] = run_chkrootkit_scan()
-    
-    # Run YARA scan if enabled
-    if config.YARA_ENABLED:
-        yara_rules = compile_yara_rules()
-        if yara_rules:
-            for path in config.SCAN_PATHS:
-                for root, _, files in os.walk(path):
-                    for file in files:
-                        file_path = os.path.join(root, file)
-                        matches = yara_scan_file(file_path, yara_rules)
-                        if matches:
-                            scan_results['yara'].append({
-                                'file': file_path,
-                                'matches': [str(m) for m in matches]
-                            })
-    
-    log_event("SCAN", "info", "Completed full system scan", {'results': scan_results})
-    return scan_results
+def log_scan_result(scan_type, scan_path, result):
+    """Log scan results to database or file"""
+    try:
+        # Here you would implement your actual logging mechanism
+        # This is just a placeholder implementation
+        log_entry = {
+            'type': scan_type,
+            'path': scan_path,
+            'status': result.get('status', 'unknown'),
+            'timestamp': result.get('timestamp', now.isoformat()),
+            'findings': len(result.get('infected_files', [])) or 
+                        len(result.get('warnings', [])) or 
+                        len(result.get('matches', [])),
+            'message': result.get('message', '')
+        }
+        
+        logger.info(f"Scan logged: {log_entry}")
+        
+    except Exception as e:
+        logger.error(f"Failed to log scan result: {str(e)}")
+
+
 
 # =============================================
 # Suricata Integration
@@ -903,14 +1034,11 @@ def threats_count():
         'threat_trend': calculate_threat_trend()  # Implement this based on your historical data
     })
 
-@app.route('/api/scans/last')
-def last_scan():
-    """Get last scan information"""
-    scans = get_last_scan_results(1)
-    return jsonify({
-        'last_scan': scans[0]['timestamp'] if scans else None,
-        'active_scans': 0  # You might track active scans differently
-    })
+
+
+
+
+
 
 @app.route('/api/process/kill', methods=['POST'])
 def kill_process():
@@ -943,26 +1071,53 @@ def block_connection():
 
 @app.route('/')
 def dashboard():
-    """Main dashboard endpoint"""
-    services = get_system_services()
-    now  = datetime.datetime.now()
+    """Main dashboard endpoint with real system statistics"""
+    # Get system stats using psutil
+    cpu = psutil.cpu_percent()
+    mem = psutil.virtual_memory()
+    disk = psutil.disk_usage('/')
+    net_io = psutil.net_io_counters()
+    net_if = psutil.net_if_addrs()
+    
+    # Get security stats
+    threats_data = threats_count().get_json()
+    services_status_data = services_status().get_json()
+    
+    # Get malicious processes count
+    malicious_procs = len(analyze_processes())
+    
+    # Get network connections
+    malicious_conns = len(get_suspicious_connections())
+    
     context = {
         'status': 'running',
         'version': config.VERSION,
-        'endpoints': {
-            '/logs': 'Get recent events',
-            '/files': 'Check file changes',
-            '/processes': 'List suspicious processes',
-            '/connections': 'Check malicious connections',
-            '/scan': 'Run a scan',
-            '/quarantine': 'Manage quarantined files',
-            '/suricata': 'Suricata status',
-            '/fail2ban': 'Fail2Ban status',
-            '/firewall': 'Firewall status',
-            '/services': 'List all services'
-        }
+        'system_stats': {
+            'cpu': cpu,
+            'mem_used': mem.used / (1024 ** 3),  # in GB
+            'mem_total': mem.total / (1024 ** 3),  # in GB
+            'mem_percent': mem.percent,
+            'disk_used': disk.used / (1024 ** 3),  # in GB
+            'disk_total': disk.total / (1024 ** 3),  # in GB
+            'disk_percent': disk.percent,
+            'net_sent': net_io.bytes_sent / (1024 ** 2),  # in MB
+            'net_recv': net_io.bytes_recv / (1024 ** 2),  # in MB
+            'net_packets_sent': net_io.packets_sent,
+            'net_packets_recv': net_io.packets_recv,
+            'net_if': net_if  # Pass the network interface data directly
+        },
+        'security_stats': {
+            'threats_count': threats_data.get('total_threats', 0),
+            'malicious_processes': malicious_procs,
+            'malicious_connections': malicious_conns,
+            'ports_secured': threats_data.get('ports_secured', 0),
+            'total_ports': threats_data.get('total_ports', 0),
+            'services_status': services_status_data,
+        },
+        'now': now,
+        'year': now.year
     }
-    return render_template('index.html', **context , now = now)
+    return render_template('index.html', **context)
 
 @app.route('/scan/full', methods=['POST'])
 def run_full_scan():
@@ -1527,35 +1682,73 @@ def service_status(service_name):
 
 
 
-def run_yara_scan(path, rule_name):
-    """Run YARA scan on specified path with specific rule"""
+def run_yara_scan(scan_path, rule_name):
+    """Run YARA scan with specified rule and return properly formatted results"""
     try:
-        # Compile the specific rule
-        rule_path = os.path.join(config.YARA_RULES, rule_name)
-        if not os.path.exists(rule_path):
-            return {'error': 'Rule file not found'}
-
-        rules = yara.compile(filepath=rule_path)
-        matches = []
-
-        # Scan all files in path
-        for root, _, files in os.walk(path):
-            for file in files:
-                file_path = os.path.join(root, file)
-                try:
-                    file_matches = rules.match(file_path)
-                    if file_matches:
-                        matches.append({
-                            'file': file_path,
-                            'matches': [str(m) for m in file_matches]
-                        })
-                except Exception as e:
-                    log_event("ERROR", "medium", f"YARA scan failed for {file_path}", {'error': str(e)})
+        logger.info(f"Starting YARA scan with rule {rule_name} on {scan_path}")
         
-        return matches
+        # Validate rule exists
+        rule_path = os.path.join(config.YARA_RULES, rule_name)
+        if not os.path.isfile(rule_path):
+            raise ValueError(f"YARA rule file not found: {rule_name}")
+        
+        # Compile the rule
+        rules = yara.compile(filepath=rule_path)
+        
+        # Scan the path
+        matches = []
+        if os.path.isdir(scan_path):
+            for root, _, files in os.walk(scan_path):
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    try:
+                        for match in rules.match(file_path):
+                            matches.append({
+                                'file': file_path,
+                                'rule': match.rule,
+                                'tags': list(match.tags),  # Convert tuple to list
+                                'meta': dict(match.meta)   # Convert to regular dict
+                            })
+                    except Exception as e:
+                        logger.warning(f"Error scanning {file_path}: {str(e)}")
+        elif os.path.isfile(scan_path):
+            file_matches = rules.match(scan_path)
+            if file_matches:
+                for match in file_matches:
+                    matches.append({
+                        'file': scan_path,
+                        'rule': match.rule,
+                        'tags': list(match.tags),
+                        'meta': dict(match.meta)
+                    })
+        
+        status = 'clean' if not matches else 'matches'
+        num_matches = len(matches)
+        
+        # Return a properly structured dictionary
+        return {
+            'status': status,
+            'matches': matches,
+            'match_count': num_matches,
+            'rule': rule_name,
+            'message': f"Found {num_matches} matches" if num_matches else "No matches found",
+            'timestamp': datetime.now().isoformat()
+        }
+        
+    except yara.SyntaxError as e:
+        logger.error(f"YARA syntax error: {str(e)}")
+        return {
+            'status': 'error',
+            'message': f"YARA rule syntax error: {str(e)}",
+            'timestamp': datetime.now().isoformat()
+        }
     except Exception as e:
-        log_event("ERROR", "high", "YARA scan failed", {'error': str(e)})
-        return {'error': str(e)}
+        logger.error(f"YARA scan failed: {str(e)}")
+        return {
+            'status': 'error',
+            'message': str(e),
+            'timestamp': datetime.now().isoformat()
+        }
 
 def secure_filename(filename):
     """Sanitize filename to prevent directory traversal and other security issues"""
@@ -1567,110 +1760,241 @@ def secure_filename(filename):
     filename = re.sub(r'_+', '_', filename)
     return filename
 
-def get_last_scan_results(limit=5):
-    """Get last scan results from log file"""
-    scan_log = os.path.join(config.LOG_DIR, 'edr.log')
-    results = []
-    
-    if not os.path.exists(scan_log):
-        return results
-    
-    try:
-        with open(scan_log, 'r') as f:
-            for line in f:
-                if 'SCAN' in line and 'Completed full system scan' in line:
-                    try:
-                        # Extract JSON part from log line
-                        json_part = line[line.find('{'):]
-                        scan_data = json.loads(json_part)
-                        results.append(scan_data)
-                        if len(results) >= limit:
-                            break
-                    except json.JSONDecodeError:
-                        continue
-    except Exception as e:
-        log_event("ERROR", "medium", "Failed to read scan log", {'error': str(e)})
-    
-    return results
 
+
+
+
+def validate_scan_path(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        scan_path = request.form.get('scan_path', '')
+        if scan_path and not any(scan_path.startswith(allowed_path) for allowed_path in config.SCAN_PATHS):
+            return jsonify({'status': 'error', 'message': 'Invalid scan path'}), 400
+        return f(*args, **kwargs)
+    return decorated_function
+
+def rate_limit_scan(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        # Implement your rate limiting logic here
+        # Example: 5 scans per minute per IP
+        return f(*args, **kwargs)
+    return decorated_function
 
 
 @app.route('/scan')
-def scan_dashboard():
-    """Scan management dashboard"""
-    # Get YARA rule files
-    yara_rules = []
-    if config.YARA_ENABLED:
-        yara_rules = [f for f in os.listdir(config.YARA_RULES) 
-                     if f.endswith('.yar') or f.endswith('.yara')]
+def scan_page():
+    """Render the scan page with all necessary data"""
+    try:
+        # Get available scan paths (example - customize as needed)
+        scan_paths = config.SCAN_PATHS
+        
+        # Get YARA rules
+        yara_rules = []
+        if os.path.isdir(config.YARA_RULES):
+            yara_rules = sorted([
+                f for f in os.listdir(config.YARA_RULES) 
+                if f.endswith(('.yar', '.yara')) and 
+                os.path.isfile(os.path.join(config.YARA_RULES, f))
+            ])
+        
+        # Get last scan results (example - implement your actual query)
+        last_scans = []  # Replace with your database query
+        
+        return render_template(
+            'scans.html',
+            scan_paths=scan_paths,
+            yara_rules=yara_rules,
+            last_scans=last_scans,
+            now=now,
+            year=now.year,
+            version=config.VERSION
+        )
+        
+    except Exception as e:
+        logger.error(f"Failed to render scan page: {str(e)}")
+
+        return redirect(url_for('index'))
     
-    context = {
-        'scan_paths': config.SCAN_PATHS,
-        'yara_rules': yara_rules,
-        'last_scans': get_last_scan_results(),
-        'version': config.VERSION,
-        'year': now.year
-    }
-    return render_template('scans.html', **context , now = now)
+
 
 @app.route('/scan/run', methods=['POST'])
+@validate_scan_path
+@rate_limit_scan
 def run_scan():
-    """Run a specific scan"""
+    """Run a specific scan with enhanced validation"""
     scan_type = request.form.get('scan_type')
     scan_path = request.form.get('scan_path', '')
     yara_rule = request.form.get('yara_rule', '')
     
+
+    if not scan_type:
+        return jsonify({'status': 'error', 'message': 'Scan type is required'}), 400
+    
     try:
+        # Validate scan path exists if provided
+        if scan_path and not os.path.exists(scan_path):
+            return jsonify({'status': 'error', 'message': 'Scan path does not exist'}), 400
+            
         if scan_type == 'clamav':
+            if not config.CLAMAV_ENABLED:
+                return jsonify({'status': 'error', 'message': 'ClamAV is not enabled'}), 400
             result = run_clamav_scan(scan_path)
             log_scan_result('clamav', scan_path, result)
-            return jsonify({'status': 'success', 'result': result})
+            
         elif scan_type == 'maldet':
+            if not config.MALDET_ENABLED:
+                return jsonify({'status': 'error', 'message': 'Maldet is not enabled'}), 400
             result = run_maldet_scan(scan_path)
             log_scan_result('maldet', scan_path, result)
-            return jsonify({'status': 'success', 'result': result})
+            
         elif scan_type == 'rkhunter':
+            if not config.RKHUNTER_ENABLED:
+                return jsonify({'status': 'error', 'message': 'Rkhunter is not enabled'}), 400
             result = run_rkhunter_scan()
             log_scan_result('rkhunter', 'system', result)
-            return jsonify({'status': 'success', 'result': result})
+            
         elif scan_type == 'yara':
+            if not config.YARA_ENABLED:
+                return jsonify({'status': 'error', 'message': 'YARA is not enabled'}), 400
             if not yara_rule:
                 return jsonify({'status': 'error', 'message': 'No YARA rule selected'}), 400
+            if not os.path.isfile(os.path.join(config.YARA_RULES, yara_rule)):
+                return jsonify({'status': 'error', 'message': 'YARA rule file not found'}), 400
             result = run_yara_scan(scan_path, yara_rule)
             log_scan_result('yara', scan_path, result)
-            return jsonify({'status': 'success', 'result': result})
+            
         else:
             return jsonify({'status': 'error', 'message': 'Invalid scan type'}), 400
+        
+        # Ensure all numeric values in result are properly handled
+        processed_result = {}
+        for key, value in result.items():
+            if isinstance(value, (float, int)):
+                # Keep numbers as numbers in the response (JSON can handle this)
+                processed_result[key] = value
+            else:
+                processed_result[key] = value
+            
+        return jsonify({
+            'status': 'success', 
+            'result': processed_result
+        })
+        
     except Exception as e:
-        app.logger.error(f"Scan failed: {str(e)}")
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+        app.logger.error(f"Scan failed: {str(e)}", exc_info=True)
+        return jsonify({
+            'status': 'error', 
+            'message': 'Scan failed',
+            'detail': str(e)
+        }), 500
+    
 
-@app.route('/scan/yara/rules', methods=['GET', 'POST'])
+
+
+@app.route('/scan/yara/rules', methods=['POST'])
 def manage_yara_rules():
-    """Manage YARA rules"""
+    """Manage YARA rules with enhanced security"""
     if request.method == 'POST':
-        # Handle file upload
         if 'yara_file' not in request.files:
             return jsonify({'status': 'error', 'message': 'No file uploaded'}), 400
             
         file = request.files['yara_file']
-        if file.filename == '':
+        if not file or file.filename == '':
             return jsonify({'status': 'error', 'message': 'No selected file'}), 400
             
-        if file and (file.filename.endswith('.yar') or file.filename.endswith('.yara')):
+        # Validate file extension and size
+        if not (file.filename.endswith('.yar') or file.filename.endswith('.yara')):
+            return jsonify({'status': 'error', 'message': 'Invalid file type'}), 400
+            
+        # Check file size
+        file.seek(0, os.SEEK_END)
+        file_length = file.tell()
+        file.seek(0)
+        
+        if file_length > config.MAX_YARA_FILE_SIZE:  # e.g., 1MB
+            return jsonify({
+                'status': 'error', 
+                'message': f'File too large (max {config.MAX_YARA_FILE_SIZE//1024}KB)'
+            }), 400
+            
+        try:
+            # Validate YARA syntax before saving
+            rules = yara.compile(source=file.read().decode('utf-8'))
+            file.seek(0)  # Reset file pointer after validation
+            
             filename = secure_filename(file.filename)
-            file.save(os.path.join(config.YARA_RULES, filename))
-            return jsonify({'status': 'success', 'message': 'YARA rule uploaded'})
+            save_path = os.path.join(config.YARA_RULES, filename)
+            
+            # Check for existing file
+            if os.path.exists(save_path):
+                return jsonify({
+                    'status': 'error', 
+                    'message': 'Rule with this name already exists'
+                }), 400
+                
+            file.save(save_path)
+            return jsonify({
+                'status': 'success', 
+                'message': 'YARA rule uploaded and validated'
+            })
+            
+        except yara.SyntaxError as e:
+            return jsonify({
+                'status': 'error', 
+                'message': 'Invalid YARA syntax',
+                'detail': str(e)
+            }), 400
+        except Exception as e:
+            app.logger.error(f"YARA rule upload failed: {str(e)}")
+            return jsonify({
+                'status': 'error', 
+                'message': 'Failed to process YARA rule'
+            }), 500
     
-    # GET request - list rules
-    yara_rules = [f for f in os.listdir(config.YARA_RULES) 
-                 if f.endswith('.yar') or f.endswith('.yara')]
-    return jsonify({'status': 'success', 'rules': yara_rules})
+    # GET request - list rules with validation
+    try:
+        yara_rules = []
+        if os.path.isdir(config.YARA_RULES):
+            yara_rules = sorted([
+                f for f in os.listdir(config.YARA_RULES) 
+                if f.endswith(('.yar', '.yara')) and 
+                os.path.isfile(os.path.join(config.YARA_RULES, f))
+            ])
+            
+        return jsonify({
+            'status': 'success', 
+            'rules': yara_rules,
+            'yara_enabled': config.YARA_ENABLED
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Failed to list YARA rules: {str(e)}")
+        return jsonify({
+            'status': 'error', 
+            'message': 'Failed to retrieve YARA rules'
+        }), 500
 
-def get_last_scan_results():
-    """Get last scan results from logs"""
-    # Implement this based on your logging system
-    return []
+
+# @app.route('/scan/progress')
+# def scan_progress():
+#     """Get progress of current scan"""
+#     scan_id = request.args.get('scan_id')
+#     # Implement your progress tracking logic
+#     return jsonify({
+#         'progress': get_scan_progress(scan_id),  # Implement this function
+#         'status': get_scan_status(scan_id)      # Implement this function
+#     })
+
+def get_last_scan_results(limit=10):
+    """Get last scan results from database or logs"""
+    try:
+        # Implement this based on your logging system
+        # Example: query from database
+        return []
+    except Exception as e:
+        app.logger.error(f"Failed to get scan results: {str(e)}")
+        return []
 
 
 def process_connection(conn, malicious_ports):

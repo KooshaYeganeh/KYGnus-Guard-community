@@ -47,7 +47,7 @@
         <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
             <!-- Navbar Brand-->
             <a class="navbar-brand ps-3" href="index.html">
-                <i class="fas fa-shield-alt me-2"></i>LinuxAV-Solutions EDR
+                <i class="fas fa-shield-alt me-2"></i>myEDR
             </a>
             <!-- Sidebar Toggle-->
             <button class="btn btn-link btn-sm order-1 order-lg-0 me-4 me-lg-0" id="sidebarToggle" href="#!">
@@ -61,66 +61,6 @@
             </div>
             
             <!-- Navbar-->
-            <ul class="navbar-nav ms-auto ms-md-0 me-3 me-lg-4">
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="fas fa-user fa-fw"></i>
-                        <span class="d-none d-lg-inline">Admin</span>
-                    </a>
-                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                        <li><a class="dropdown-item" href="#!"><i class="fas fa-cog fa-fw me-2"></i>Settings</a></li>
-                        <li><a class="dropdown-item" href="#!"><i class="fas fa-list fa-fw me-2"></i>Activity Log</a></li>
-                        <li><hr class="dropdown-divider" /></li>
-                        <li><a class="dropdown-item" href="/logout"><i class="fas fa-sign-out-alt fa-fw me-2"></i>Logout</a></li>
-                    </ul>
-                </li>
-                <li class="nav-item dropdown">
-                    <a class="nav-link" id="alertsDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="fas fa-bell fa-fw"></i>
-                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                            3+
-                            <span class="visually-hidden">unread alerts</span>
-                        </span>
-                    </a>
-                    <ul class="dropdown-menu dropdown-menu-end p-2" aria-labelledby="alertsDropdown" style="min-width: 300px;">
-                        <li><h6 class="dropdown-header">Security Alerts</h6></li>
-                        <li>
-                            <a class="dropdown-item d-flex align-items-center" href="#">
-                                <div class="me-3">
-                                    <div class="bg-danger icon-circle"><i class="fas fa-exclamation-triangle text-white"></i></div>
-                                </div>
-                                <div>
-                                    <span class="small text-gray-500">Just now</span>
-                                    <p class="mb-0 small">Malicious process detected</p>
-                                </div>
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item d-flex align-items-center" href="#">
-                                <div class="me-3">
-                                    <div class="bg-warning icon-circle"><i class="fas fa-exclamation text-white"></i></div>
-                                </div>
-                                <div>
-                                    <span class="small text-gray-500">5 min ago</span>
-                                    <p class="mb-0 small">Suspicious network activity</p>
-                                </div>
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item d-flex align-items-center" href="#">
-                                <div class="me-3">
-                                    <div class="bg-primary icon-circle"><i class="fas fa-info-circle text-white"></i></div>
-                                </div>
-                                <div>
-                                    <span class="small text-gray-500">1 hour ago</span>
-                                    <p class="mb-0 small">Firewall rule added</p>
-                                </div>
-                            </a>
-                        </li>
-                        <li><hr class="dropdown-divider" /></li>
-                        <li><a class="dropdown-item text-center small" href="#">View All Alerts</a></li>
-                    </ul>
-                </li>
             </ul>
         </nav>
         <div id="layoutSidenav">
@@ -129,54 +69,51 @@
                     <div class="sb-sidenav-menu">
                         <div class="nav">
                             <div class="sb-sidenav-menu-heading">Core</div>
-                            <a class="nav-link" href="/">
+                            <a class="nav-link" href="index.html">
                                 <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
                                 Dashboard
                             </a>
                             <div class="sb-sidenav-menu-heading">Security Modules</div>
+                            <a class="nav-link" href="/network">
+                                <div class="sb-nav-link-icon"><i class="fas fa-network-wired"></i></div>
+                                Network Monitoring
+                            </a>
                             <a class="nav-link" href="/scan">
                                 <div class="sb-nav-link-icon"><i class="fas fa-search"></i></div>
                                 Scan Management
-                            </a>
-                            <a class="nav-link" href="/services">
-                                <div class="sb-nav-link-icon"><i class="fas fa-server"></i></div>
-                                Services
-                            </a>
-                            <a class="nav-link active" href="/firewall">
-                                <div class="sb-nav-link-icon"><i class="fas fa-fire"></i></div>
-                                Firewall
                             </a>
                             <a class="nav-link" href="/ids">
                                 <div class="sb-nav-link-icon"><i class="fas fa-shield-virus"></i></div>
                                 IDS/IPS
                             </a>
-                            <a class="nav-link" href="/process">
-                                <div class="sb-nav-link-icon"><i class="fas fa-tasks"></i></div>
-                                Processes
+                            <a class="nav-link active" href="/firewall">
+                                <div class="sb-nav-link-icon"><i class="fas fa-fire"></i></div>
+                                Firewall
                             </a>
-                            <a class="nav-link" href="/ai_detection">
-                                <div class="sb-nav-link-icon"><i class="fas fa-brain"></i></div>
-                                AI Detection
+                            <a class="nav-link" href="/services">
+                                <div class="sb-nav-link-icon"><i class="fas fa-server"></i></div>
+                                Services
                             </a>
-                            <div class="sb-sidenav-menu-heading">System</div>
-                            <a class="nav-link" href="#">
+
+                            <a class="nav-link" href="/process">    
+                                <div class="sb-nav-link-icon"><i class="fas fa-server"></i></div>
+                                Process
+                            </a>
+                            
+                            <a class="nav-link" href="/manage_users">
                                 <div class="sb-nav-link-icon"><i class="fas fa-users"></i></div>
-                                Users
+                                Manage Users
                             </a>
-                            <a class="nav-link" href="#">
-                                <div class="sb-nav-link-icon"><i class="fas fa-file-alt"></i></div>
-                                Logs
-                            </a>
-                            <a class="nav-link" href="#">
-                                <div class="sb-nav-link-icon"><i class="fas fa-cog"></i></div>
-                                Settings
+                            <a class="nav-link" href="/manage_kernel_modules">
+                                <div class="sb-nav-link-icon"><i class="fas fa-server"></i></div>
+                                Manage Kernel 
                             </a>
                         </div>
                     </div>
                     <div class="sb-sidenav-footer">
-                        <div class="small">Logged in as:</div>
-                        EDR Administrator
-                        <div class="small mt-1">Version: {{ version }}</div>
+                        <div class="small">Developer :</div>
+                            Koosha Yeganeh
+                        <div class="small mt-1">Version: 1.0.0</div>
                     </div>
                 </nav>
             </div>

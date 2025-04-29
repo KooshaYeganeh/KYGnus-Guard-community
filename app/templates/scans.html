@@ -11,8 +11,6 @@
         <link href="../static/css/styles.css" rel="stylesheet" />
         <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
         <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
-        <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet">
-        <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
         <style>
             .scan-card {
                 transition: transform 0.3s;
@@ -36,6 +34,19 @@
             }
             .card-header-tabs .nav-link {
                 padding: 0.75rem 1rem;
+            }
+            .scan-status {
+                padding: 10px;
+                border-radius: 5px;
+                margin-top: 10px;
+            }
+            .status-success {
+                background-color: #d4edda;
+                color: #155724;
+            }
+            .status-error {
+                background-color: #f8d7da;
+                color: #721c24;
             }
         </style>
     </head>
@@ -70,53 +81,6 @@
                         <li><a class="dropdown-item" href="/logout"><i class="fas fa-sign-out-alt fa-fw me-2"></i>Logout</a></li>
                     </ul>
                 </li>
-                <li class="nav-item dropdown">
-                    <a class="nav-link" id="alertsDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="fas fa-bell fa-fw"></i>
-                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                            3+
-                            <span class="visually-hidden">unread alerts</span>
-                        </span>
-                    </a>
-                    <ul class="dropdown-menu dropdown-menu-end p-2" aria-labelledby="alertsDropdown" style="min-width: 300px;">
-                        <li><h6 class="dropdown-header">Security Alerts</h6></li>
-                        <li>
-                            <a class="dropdown-item d-flex align-items-center" href="#">
-                                <div class="me-3">
-                                    <div class="bg-danger icon-circle"><i class="fas fa-exclamation-triangle text-white"></i></div>
-                                </div>
-                                <div>
-                                    <span class="small text-gray-500">Just now</span>
-                                    <p class="mb-0 small">Malicious process detected</p>
-                                </div>
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item d-flex align-items-center" href="#">
-                                <div class="me-3">
-                                    <div class="bg-warning icon-circle"><i class="fas fa-exclamation text-white"></i></div>
-                                </div>
-                                <div>
-                                    <span class="small text-gray-500">5 min ago</span>
-                                    <p class="mb-0 small">Suspicious network activity</p>
-                                </div>
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item d-flex align-items-center" href="#">
-                                <div class="me-3">
-                                    <div class="bg-primary icon-circle"><i class="fas fa-info-circle text-white"></i></div>
-                                </div>
-                                <div>
-                                    <span class="small text-gray-500">1 hour ago</span>
-                                    <p class="mb-0 small">Firewall rule added</p>
-                                </div>
-                            </a>
-                        </li>
-                        <li><hr class="dropdown-divider" /></li>
-                        <li><a class="dropdown-item text-center small" href="#">View All Alerts</a></li>
-                    </ul>
-                </li>
             </ul>
         </nav>
         <div id="layoutSidenav">
@@ -125,18 +89,18 @@
                     <div class="sb-sidenav-menu">
                         <div class="nav">
                             <div class="sb-sidenav-menu-heading">Core</div>
-                            <a class="nav-link" href="/">
+                            <a class="nav-link" href="index.html">
                                 <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
                                 Dashboard
                             </a>
                             <div class="sb-sidenav-menu-heading">Security Modules</div>
-                            <a class="nav-link active" href="/scan">
-                                <div class="sb-nav-link-icon"><i class="fas fa-search"></i></div>
-                                Scan Management
-                            </a>
                             <a class="nav-link" href="/network">
                                 <div class="sb-nav-link-icon"><i class="fas fa-network-wired"></i></div>
                                 Network Monitoring
+                            </a>
+                            <a class="nav-link active" href="/scan">
+                                <div class="sb-nav-link-icon"><i class="fas fa-search"></i></div>
+                                Scan Management
                             </a>
                             <a class="nav-link" href="/ids">
                                 <div class="sb-nav-link-icon"><i class="fas fa-shield-virus"></i></div>
@@ -150,12 +114,24 @@
                                 <div class="sb-nav-link-icon"><i class="fas fa-server"></i></div>
                                 Services
                             </a>
+                            <a class="nav-link" href="/process">    
+                                <div class="sb-nav-link-icon"><i class="fas fa-server"></i></div>
+                                Process
+                            </a>
+                            <a class="nav-link" href="/manage_users">
+                                <div class="sb-nav-link-icon"><i class="fas fa-users"></i></div>
+                                Manage Users
+                            </a>
+                            <a class="nav-link" href="/manage_kernel_modules">
+                                <div class="sb-nav-link-icon"><i class="fas fa-server"></i></div>
+                                Manage Kernel 
+                            </a>
                         </div>
                     </div>
                     <div class="sb-sidenav-footer">
-                        <div class="small">Logged in as:</div>
-                        EDR Administrator
-                        <div class="small mt-1">Version: {{ version }}</div>
+                        <div class="small">Developer :</div>
+                            Koosha Yeganeh
+                        <div class="small mt-1">Version: 1.0.0</div>
                     </div>
                 </nav>
             </div>
@@ -168,6 +144,18 @@
                             <li class="breadcrumb-item active">Scan Management</li>
                         </ol>
                         
+                        <!-- Display scan status messages -->
+                        {% with messages = get_flashed_messages(with_categories=true) %}
+                            {% if messages %}
+                                {% for category, message in messages %}
+                                    <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                                        <strong>{{ message }}</strong>
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        {% endwith %}
+                        
                         <div class="row">
                             <div class="col-12">
                                 <div class="card mb-4">
@@ -178,55 +166,89 @@
                                         <div class="row">
                                             <div class="col-md-6">
                                                 <div class="card scan-card h-100">
-                                                    <div class="card-body">
-                                                        <h5 class="card-title"><i class="fas fa-bolt scan-icon"></i>Quick Scans</h5>
-                                                        <div class="mb-3">
-                                                            <label class="form-label">Scan Path</label>
-                                                            <select class="form-select" id="scanPath">
-                                                                {% for path in scan_paths %}
-                                                                <option value="{{ path }}">{{ path }}</option>
-                                                                {% endfor %}
-                                                            </select>
+                                                    <form id="scanForm" action="/scan/run" method="post">
+                                                        <div class="card-body">
+                                                            <h5 class="card-title"><i class="fas fa-bolt scan-icon"></i>Quick Scans</h5>
+                                                            <div class="mb-3">
+                                                                <label class="form-label">Scan Path</label>
+                                                                <select class="form-select" name="scan_path" id="scanPath">
+                                                                    {% for path in scan_paths %}
+                                                                    <option value="{{ path }}">{{ path }}</option>
+                                                                    {% endfor %}
+                                                                </select>
+                                                            </div>
+                                                            <div class="mb-3">
+                                                                <label class="form-label">Scan Type</label>
+                                                                <select class="form-select" name="scan_type">
+                                                                    <option value="clamav">ClamAV</option>
+                                                                    <option value="maldet">Maldet</option>
+                                                                    <option value="rkhunter">Rkhunter</option>
+                                                                </select>
+                                                            </div>
+                                                            <button type="submit" class="btn btn-primary">
+                                                                <i class="fas fa-play"></i> Run Scan
+                                                            </button>
                                                         </div>
-                                                        <div class="d-flex flex-wrap gap-2">
-                                                            <button class="btn btn-primary run-scan scan-btn" data-type="clamav">
-                                                                <i class="fas fa-shield-virus"></i> ClamAV
-                                                            </button>
-                                                            <button class="btn btn-info run-scan scan-btn" data-type="maldet">
-                                                                <i class="fas fa-biohazard"></i> Maldet
-                                                            </button>
-                                                            <button class="btn btn-warning run-scan scan-btn" data-type="rkhunter">
-                                                                <i class="fas fa-search"></i> Rkhunter
-                                                            </button>
-                                                        </div>
-                                                    </div>
+                                                    </form>
                                                 </div>
                                             </div>
                                             <div class="col-md-6">
                                                 <div class="card scan-card h-100">
-                                                    <div class="card-body">
-                                                        <h5 class="card-title"><i class="fas fa-file-code scan-icon"></i>YARA Scans</h5>
-                                                        <div class="mb-3">
-                                                            <label class="form-label">YARA Rule</label>
-                                                            <select class="form-select" id="yaraRule">
-                                                                {% for rule in yara_rules %}
-                                                                <option value="{{ rule }}">{{ rule }}</option>
-                                                                {% endfor %}
-                                                            </select>
+                                                    <form id="yaraScanForm" action="/scan/run" method="post">
+                                                        <input type="hidden" name="scan_type" value="yara">
+                                                        <div class="card-body">
+                                                            <h5 class="card-title"><i class="fas fa-file-code scan-icon"></i>YARA Scans</h5>
+                                                            <div class="mb-3">
+                                                                <label class="form-label">Scan Path</label>
+                                                                <select class="form-select" name="scan_path" id="yaraScanPath">
+                                                                    {% for path in scan_paths %}
+                                                                    <option value="{{ path }}">{{ path }}</option>
+                                                                    {% endfor %}
+                                                                </select>
+                                                            </div>
+                                                            <div class="mb-3">
+                                                                <label class="form-label">YARA Rule</label>
+                                                                <select class="form-select" name="yara_rule">
+                                                                    {% for rule in yara_rules %}
+                                                                    <option value="{{ rule }}">{{ rule }}</option>
+                                                                    {% endfor %}
+                                                                </select>
+                                                            </div>
+                                                            <div class="d-flex flex-wrap gap-2">
+                                                                <button type="submit" class="btn btn-danger">
+                                                                    <i class="fas fa-play"></i> Run YARA Scan
+                                                                </button>
+                                                            </div>
                                                         </div>
-                                                        <div class="d-flex flex-wrap gap-2">
-                                                            <button class="btn btn-danger run-scan scan-btn" data-type="yara">
-                                                                <i class="fas fa-play"></i> Run Scan
-                                                            </button>
-                                                            <button class="btn btn-secondary scan-btn" data-bs-toggle="modal" data-bs-target="#uploadYaraModal">
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- YARA Rule Upload Section -->
+                                        <div class="row mt-4">
+                                            <div class="col-12">
+                                                <div class="card">
+                                                    <div class="card-header">
+                                                        <h5 class="mb-0"><i class="fas fa-upload me-2"></i>Upload YARA Rules</h5>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <form id="yaraUploadForm" enctype="multipart/form-data" action="/scan/yara/rules" method="post">
+                                                            <div class="mb-3">
+                                                                <label for="yaraFile" class="form-label">YARA Rule File (.yar or .yara)</label>
+                                                                <input class="form-control" type="file" id="yaraFile" name="yara_file" accept=".yar,.yara" required>
+                                                                <div class="form-text">Max file size: 1MB</div>
+                                                            </div>
+                                                            <button type="submit" class="btn btn-primary">
                                                                 <i class="fas fa-upload"></i> Upload Rule
                                                             </button>
-                                                        </div>
+                                                        </form>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
                                         
+                                        <!-- Scan Results Section -->
                                         <div class="row mt-4">
                                             <div class="col-12">
                                                 <div class="card">
@@ -234,7 +256,24 @@
                                                         <h5 class="mb-0"><i class="fas fa-list-alt me-2"></i>Scan Results</h5>
                                                     </div>
                                                     <div class="card-body">
-                                                        <div class="table-responsive">
+                                                        {% if last_scan %}
+                                                        <div class="scan-status status-{{ 'success' if last_scan.status == 'success' else 'error' }}">
+                                                            <h5>Last Scan Status</h5>
+                                                            <p><strong>Type:</strong> {{ last_scan.type | upper }}</p>
+                                                            <p><strong>Path:</strong> {{ last_scan.path }}</p>
+                                                            <p><strong>Timestamp:</strong> {{ last_scan.timestamp | datetimeformat }}</p>
+                                                            <p><strong>Status:</strong> 
+                                                                <span class="badge bg-{{ 'success' if last_scan.status == 'success' else 'danger' }}">
+                                                                    {{ last_scan.status | capitalize }}
+                                                                </span>
+                                                            </p>
+                                                            {% if last_scan.message %}
+                                                            <p><strong>Details:</strong> {{ last_scan.message }}</p>
+                                                            {% endif %}
+                                                        </div>
+                                                        {% endif %}
+                                                        
+                                                        <div class="table-responsive mt-3">
                                                             <table class="table table-hover" id="scanResultsTable">
                                                                 <thead>
                                                                     <tr>
@@ -243,7 +282,7 @@
                                                                         <th>Path</th>
                                                                         <th>Findings</th>
                                                                         <th>Status</th>
-                                                                        <th>Actions</th>
+                                                                        <th>Details</th>
                                                                     </tr>
                                                                 </thead>
                                                                 <tbody>
@@ -267,9 +306,8 @@
                                                                             </span>
                                                                         </td>
                                                                         <td>
-                                                                            <button class="btn btn-sm btn-outline-info view-details" 
-                                                                                    data-scan="{{ scan | tojson | forceescape }}">
-                                                                                <i class="fas fa-eye"></i> Details
+                                                                            <button class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#detailsModal{{ loop.index }}">
+                                                                                <i class="fas fa-eye"></i> View
                                                                             </button>
                                                                         </td>
                                                                     </tr>
@@ -292,52 +330,62 @@
                     </div>
                 </main>
                 
-                <!-- YARA Rule Upload Modal -->
-                <div class="modal fade" id="uploadYaraModal" tabindex="-1" aria-hidden="true">
-                    <div class="modal-dialog">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title"><i class="fas fa-upload me-2"></i>Upload YARA Rule</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                            </div>
-                            <div class="modal-body">
-                                <form id="yaraUploadForm" enctype="multipart/form-data">
-                                    <div class="mb-3">
-                                        <label for="yaraFile" class="form-label">Select YARA rule file (.yar or .yara)</label>
-                                        <input class="form-control" type="file" id="yaraFile" name="yara_file" accept=".yar,.yara" required>
-                                        <div class="form-text">Max file size: 1MB</div>
-                                    </div>
-                                </form>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                <button type="button" class="btn btn-primary" id="uploadYaraBtn">
-                                    <i class="fas fa-upload me-1"></i> Upload
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Scan Details Modal -->
-                <div class="modal fade" id="scanDetailsModal" tabindex="-1" aria-hidden="true">
+                <!-- Details Modals for each scan -->
+                {% for scan in last_scans %}
+                <div class="modal fade" id="detailsModal{{ loop.index }}" tabindex="-1" aria-hidden="true">
                     <div class="modal-dialog modal-lg">
                         <div class="modal-content">
                             <div class="modal-header">
-                                <h5 class="modal-title"><i class="fas fa-info-circle me-2"></i>Scan Details</h5>
+                                <h5 class="modal-title">Scan Details - {{ scan.type | upper }}</h5>
                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                             </div>
-                            <div class="modal-body" id="scanDetailsContent">
-                                <!-- Details will be inserted here by JavaScript -->
+                            <div class="modal-body">
+                                <div class="mb-3">
+                                    <h6>Scan Information</h6>
+                                    <p><strong>Path:</strong> {{ scan.path }}</p>
+                                    <p><strong>Timestamp:</strong> {{ scan.timestamp | datetimeformat }}</p>
+                                    <p><strong>Status:</strong> 
+                                        <span class="badge bg-{{ 'success' if scan.status == 'clean' else 'danger' }}">
+                                            {{ scan.status | capitalize }}
+                                        </span>
+                                    </p>
+                                </div>
+                                
+                                {% if scan.results %}
+                                <div class="mb-3">
+                                    <h6>Findings ({{ scan.results | length }})</h6>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm">
+                                            <thead>
+                                                <tr>
+                                                    <th>File</th>
+                                                    <th>Detection</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for result in scan.results %}
+                                                <tr>
+                                                    <td><code>{{ result.file }}</code></td>
+                                                    <td><span class="badge bg-danger">{{ result.detection }}</span></td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                {% else %}
+                                <div class="alert alert-success">
+                                    No threats detected in this scan.
+                                </div>
+                                {% endif %}
                             </div>
                             <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                                    <i class="fas fa-times me-1"></i> Close
-                                </button>
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                             </div>
                         </div>
                     </div>
                 </div>
+                {% endfor %}
                 
                 <footer class="py-4 bg-light mt-auto">
                     <div class="container-fluid px-4">
@@ -354,163 +402,5 @@
 
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
         <script src="../static/js/scripts.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-        
-        <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            toastr.options = {
-                "closeButton": true,
-                "progressBar": true,
-                "positionClass": "toast-top-right",
-                "timeOut": "5000"
-            };
-
-            // Update system time every second
-            function updateSystemTime() {
-                const now = new Date();
-                const timeString = now.toISOString().replace('T', ' ').substr(0, 19);
-                document.getElementById('current-time').textContent = timeString;
-            }
-            setInterval(updateSystemTime, 1000);
-
-            // Run scan button handler
-            $('.run-scan').click(function() {
-                const scanType = $(this).data('type');
-                const scanPath = $('#scanPath').val();
-                const yaraRule = $('#yaraRule').val();
-                
-                Swal.fire({
-                    title: 'Confirm Scan',
-                    text: `Run ${scanType.toUpperCase()} scan on ${scanPath}?`,
-                    icon: 'question',
-                    showCancelButton: true,
-                    confirmButtonText: 'Run Scan',
-                    cancelButtonText: 'Cancel'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        toastr.info(`Starting ${scanType} scan...`);
-                        
-                        $.ajax({
-                            url: '/scan/run',
-                            method: 'POST',
-                            data: {
-                                scan_type: scanType,
-                                scan_path: scanPath,
-                                yara_rule: scanType === 'yara' ? yaraRule : ''
-                            },
-                            success: function(response) {
-                                toastr.success(`${scanType} scan completed`);
-                                setTimeout(function() {
-                                    location.reload();
-                                }, 1500);
-                            },
-                            error: function(xhr) {
-                                toastr.error(`Scan failed: ${xhr.responseJSON.message}`);
-                            }
-                        });
-                    }
-                });
-            });
-
-            // YARA rule upload
-            $('#uploadYaraBtn').click(function() {
-                const fileInput = $('#yaraFile')[0];
-                if (!fileInput.files.length) {
-                    toastr.error('Please select a file to upload');
-                    return;
-                }
-                
-                const formData = new FormData($('#yaraUploadForm')[0]);
-                
-                Swal.fire({
-                    title: 'Upload YARA Rule',
-                    text: 'Are you sure you want to upload this rule file?',
-                    icon: 'question',
-                    showCancelButton: true,
-                    confirmButtonText: 'Upload',
-                    cancelButtonText: 'Cancel'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        $.ajax({
-                            url: '/scan/yara/rules',
-                            method: 'POST',
-                            data: formData,
-                            processData: false,
-                            contentType: false,
-                            beforeSend: function() {
-                                $('#uploadYaraBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i> Uploading...');
-                            },
-                            success: function(response) {
-                                toastr.success(response.message);
-                                $('#uploadYaraModal').modal('hide');
-                                setTimeout(function() {
-                                    location.reload();
-                                }, 1500);
-                            },
-                            error: function(xhr) {
-                                toastr.error(xhr.responseJSON.message);
-                                $('#uploadYaraBtn').prop('disabled', false).html('<i class="fas fa-upload me-1"></i> Upload');
-                            }
-                        });
-                    }
-                });
-            });
-
-            // View scan details
-            $(document).on('click', '.view-details', function() {
-                const scanData = $(this).data('scan');
-                let detailsHtml = `
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <p><strong><i class="fas fa-shield-alt me-2"></i>Scan Type:</strong> ${scanData.type.toUpperCase()}</p>
-                            <p><strong><i class="fas fa-folder-open me-2"></i>Path:</strong> ${scanData.path}</p>
-                        </div>
-                        <div class="col-md-6">
-                            <p><strong><i class="fas fa-clock me-2"></i>Timestamp:</strong> ${scanData.timestamp}</p>
-                            <p><strong><i class="fas fa-check-circle me-2"></i>Status:</strong> 
-                                <span class="badge bg-${scanData.status === 'clean' ? 'success' : 'danger'}">
-                                    ${scanData.status.charAt(0).toUpperCase() + scanData.status.slice(1)}
-                                </span>
-                            </p>
-                        </div>
-                    </div>
-                    <hr>
-                    <h5><i class="fas fa-search me-2"></i>Findings</h5>
-                `;
-
-                if (scanData.results && scanData.results.length > 0) {
-                    detailsHtml += '<div class="table-responsive"><table class="table table-sm table-hover"><thead><tr><th>Item</th><th>Details</th><th>Severity</th></tr></thead><tbody>';
-                    
-                    if (scanData.type === 'clamav') {
-                        scanData.results.forEach(item => {
-                            detailsHtml += `<tr><td>${item.split('/').pop()}</td><td>${item}</td><td><span class="badge bg-danger">High</span></td></tr>`;
-                        });
-                    } else if (scanData.type === 'maldet') {
-                        detailsHtml += `<tr><td colspan="3">${scanData.results} threats detected</td></tr>`;
-                    } else if (scanData.type === 'rkhunter') {
-                        scanData.results.forEach(item => {
-                            detailsHtml += `<tr><td colspan="3"><i class="fas fa-exclamation-triangle text-warning me-2"></i>${item}</td></tr>`;
-                        });
-                    } else if (scanData.type === 'yara') {
-                        scanData.results.forEach(item => {
-                            detailsHtml += `<tr><td>${item.file.split('/').pop()}</td><td>${item.matches.join(', ')}</td><td><span class="badge bg-warning">Medium</span></td></tr>`;
-                        });
-                    }
-                    
-                    detailsHtml += '</tbody></table></div>';
-                } else {
-                    detailsHtml += `
-                        <div class="alert alert-success">
-                            <i class="fas fa-check-circle me-2"></i>No threats detected in this scan
-                        </div>
-                    `;
-                }
-
-                $('#scanDetailsContent').html(detailsHtml);
-                $('#scanDetailsModal').modal('show');
-            });
-        });
-        </script>
     </body>
 </html>
