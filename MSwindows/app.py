@@ -1,857 +1,785 @@
-import psutil
-import sqlite3
-import hashlib
 import os
-import time
-import win32api
-import win32con
-import win32security
-import win32serviceutil
-import win32service
-import win32event
+import subprocess
 import json
-import threading
+import time
+import psutil
+import hashlib
 from datetime import datetime
-from flask import Flask, render_template, request, redirect, url_for, jsonify
-from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+import logging
+from logging.handlers import RotatingFileHandler
+import socket
+import requests
+from functools import wraps
+import yara
+import threading
+import glob
+import re
+import shutil
 import winreg
+import wmi
+import pythoncom
+from flask import Flask, jsonify, request, render_template, Response, redirect, url_for
 
-# Configuration
-CONFIG = {
-    'DB_PATH': 'edr_agent.db',
-    'MONITOR_PATHS': [r'C:\Windows\System32', r'C:\Program Files'],
-    'REGISTRY_KEYS': [
-        r'SOFTWARE\Microsoft\Windows\CurrentVersion\Run',
-        r'SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce'
-    ],
-    'WEB_INTERFACE': {
-        'HOST': '127.0.0.1',
-        'PORT': 5000,
-        'SECRET_KEY': 'your-secret-key-here',
-        'USERNAME': 'admin',
-        'PASSWORD_HASH': 'sha256$yourpasswordhash'  # Generate with hashlib
-    }
-}
-
-# Flask Application Setup
 app = Flask(__name__)
-app.secret_key = CONFIG['WEB_INTERFACE']['SECRET_KEY']
 
-# Flask-Login Setup
-login_manager = LoginManager()
-login_manager.init_app(app)
-login_manager.login_view = 'login'
+# =============================================
+# Configuration
+# =============================================
 
-class User(UserMixin):
-    def __init__(self, id):
-        self.id = id
-
-@login_manager.user_loader
-def load_user(user_id):
-    return User(user_id) if user_id == CONFIG['WEB_INTERFACE']['USERNAME'] else None
-
-# EDR Agent Core
-class EDRAgent:
-    def __init__(self):
-        self.agent_id = self.get_system_fingerprint()
-        self.db_path = CONFIG['DB_PATH']
-        self.running = False
-        self.init_database()
-        self.init_web_users()
-        
-    def get_system_fingerprint(self):
-        """Create a unique identifier for this endpoint"""
-        info = f"{os.environ['COMPUTERNAME']}-{psutil.cpu_count()}-{psutil.virtual_memory().total}"
-        return hashlib.sha256(info.encode()).hexdigest()
+class Config:
+    # Directories
+    APP_DIR = os.path.join(os.environ['PROGRAMDATA'], 'WindowsEDR')
+    LOG_DIR = os.path.join(APP_DIR, 'logs')
+    QUARANTINE_DIR = os.path.join(APP_DIR, 'quarantine')
+    SIGNATURES_DIR = os.path.join(APP_DIR, 'signatures')
+    YARA_RULES = os.path.join(APP_DIR, 'yara_rules')
+    REPORT_DIR = os.path.join(APP_DIR, 'reports')
     
-    def init_database(self):
-        """Initialize SQLite database with required tables"""
-        with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.cursor()
-            
-            # System events table
-            cursor.execute('''
-            CREATE TABLE IF NOT EXISTS events (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                event_type TEXT NOT NULL,
-                event_data TEXT NOT NULL,
-                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-                processed BOOLEAN DEFAULT 0,
-                severity TEXT DEFAULT 'info'
-            )
-            ''')
-            
-            # System baseline table
-            cursor.execute('''
-            CREATE TABLE IF NOT EXISTS system_baseline (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                item_type TEXT NOT NULL,
-                item_path TEXT NOT NULL,
-                item_hash TEXT,
-                permissions TEXT,
-                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-                whitelisted BOOLEAN DEFAULT 0
-            )
-            ''')
-            
-            # Alerts table
-            cursor.execute('''
-            CREATE TABLE IF NOT EXISTS alerts (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                event_id INTEGER,
-                alert_type TEXT NOT NULL,
-                description TEXT NOT NULL,
-                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-                resolved BOOLEAN DEFAULT 0,
-                FOREIGN KEY(event_id) REFERENCES events(id)
-            )
-            ''')
-            
-            # Web users table
-            cursor.execute('''
-            CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                username TEXT UNIQUE NOT NULL,
-                password_hash TEXT NOT NULL,
-                last_login DATETIME,
-                is_admin BOOLEAN DEFAULT 0
-            )
-            ''')
-            
-            conn.commit()
+    # Scanning
+    SCAN_TIMEOUT = 300  # 5 minutes
+    SCAN_INTERVAL = 3600  # 1 hour
     
-    def init_web_users(self):
-        """Initialize web interface users"""
-        with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.cursor()
-            
-            # Check if admin user exists
-            cursor.execute('SELECT 1 FROM users WHERE username = ?', 
-                         (CONFIG['WEB_INTERFACE']['USERNAME'],))
-            if not cursor.fetchone():
-                cursor.execute('''
-                INSERT INTO users (username, password_hash, is_admin)
-                VALUES (?, ?, 1)
-                ''', (CONFIG['WEB_INTERFACE']['USERNAME'], 
-                     CONFIG['WEB_INTERFACE']['PASSWORD_HASH']))
-                conn.commit()
+    # Services
+    SURICATA_ENABLED = False
+    SURICATA_DIR = os.path.join(APP_DIR, 'suricata')
+    SURICATA_RULES = os.path.join(SURICATA_DIR, 'rules')
+    SURICATA_LOGS = os.path.join(SURICATA_DIR, 'logs')
     
-    def log_event(self, event_type, event_data, severity='info'):
-        """Store event in local database"""
-        with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.cursor()
-            cursor.execute('''
-            INSERT INTO events (event_type, event_data, severity)
-            VALUES (?, ?, ?)
-            ''', (event_type, json.dumps(event_data), severity))
-            conn.commit()
-            return cursor.lastrowid
+    # Version
+    VERSION = "1.0"
     
-    def create_alert(self, event_id, alert_type, description):
-        """Create an alert from an event"""
-        with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.cursor()
-            cursor.execute('''
-            INSERT INTO alerts (event_id, alert_type, description)
-            VALUES (?, ?, ?)
-            ''', (event_id, alert_type, description))
-            conn.commit()
-    
-    def start_monitoring(self):
-        """Start all monitoring threads"""
-        if self.running:
-            return False
-        
-        self.running = True
-        self.establish_baseline()
-        
-        # Start monitoring threads
-        self.monitor_threads = [
-            threading.Thread(target=self.monitor_processes),
-            threading.Thread(target=self.monitor_file_changes, 
-                           args=(CONFIG['MONITOR_PATHS'],)),
-            threading.Thread(target=self.monitor_registry_keys, 
-                           args=(CONFIG['REGISTRY_KEYS'],)),
-            threading.Thread(target=self.monitor_network_connections),
-            threading.Thread(target=self.monitor_services),
-            threading.Thread(target=self.analyze_events)
+    @staticmethod
+    def init_directories():
+        """Create all required directories"""
+        dirs = [
+            Config.APP_DIR,
+            Config.LOG_DIR,
+            Config.QUARANTINE_DIR,
+            Config.SIGNATURES_DIR,
+            Config.YARA_RULES,
+            Config.REPORT_DIR,
+            Config.SURICATA_DIR,
+            Config.SURICATA_RULES,
+            Config.SURICATA_LOGS
         ]
         
-        for t in self.monitor_threads:
-            t.daemon = True
-            t.start()
+        for dir_path in dirs:
+            os.makedirs(dir_path, exist_ok=True)
+
+# =============================================
+# Initialization
+# =============================================
+
+def init_directories():
+    """Initialize all required directories"""
+    Config.init_directories()
+
+def setup_logging():
+    """Configure application logging"""
+    log_file = os.path.join(Config.LOG_DIR, 'edr.log')
+    handler = RotatingFileHandler(log_file, maxBytes=1000000, backupCount=5)
+    handler.setLevel(logging.INFO)
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+    app.logger.addHandler(handler)
+    app.logger.setLevel(logging.INFO)
+
+def log_event(event_type, level, message, extra_info=None):
+    """Log security events"""
+    log_entry = {
+        'timestamp': datetime.now().isoformat(),
+        'type': event_type,
+        'level': level,
+        'message': message
+    }
+    
+    if extra_info:
+        log_entry['extra_info'] = extra_info
+    
+    app.logger.info(json.dumps(log_entry))
+
+# =============================================
+# Antivirus Scanning
+# =============================================
+
+def run_clamav_scan(scan_path):
+    """Run ClamAV scan on Windows"""
+    try:
+        clamscan_path = r'C:\Program Files\ClamAV\clamscan.exe'
+        if not os.path.exists(clamscan_path):
+            return {
+                'status': 'error',
+                'message': 'ClamAV not found',
+                'timestamp': datetime.now().isoformat()
+            }
         
-        return True
-    
-    def stop_monitoring(self):
-        """Stop all monitoring threads"""
-        self.running = False
-        for t in self.monitor_threads:
-            if t.is_alive():
-                t.join(timeout=5)
-    
-    def establish_baseline(self):
-        """Create initial baseline of system state"""
-        with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.cursor()
-            
-            # Record running processes
-            for proc in psutil.process_iter(['pid', 'name', 'exe', 'username']):
-                try:
-                    cursor.execute('''
-                    INSERT OR IGNORE INTO system_baseline 
-                    (item_type, item_path, item_hash, permissions)
-                    VALUES (?, ?, ?, ?)
-                    ''', ('process', proc.info['exe'], 
-                         self.get_file_hash(proc.info['exe']) if proc.info['exe'] else None, 
-                         self.get_process_permissions(proc.pid)))
-                except (psutil.NoSuchProcess, psutil.AccessDenied, FileNotFoundError):
-                    continue
-            
-            # Record critical files
-            for path in CONFIG['MONITOR_PATHS']:
-                for root, _, files in os.walk(path):
-                    for file in files:
-                        file_path = os.path.join(root, file)
-                        try:
-                            cursor.execute('''
-                            INSERT OR IGNORE INTO system_baseline 
-                            (item_type, item_path, item_hash, permissions)
-                            VALUES (?, ?, ?, ?)
-                            ''', ('file', file_path, self.get_file_hash(file_path), 
-                                 self.get_file_permissions(file_path)))
-                        except (PermissionError, FileNotFoundError):
-                            continue
-            
-            conn.commit()
-    
-    def get_process_permissions(self, pid):
-        """Get process security permissions"""
-        try:
-            process = win32api.OpenProcess(
-                win32con.PROCESS_QUERY_INFORMATION, False, pid)
-            sd = win32security.GetSecurityInfo(
-                process, win32security.SE_KERNEL_OBJECT,
-                win32security.DACL_SECURITY_INFORMATION)
-            dacl = sd.GetSecurityDescriptorDacl()
-            return str([(str(ace[0]), ace[1]) for ace in dacl])
-        except Exception as e:
-            return str(e)
-    
-    def get_file_permissions(self, filepath):
-        """Get file security permissions"""
-        try:
-            sd = win32security.GetFileSecurity(
-                filepath, win32security.DACL_SECURITY_INFORMATION)
-            dacl = sd.GetSecurityDescriptorDacl()
-            return str([(str(ace[0]), ace[1]) for ace in dacl])
-        except Exception as e:
-            return str(e)
-    
-    def monitor_processes(self):
-        """Monitor process creation and termination"""
-        known_processes = set()
+        cmd = [clamscan_path, '-r', '--infected', '--no-summary']
+        if scan_path:
+            cmd.append(scan_path)
         
-        while self.running:
-            current_processes = {p.pid for p in psutil.process_iter()}
-            
-            # New processes
-            new_pids = current_processes - known_processes
-            for pid in new_pids:
-                try:
-                    p = psutil.Process(pid)
-                    self.log_process_event(p, "creation")
-                except psutil.NoSuchProcess:
-                    continue
-            
-            # Terminated processes
-            terminated_pids = known_processes - current_processes
-            for pid in terminated_pids:
-                self.log_event("process_termination", {"pid": pid})
-            
-            known_processes = current_processes
-            time.sleep(1)
-    
-    def log_process_event(self, process, event_type):
-        """Log process-related events"""
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=Config.SCAN_TIMEOUT
+        )
+        
+        infected_files = []
+        if result.returncode == 1:  # Found viruses
+            for line in result.stdout.split('\n'):
+                if 'FOUND' in line:
+                    parts = line.split(':', 1)
+                    if len(parts) == 2:
+                        infected_files.append({
+                            'file': parts[0].strip(),
+                            'detection': parts[1].strip()
+                        })
+        
+        status = 'clean' if result.returncode == 0 else 'infected'
+        
+        return {
+            'status': status,
+            'infected_files': infected_files,
+            'infected_count': len(infected_files),
+            'output': result.stdout,
+            'message': f"Found {len(infected_files)} infected files" if infected_files else "No threats found",
+            'timestamp': datetime.now().isoformat()
+        }
+        
+    except subprocess.TimeoutExpired:
+        return {
+            'status': 'error',
+            'message': 'Scan timed out',
+            'timestamp': datetime.now().isoformat()
+        }
+    except Exception as e:
+        return {
+            'status': 'error',
+            'message': str(e),
+            'timestamp': datetime.now().isoformat()
+        }
+
+def run_defender_scan(scan_path):
+    """Run Windows Defender scan"""
+    try:
+        cmd = ['powershell', '-Command', 
+               f'Start-MpScan -ScanPath "{scan_path}" -ScanType FullScan | ConvertTo-Json']
+        
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=Config.SCAN_TIMEOUT
+        )
+        
         try:
-            event_data = {
-                "pid": process.pid,
-                "name": process.name(),
-                "exe": process.exe(),
-                "cmdline": process.cmdline(),
-                "username": process.username(),
-                "create_time": process.create_time(),
-                "permissions": self.get_process_permissions(process.pid)
+            scan_result = json.loads(result.stdout)
+            return {
+                'status': 'success',
+                'result': scan_result,
+                'timestamp': datetime.now().isoformat()
+            }
+        except json.JSONDecodeError:
+            return {
+                'status': 'error',
+                'message': 'Failed to parse Defender output',
+                'output': result.stdout,
+                'timestamp': datetime.now().isoformat()
             }
             
-            event_id = self.log_event(f"process_{event_type}", event_data)
-            
-            # Check if this is a new/unrecognized process
-            if event_type == "creation":
-                with sqlite3.connect(self.db_path) as conn:
-                    cursor = conn.cursor()
-                    cursor.execute('''
-                    SELECT 1 FROM system_baseline 
-                    WHERE item_type = 'process' AND item_path = ? AND whitelisted = 1
-                    ''', (process.exe(),))
-                    
-                    if not cursor.fetchone():
-                        self.create_alert(
-                            event_id, 
-                            "unknown_process", 
-                            f"New process detected: {process.name()} ({process.exe()})"
-                        )
-                        
-        except (psutil.NoSuchProcess, FileNotFoundError):
-            pass
-    
-    def monitor_file_changes(self, directories):
-        """Monitor specified directories for file changes"""
-        file_hashes = {}
+    except subprocess.TimeoutExpired:
+        return {
+            'status': 'error',
+            'message': 'Scan timed out',
+            'timestamp': datetime.now().isoformat()
+        }
+    except Exception as e:
+        return {
+            'status': 'error',
+            'message': str(e),
+            'timestamp': datetime.now().isoformat()
+        }
+
+def run_yara_scan(scan_path, rule_name):
+    """Run YARA scan on Windows"""
+    try:
+        rule_path = os.path.join(Config.YARA_RULES, rule_name)
+        if not os.path.isfile(rule_path):
+            return {
+                'status': 'error',
+                'message': f'YARA rule file not found: {rule_name}',
+                'timestamp': datetime.now().isoformat()
+            }
         
-        # Initial scan
-        for root_dir in directories:
-            for root, _, files in os.walk(root_dir):
+        rules = yara.compile(filepath=rule_path)
+        matches = []
+        
+        if os.path.isdir(scan_path):
+            for root, _, files in os.walk(scan_path):
                 for file in files:
                     file_path = os.path.join(root, file)
                     try:
-                        file_hashes[file_path] = self.get_file_hash(file_path)
-                    except (PermissionError, FileNotFoundError):
-                        continue
-        
-        # Continuous monitoring
-        while self.running:
-            for root_dir in directories:
-                for root, _, files in os.walk(root_dir):
-                    for file in files:
-                        file_path = os.path.join(root, file)
-                        try:
-                            current_hash = self.get_file_hash(file_path)
-                            
-                            if file_path not in file_hashes:
-                                # New file detected
-                                event_id = self.log_event("file_creation", {
-                                    "path": file_path,
-                                    "hash": current_hash,
-                                    "permissions": self.get_file_permissions(file_path)
-                                })
-                                
-                                with sqlite3.connect(self.db_path) as conn:
-                                    cursor = conn.cursor()
-                                    cursor.execute('''
-                                    SELECT 1 FROM system_baseline 
-                                    WHERE item_type = 'file' AND item_path = ? AND whitelisted = 1
-                                    ''', (file_path,))
-                                    
-                                    if not cursor.fetchone():
-                                        self.create_alert(
-                                            event_id, 
-                                            "new_file", 
-                                            f"New file detected: {file_path}"
-                                        )
-                                
-                                file_hashes[file_path] = current_hash
-                            elif file_hashes[file_path] != current_hash:
-                                # File modified
-                                event_id = self.log_event("file_modification", {
-                                    "path": file_path,
-                                    "old_hash": file_hashes[file_path],
-                                    "new_hash": current_hash,
-                                    "permissions": self.get_file_permissions(file_path)
-                                }, severity='warning')
-                                
-                                with sqlite3.connect(self.db_path) as conn:
-                                    cursor = conn.cursor()
-                                    cursor.execute('''
-                                    SELECT 1 FROM system_baseline 
-                                    WHERE item_type = 'file' AND item_path = ? AND whitelisted = 1
-                                    ''', (file_path,))
-                                    
-                                    if not cursor.fetchone():
-                                        self.create_alert(
-                                            event_id, 
-                                            "file_modified", 
-                                            f"Critical file modified: {file_path}"
-                                        )
-                                
-                                file_hashes[file_path] = current_hash
-                                
-                        except (PermissionError, FileNotFoundError):
-                            if file_path in file_hashes:
-                                # File deleted
-                                event_id = self.log_event("file_deletion", {
-                                    "path": file_path,
-                                    "hash": file_hashes[file_path]
-                                }, severity='warning')
-                                
-                                self.create_alert(
-                                    event_id, 
-                                    "file_deleted", 
-                                    f"File deleted: {file_path}"
-                                )
-                                
-                                del file_hashes[file_path]
-                            continue
-            
-            time.sleep(60)
-    
-    def get_file_hash(self, filepath):
-        """Calculate SHA-256 hash of a file"""
-        hasher = hashlib.sha256()
-        with open(filepath, 'rb') as f:
-            for chunk in iter(lambda: f.read(4096), b''):
-                hasher.update(chunk)
-        return hasher.hexdigest()
-    
-    def monitor_registry_keys(self, keys_to_watch):
-        """Monitor important registry keys for changes"""
-        original_values = {}
-        for key_path in keys_to_watch:
-            try:
-                key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, key_path)
-                original_values[key_path] = winreg.QueryValueEx(key, "")[0]
-                winreg.CloseKey(key)
-            except WindowsError:
-                continue
-        
-        while self.running:
-            for key_path in keys_to_watch:
-                try:
-                    key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, key_path)
-                    current_value = winreg.QueryValueEx(key, "")[0]
-                    
-                    if original_values.get(key_path) != current_value:
-                        event_id = self.log_event("registry_change", {
-                            "key": key_path,
-                            "old_value": original_values.get(key_path),
-                            "new_value": current_value
-                        }, severity='warning')
-                        
-                        self.create_alert(
-                            event_id,
-                            "registry_modified",
-                            f"Registry key modified: {key_path}"
-                        )
-                        
-                        original_values[key_path] = current_value
-                    
-                    winreg.CloseKey(key)
-                except WindowsError:
-                    if key_path in original_values:
-                        # Key was deleted
-                        event_id = self.log_event("registry_deletion", {
-                            "key": key_path,
-                            "old_value": original_values[key_path]
-                        }, severity='high')
-                        
-                        self.create_alert(
-                            event_id,
-                            "registry_deleted",
-                            f"Registry key deleted: {key_path}"
-                        )
-                        
-                        del original_values[key_path]
-                    continue
-            
-            time.sleep(60)
-    
-    def monitor_network_connections(self):
-        """Monitor network connections"""
-        known_connections = set()
-        
-        while self.running:
-            current_connections = set()
-            for conn in psutil.net_connections(kind='inet'):
-                if conn.status == 'ESTABLISHED' and conn.raddr:
-                    conn_id = (conn.laddr.ip, conn.laddr.port, conn.raddr.ip, conn.raddr.port)
-                    current_connections.add(conn_id)
-                    
-                    if conn_id not in known_connections:
-                        try:
-                            p = psutil.Process(conn.pid)
-                            event_id = self.log_event("network_connection", {
-                                "pid": conn.pid,
-                                "process_name": p.name(),
-                                "local": f"{conn.laddr.ip}:{conn.laddr.port}",
-                                "remote": f"{conn.raddr.ip}:{conn.raddr.port}",
-                                "status": conn.status
+                        for match in rules.match(file_path):
+                            matches.append({
+                                'file': file_path,
+                                'rule': match.rule,
+                                'tags': list(match.tags),
+                                'meta': dict(match.meta)
                             })
-                            
-                            # Check if this is a known process
-                            with sqlite3.connect(self.db_path) as conn_db:
-                                cursor = conn_db.cursor()
-                                cursor.execute('''
-                                SELECT 1 FROM system_baseline 
-                                WHERE item_type = 'process' AND item_path = ? AND whitelisted = 1
-                                ''', (p.exe(),))
-                                
-                                if not cursor.fetchone():
-                                    self.create_alert(
-                                        event_id,
-                                        "new_connection",
-                                        f"New network connection from {p.name()} to {conn.raddr.ip}:{conn.raddr.port}"
-                                    )
-                            
-                        except (psutil.NoSuchProcess, AttributeError):
-                            continue
-            
-            # Detect closed connections
-            closed_connections = known_connections - current_connections
-            for conn_id in closed_connections:
-                self.log_event("network_disconnection", {
-                    "connection": conn_id
+                    except Exception as e:
+                        app.logger.warning(f"Error scanning {file_path}: {str(e)}")
+        elif os.path.isfile(scan_path):
+            for match in rules.match(scan_path):
+                matches.append({
+                    'file': scan_path,
+                    'rule': match.rule,
+                    'tags': list(match.tags),
+                    'meta': dict(match.meta)
                 })
-            
-            known_connections = current_connections
+        
+        status = 'clean' if not matches else 'matches'
+        
+        return {
+            'status': status,
+            'matches': matches,
+            'match_count': len(matches),
+            'rule': rule_name,
+            'message': f"Found {len(matches)} matches" if matches else "No matches found",
+            'timestamp': datetime.now().isoformat()
+        }
+        
+    except yara.SyntaxError as e:
+        return {
+            'status': 'error',
+            'message': f"YARA rule syntax error: {str(e)}",
+            'timestamp': datetime.now().isoformat()
+        }
+    except Exception as e:
+        return {
+            'status': 'error',
+            'message': str(e),
+            'timestamp': datetime.now().isoformat()
+        }
+
+# =============================================
+# Firewall Management
+# =============================================
+
+def get_firewall_status():
+    """Get Windows Firewall status"""
+    try:
+        cmd = ['netsh', 'advfirewall', 'show', 'allprofiles']
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        
+        status = {
+            'domain': {},
+            'private': {},
+            'public': {}
+        }
+        
+        current_profile = None
+        for line in result.stdout.split('\n'):
+            line = line.strip()
+            if 'Profile Settings:' in line:
+                current_profile = line.split()[0].lower()
+            elif current_profile and 'State' in line:
+                status[current_profile]['state'] = line.split()[-1]
+            elif current_profile and 'Firewall Policy' in line:
+                status[current_profile]['policy'] = ' '.join(line.split()[2:])
+        
+        return {
+            'status': 'success',
+            'result': status,
+            'timestamp': datetime.now().isoformat()
+        }
+    except Exception as e:
+        return {
+            'status': 'error',
+            'message': str(e),
+            'timestamp': datetime.now().isoformat()
+        }
+
+def manage_firewall_rule(action, rule_name, direction='in', protocol='tcp', 
+                        local_port='any', remote_ip='any', profile='any'):
+    """Manage Windows Firewall rules"""
+    try:
+        cmd = ['netsh', 'advfirewall', 'firewall']
+        
+        if action == 'add':
+            cmd.extend([
+                'add', 'rule',
+                f'name="{rule_name}"',
+                f'dir={direction}',
+                f'action=allow',
+                f'protocol={protocol}',
+                f'localport={local_port}',
+                f'remoteip={remote_ip}',
+                f'profile={profile}'
+            ])
+        elif action == 'delete':
+            cmd.extend(['delete', 'rule', f'name="{rule_name}"'])
+        else:
+            return {
+                'status': 'error',
+                'message': 'Invalid action',
+                'timestamp': datetime.now().isoformat()
+            }
+        
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        
+        if result.returncode == 0:
+            return {
+                'status': 'success',
+                'message': result.stdout.strip(),
+                'timestamp': datetime.now().isoformat()
+            }
+        else:
+            return {
+                'status': 'error',
+                'message': result.stderr.strip(),
+                'timestamp': datetime.now().isoformat()
+            }
+    except Exception as e:
+        return {
+            'status': 'error',
+            'message': str(e),
+            'timestamp': datetime.now().isoformat()
+        }
+
+# =============================================
+# Suricata Integration
+# =============================================
+
+def start_suricata():
+    """Start Suricata IDS/IPS on Windows"""
+    if not Config.SURICATA_ENABLED:
+        return False
+    
+    try:
+        suricata_path = os.path.join(Config.SURICATA_DIR, 'suricata.exe')
+        if not os.path.exists(suricata_path):
+            log_event("SURICATA", "error", "Suricata executable not found")
+            return False
+        
+        # Get network interfaces
+        interfaces = get_network_interfaces()
+        if not interfaces:
+            log_event("SURICATA", "error", "No network interfaces found")
+            return False
+        
+        # Start Suricata on first interface
+        interface = interfaces[0]['name']
+        cmd = [
+            suricata_path,
+            '-c', os.path.join(Config.SURICATA_DIR, 'suricata.yaml'),
+            '-i', interface,
+            '--set', f'default-rule-path={Config.SURICATA_RULES}',
+            '--set', f'rule-files={",".join(os.listdir(Config.SURICATA_RULES))}',
+            '--set', f'log-dir={Config.SURICATA_LOGS}'
+        ]
+        
+        subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        log_event("SURICATA", "info", "Started Suricata IDS/IPS")
+        return True
+    except Exception as e:
+        log_event("ERROR", "high", "Failed to start Suricata", {'error': str(e)})
+        return False
+
+def monitor_suricata_logs():
+    """Monitor Suricata logs for alerts"""
+    if not Config.SURICATA_ENABLED:
+        return
+    
+    eve_log = os.path.join(Config.SURICATA_LOGS, 'eve.json')
+    if not os.path.exists(eve_log):
+        return
+    
+    try:
+        current_pos = os.path.getsize(eve_log)
+        
+        while True:
+            new_size = os.path.getsize(eve_log)
+            if new_size > current_pos:
+                with open(eve_log, 'r') as f:
+                    f.seek(current_pos)
+                    for line in f:
+                        try:
+                            alert = json.loads(line)
+                            if alert['event_type'] == 'alert':
+                                log_event("SURICATA", "high", "Suricata alert detected", {
+                                    'signature': alert['alert']['signature'],
+                                    'source_ip': alert.get('src_ip', 'unknown'),
+                                    'dest_ip': alert.get('dest_ip', 'unknown'),
+                                    'action': alert.get('action', 'unknown')
+                                })
+                        except json.JSONDecodeError:
+                            continue
+                    current_pos = f.tell()
             time.sleep(5)
+    except Exception as e:
+        log_event("ERROR", "high", "Suricata log monitoring failed", {'error': str(e)})
+
+# =============================================
+# Process Monitoring
+# =============================================
+
+def analyze_processes():
+    """Analyze running processes for anomalies"""
+    suspicious_processes = []
     
-    def monitor_services(self):
-        """Monitor Windows services"""
-        known_services = {s.name() for s in psutil.win_service_iter()}
+    # Known malicious process patterns
+    malicious_patterns = [
+        'mimikatz', 'cobaltstrike', 'metasploit', 'empire', 
+        'powersploit', 'bloodhound', 'netspy', 'njrat',
+        'quasar', 'darkcomet', 'nanocore', 'gh0st'
+    ]
+    
+    try:
+        pythoncom.CoInitialize()
+        c = wmi.WMI()
         
-        while self.running:
-            current_services = {s.name() for s in psutil.win_service_iter()}
-            
-            # New services
-            new_services = current_services - known_services
-            for service_name in new_services:
-                try:
-                    service = psutil.win_service_get(service_name)
-                    event_id = self.log_event("service_creation", {
-                        "name": service.name(),
-                        "display_name": service.display_name(),
-                        "status": service.status(),
-                        "binpath": service.binpath()
-                    }, severity='warning')
+        for process in c.Win32_Process():
+            try:
+                suspicion_score = 0
+                reasons = []
+                
+                # Check process name against malicious patterns
+                for pattern in malicious_patterns:
+                    if re.search(pattern, process.Name, re.IGNORECASE):
+                        suspicion_score += 40
+                        reasons.append(f"Matches malicious pattern: {pattern}")
+                
+                # Check for unsigned processes
+                if not is_process_signed(process.ProcessId):
+                    suspicion_score += 20
+                    reasons.append("Process is unsigned")
+                
+                # Check for hidden processes (no associated executable)
+                if not process.ExecutablePath:
+                    suspicion_score += 30
+                    reasons.append("No executable path (possible hidden process)")
+                
+                # Check for unusual parent processes
+                if process.ParentProcessId != 0:
+                    parent = c.Win32_Process(ProcessId=process.ParentProcessId)
+                    if parent and parent[0].Name.lower() not in ['explorer.exe', 'svchost.exe', 'services.exe']:
+                        suspicion_score += 15
+                        reasons.append(f"Unusual parent process: {parent[0].Name}")
+                
+                # Check for process injection
+                if is_process_injected(process.ProcessId):
+                    suspicion_score += 50
+                    reasons.append("Possible process injection detected")
+                
+                if suspicion_score >= 30:
+                    suspicious_processes.append({
+                        'pid': process.ProcessId,
+                        'name': process.Name,
+                        'path': process.ExecutablePath or 'N/A',
+                        'command_line': process.CommandLine or 'N/A',
+                        'user': process.GetOwner()[0] if process.GetOwner() else 'N/A',
+                        'creation_date': process.CreationDate,
+                        'suspicion_score': suspicion_score,
+                        'reasons': reasons
+                    })
                     
-                    self.create_alert(
-                        event_id,
-                        "new_service",
-                        f"New service detected: {service.name()} ({service.binpath()})"
-                    )
+            except Exception as e:
+                app.logger.warning(f"Failed to analyze process {process.Name}: {str(e)}")
+                continue
+                
+    except Exception as e:
+        log_event("ERROR", "high", "Process analysis failed", {'error': str(e)})
+    finally:
+        pythoncom.CoUninitialize()
+    
+    return sorted(suspicious_processes, key=lambda x: x['suspicion_score'], reverse=True)
+
+def is_process_signed(pid):
+    """Check if a process is signed (simplified)"""
+    try:
+        process = psutil.Process(pid)
+        exe_path = process.exe()
+        if not exe_path:
+            return False
+            
+        # In a real implementation, you would verify the digital signature
+        # This is a simplified check
+        return os.path.exists(exe_path)
+    except:
+        return False
+
+def is_process_injected(pid):
+    """Check for signs of process injection (simplified)"""
+    try:
+        process = psutil.Process(pid)
+        
+        # Check for mismatched memory regions
+        # In a real implementation, you would analyze memory regions
+        return False
+    except:
+        return False
+
+# =============================================
+# Registry Monitoring
+# =============================================
+
+def scan_registry_for_abnormalities():
+    """Scan Windows Registry for suspicious entries"""
+    suspicious_entries = []
+    
+    # Common persistence locations
+    persistence_locations = [
+        (winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Run"),
+        (winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce"),
+        (winreg.HKEY_CURRENT_USER, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Run"),
+        (winreg.HKEY_CURRENT_USER, r"SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce"),
+        (winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Run"),
+        (winreg.HKEY_LOCAL_MACHINE, r"SYSTEM\CurrentControlSet\Services")
+    ]
+    
+    # Known malicious patterns
+    malicious_patterns = [
+        'powershell -nop -w hidden -c',
+        'rundll32',
+        'regsvr32',
+        'mshta',
+        'wscript',
+        'cscript',
+        'certutil',
+        'bitsadmin'
+    ]
+    
+    for root, subkey in persistence_locations:
+        try:
+            with winreg.OpenKey(root, subkey) as key:
+                i = 0
+                while True:
+                    try:
+                        name, value, _ = winreg.EnumValue(key, i)
+                        i += 1
+                        
+                        # Check for suspicious values
+                        for pattern in malicious_patterns:
+                            if isinstance(value, str) and pattern.lower() in value.lower():
+                                suspicious_entries.append({
+                                    'root': root,
+                                    'subkey': subkey,
+                                    'name': name,
+                                    'value': value,
+                                    'reason': f"Matches malicious pattern: {pattern}"
+                                })
+                                break
+                                
+                    except WindowsError:
+                        break
+        except WindowsError as e:
+            app.logger.warning(f"Failed to access registry key {subkey}: {str(e)}")
+    
+    return suspicious_entries
+
+# =============================================
+# Memory Scanning
+# =============================================
+
+def scan_memory_for_malicious_activity():
+    """Scan system memory for signs of malicious activity"""
+    suspicious_memory = []
+    
+    try:
+        pythoncom.CoInitialize()
+        c = wmi.WMI()
+        
+        # Scan for suspicious modules in memory
+        for process in c.Win32_Process():
+            try:
+                for module in process.Associators("Win32_ProcessToModule"):
+                    module_name = module.Name.lower()
+                    
+                    # Check for known malicious patterns
+                    if any(x in module_name for x in ['inject', 'hook', 'mimikatz', 'meterpreter']):
+                        suspicious_memory.append({
+                            'process_id': process.ProcessId,
+                            'process_name': process.Name,
+                            'module_name': module.Name,
+                            'module_path': module.ExecutablePath,
+                            'reason': "Suspicious module name"
+                        })
+            except Exception as e:
+                app.logger.warning(f"Failed to scan memory for process {process.Name}: {str(e)}")
+                
+    except Exception as e:
+        log_event("ERROR", "high", "Memory scanning failed", {'error': str(e)})
+    finally:
+        pythoncom.CoUninitialize()
+    
+    return suspicious_memory
+
+# =============================================
+# Network Monitoring
+# =============================================
+
+def get_network_interfaces():
+    """Get list of network interfaces"""
+    interfaces = []
+    
+    try:
+        pythoncom.CoInitialize()
+        c = wmi.WMI()
+        
+        for interface in c.Win32_NetworkAdapterConfiguration(IPEnabled=True):
+            interfaces.append({
+                'name': interface.Description,
+                'ip_address': interface.IPAddress[0] if interface.IPAddress else 'N/A',
+                'mac_address': interface.MACAddress,
+                'is_dhcp_enabled': interface.DHCPEnabled
+            })
+            
+    except Exception as e:
+        log_event("ERROR", "high", "Failed to get network interfaces", {'error': str(e)})
+    finally:
+        pythoncom.CoUninitialize()
+    
+    return interfaces
+
+def get_network_connections():
+    """Get active network connections"""
+    connections = []
+    
+    try:
+        for conn in psutil.net_connections(kind='inet'):
+            if conn.status == 'ESTABLISHED' and conn.raddr:
+                try:
+                    process = psutil.Process(conn.pid)
+                    connections.append({
+                        'pid': conn.pid,
+                        'process_name': process.name(),
+                        'local_address': f"{conn.laddr.ip}:{conn.laddr.port}",
+                        'remote_address': f"{conn.raddr.ip}:{conn.raddr.port}",
+                        'status': conn.status
+                    })
                 except psutil.NoSuchProcess:
-                    continue
-            
-            # Removed services
-            removed_services = known_services - current_services
-            for service_name in removed_services:
-                self.log_event("service_removal", {
-                    "name": service_name
-                }, severity='warning')
-            
-            known_services = current_services
-            time.sleep(60)
+                    connections.append({
+                        'pid': conn.pid,
+                        'process_name': 'Unknown',
+                        'local_address': f"{conn.laddr.ip}:{conn.laddr.port}",
+                        'remote_address': f"{conn.raddr.ip}:{conn.raddr.port}",
+                        'status': conn.status
+                    })
+    except Exception as e:
+        log_event("ERROR", "high", "Failed to get network connections", {'error': str(e)})
     
-    def analyze_events(self):
-        """Analyze events for suspicious patterns"""
-        while self.running:
-            with sqlite3.connect(self.db_path) as conn:
-                cursor = conn.cursor()
-                
-                # Check for suspicious process chains
-                cursor.execute('''
-                SELECT e.id, e.event_data
-                FROM events e
-                WHERE e.event_type = 'process_creation'
-                AND e.processed = 0
-                AND json_extract(e.event_data, '$.name') IN 
-                    ('powershell.exe', 'cmd.exe', 'wscript.exe', 'cscript.exe')
-                ''')
-                
-                for event_id, event_data in cursor.fetchall():
-                    data = json.loads(event_data)
-                    self.create_alert(
-                        event_id,
-                        "suspicious_process",
-                        f"Suspicious process executed: {data['name']} with command: {data['cmdline']}"
-                    )
-                
-                # Check for DLL injection patterns
-                cursor.execute('''
-                SELECT e.id, e.event_data
-                FROM events e
-                WHERE e.event_type = 'process_creation'
-                AND e.processed = 0
-                AND json_extract(e.event_data, '$.cmdline') LIKE '%rundll32%'
-                ''')
-                
-                for event_id, event_data in cursor.fetchall():
-                    data = json.loads(event_data)
-                    self.create_alert(
-                        event_id,
-                        "possible_dll_injection",
-                        f"Possible DLL injection detected: {data['cmdline']}"
-                    )
-                
-                # Mark events as processed
-                cursor.execute('''
-                UPDATE events SET processed = 1 WHERE processed = 0
-                ''')
-                
-                conn.commit()
-            
-            time.sleep(30)
+    return connections
 
-# Windows Service Wrapper
-class EDRService(win32serviceutil.ServiceFramework):
-    _svc_name_ = "PythonEDR"
-    _svc_display_name_ = "Python EDR Agent"
-    
-    def __init__(self, args):
-        win32serviceutil.ServiceFramework.__init__(self, args)
-        self.agent = EDRAgent()
-        self.stop_event = win32event.CreateEvent(None, 0, 0, None)
-        self.web_thread = None
-    
-    def SvcStop(self):
-        self.ReportServiceStatus(win32service.SERVICE_STOP_PENDING)
-        self.agent.stop_monitoring()
-        
-        if self.web_thread and self.web_thread.is_alive():
-            # Shutdown Flask server
-            func = request.environ.get('werkzeug.server.shutdown')
-            if func:
-                func()
-            self.web_thread.join(timeout=5)
-        
-        win32event.SetEvent(self.stop_event)
-    
-    def SvcDoRun(self):
-        # Start monitoring
-        self.agent.start_monitoring()
-        
-        # Start web interface in a separate thread
-        self.web_thread = threading.Thread(target=self.run_web_interface)
-        self.web_thread.daemon = True
-        self.web_thread.start()
-        
-        # Wait for stop signal
-        win32event.WaitForSingleObject(self.stop_event, win32event.INFINITE)
-    
-    def run_web_interface(self):
-        """Run the Flask web interface"""
-        # Web Interface Routes
-        @app.route('/')
-        @login_required
-        def dashboard():
-            with sqlite3.connect(CONFIG['DB_PATH']) as conn:
-                conn.row_factory = sqlite3.Row
-                cursor = conn.cursor()
-                
-                # Get recent alerts
-                cursor.execute('''
-                SELECT a.*, e.event_type, e.event_data, e.timestamp as event_time
-                FROM alerts a
-                JOIN events e ON a.event_id = e.id
-                WHERE a.resolved = 0
-                ORDER BY a.timestamp DESC
-                LIMIT 50
-                ''')
-                alerts = cursor.fetchall()
-                
-                # Get stats
-                cursor.execute('SELECT COUNT(*) FROM events')
-                total_events = cursor.fetchone()[0]
-                
-                cursor.execute('SELECT COUNT(*) FROM alerts WHERE resolved = 0')
-                active_alerts = cursor.fetchone()[0]
-                
-                cursor.execute('''
-                SELECT event_type, COUNT(*) as count 
-                FROM events 
-                GROUP BY event_type
-                ORDER BY count DESC
-                LIMIT 10
-                ''')
-                event_types = cursor.fetchall()
-            
-            return render_template(
-                'dashboard.html',
-                alerts=alerts,
-                total_events=total_events,
-                active_alerts=active_alerts,
-                event_types=event_types
-            )
-        
-        @app.route('/login', methods=['GET', 'POST'])
-        def login():
-            if request.method == 'POST':
-                username = request.form.get('username')
-                password = request.form.get('password')
-                
-                with sqlite3.connect(CONFIG['DB_PATH']) as conn:
-                    cursor = conn.cursor()
-                    cursor.execute('''
-                    SELECT password_hash FROM users WHERE username = ?
-                    ''', (username,))
-                    result = cursor.fetchone()
-                
-                if result and result[0] == hashlib.sha256(password.encode()).hexdigest():
-                    user = User(username)
-                    login_user(user)
-                    return redirect(url_for('dashboard'))
-                
-                return render_template('login.html', error='Invalid credentials')
-            
-            return render_template('login.html')
-        
-        @app.route('/logout')
-        @login_required
-        def logout():
-            logout_user()
-            return redirect(url_for('login'))
-        
-        @app.route('/events')
-        @login_required
-        def events():
-            page = request.args.get('page', 1, type=int)
-            per_page = 50
-            offset = (page - 1) * per_page
-            
-            with sqlite3.connect(CONFIG['DB_PATH']) as conn:
-                conn.row_factory = sqlite3.Row
-                cursor = conn.cursor()
-                
-                cursor.execute('''
-                SELECT * FROM events
-                ORDER BY timestamp DESC
-                LIMIT ? OFFSET ?
-                ''', (per_page, offset))
-                events = cursor.fetchall()
-                
-                cursor.execute('SELECT COUNT(*) FROM events')
-                total = cursor.fetchone()[0]
-            
-            return render_template(
-                'events.html',
-                events=events,
-                pagination={
-                    'page': page,
-                    'per_page': per_page,
-                    'total': total
-                }
-            )
-        
-        @app.route('/alerts')
-        @login_required
-        def alerts():
-            resolved = request.args.get('resolved', '0')
-            
-            with sqlite3.connect(CONFIG['DB_PATH']) as conn:
-                conn.row_factory = sqlite3.Row
-                cursor = conn.cursor()
-                
-                cursor.execute('''
-                SELECT a.*, e.event_type, e.event_data, e.timestamp as event_time
-                FROM alerts a
-                JOIN events e ON a.event_id = e.id
-                WHERE a.resolved = ?
-                ORDER BY a.timestamp DESC
-                ''', (resolved,))
-                alerts = cursor.fetchall()
-            
-            return render_template('alerts.html', alerts=alerts, resolved=resolved)
-        
-        @app.route('/resolve_alert/<int:alert_id>', methods=['POST'])
-        @login_required
-        def resolve_alert(alert_id):
-            with sqlite3.connect(CONFIG['DB_PATH']) as conn:
-                cursor = conn.cursor()
-                cursor.execute('''
-                UPDATE alerts SET resolved = 1 WHERE id = ?
-                ''', (alert_id,))
-                conn.commit()
-            
-            return redirect(url_for('alerts'))
-        
-        @app.route('/whitelist', methods=['GET', 'POST'])
-        @login_required
-        def whitelist():
-            if request.method == 'POST':
-                item_type = request.form.get('item_type')
-                item_path = request.form.get('item_path')
-                
-                with sqlite3.connect(CONFIG['DB_PATH']) as conn:
-                    cursor = conn.cursor()
-                    cursor.execute('''
-                    INSERT OR REPLACE INTO system_baseline 
-                    (item_type, item_path, whitelisted)
-                    VALUES (?, ?, 1)
-                    ''', (item_type, item_path))
-                    conn.commit()
-                
-                return redirect(url_for('whitelist'))
-            
-            with sqlite3.connect(CONFIG['DB_PATH']) as conn:
-                conn.row_factory = sqlite3.Row
-                cursor = conn.cursor()
-                cursor.execute('''
-                SELECT * FROM system_baseline
-                WHERE whitelisted = 1
-                ORDER BY item_type, item_path
-                ''')
-                whitelist = cursor.fetchall()
-            
-            return render_template('whitelist.html', whitelist=whitelist)
-        
-        @app.route('/remove_whitelist/<int:item_id>', methods=['POST'])
-        @login_required
-        def remove_whitelist(item_id):
-            with sqlite3.connect(CONFIG['DB_PATH']) as conn:
-                cursor = conn.cursor()
-                cursor.execute('''
-                UPDATE system_baseline SET whitelisted = 0 WHERE id = ?
-                ''', (item_id,))
-                conn.commit()
-            
-            return redirect(url_for('whitelist'))
-        
-        @app.route('/api/events', methods=['GET'])
-        @login_required
-        def api_events():
-            limit = request.args.get('limit', 100, type=int)
-            event_type = request.args.get('type')
-            
-            query = 'SELECT * FROM events'
-            params = []
-            
-            if event_type:
-                query += ' WHERE event_type = ?'
-                params.append(event_type)
-            
-            query += ' ORDER BY timestamp DESC LIMIT ?'
-            params.append(limit)
-            
-            with sqlite3.connect(CONFIG['DB_PATH']) as conn:
-                conn.row_factory = sqlite3.Row
-                cursor = conn.cursor()
-                cursor.execute(query, params)
-                events = cursor.fetchall()
-            
-            return jsonify([dict(event) for event in events])
-        
-        # Run the Flask app
-        app.run(
-            host=CONFIG['WEB_INTERFACE']['HOST'],
-            port=CONFIG['WEB_INTERFACE']['PORT'],
-            threaded=True
-        )
+# =============================================
+# Flask Routes
+# =============================================
 
-# Command Line Interface
+@app.route('/')
+def dashboard():
+    """Main dashboard"""
+    return render_template('dashboard.html',
+                         version=Config.VERSION,
+                         timestamp=datetime.now().isoformat())
+
+@app.route('/scan', methods=['GET', 'POST'])
+def scan():
+    """Scan endpoint"""
+    if request.method == 'POST':
+        scan_type = request.form.get('scan_type')
+        scan_path = request.form.get('scan_path', 'C:\\')
+        
+        if scan_type == 'clamav':
+            result = run_clamav_scan(scan_path)
+        elif scan_type == 'defender':
+            result = run_defender_scan(scan_path)
+        elif scan_type == 'yara':
+            rule_name = request.form.get('yara_rule')
+            result = run_yara_scan(scan_path, rule_name)
+        else:
+            result = {
+                'status': 'error',
+                'message': 'Invalid scan type',
+                'timestamp': datetime.now().isoformat()
+            }
+        
+        return jsonify(result)
+    
+    return render_template('scan.html',
+                         yara_rules=os.listdir(Config.YARA_RULES),
+                         version=Config.VERSION)
+
+@app.route('/firewall', methods=['GET', 'POST'])
+def firewall():
+    """Firewall management"""
+    if request.method == 'POST':
+        action = request.form.get('action')
+        rule_name = request.form.get('rule_name')
+        
+        if action == 'status':
+            return jsonify(get_firewall_status())
+        else:
+            direction = request.form.get('direction', 'in')
+            protocol = request.form.get('protocol', 'tcp')
+            local_port = request.form.get('local_port', 'any')
+            remote_ip = request.form.get('remote_ip', 'any')
+            profile = request.form.get('profile', 'any')
+            
+            return jsonify(manage_firewall_rule(
+                action, rule_name, direction, protocol, 
+                local_port, remote_ip, profile
+            ))
+    
+    return render_template('firewall.html',
+                         version=Config.VERSION)
+
+@app.route('/processes')
+def processes():
+    """Process monitoring"""
+    return jsonify({
+        'status': 'success',
+        'processes': analyze_processes(),
+        'timestamp': datetime.now().isoformat()
+    })
+
+@app.route('/registry')
+def registry():
+    """Registry monitoring"""
+    return jsonify({
+        'status': 'success',
+        'suspicious_entries': scan_registry_for_abnormalities(),
+        'timestamp': datetime.now().isoformat()
+    })
+
+@app.route('/memory')
+def memory():
+    """Memory scanning"""
+    return jsonify({
+        'status': 'success',
+        'suspicious_memory': scan_memory_for_malicious_activity(),
+        'timestamp': datetime.now().isoformat()
+    })
+
+@app.route('/network')
+def network():
+    """Network monitoring"""
+    return jsonify({
+        'status': 'success',
+        'interfaces': get_network_interfaces(),
+        'connections': get_network_connections(),
+        'timestamp': datetime.now().isoformat()
+    })
+
+# =============================================
+# Main Execution
+# =============================================
+
 if __name__ == '__main__':
-    import sys
+    init_directories()
+    setup_logging()
     
-    if len(sys.argv) > 1 and sys.argv[1] == 'run':
-        # Run in console mode (for debugging)
-        agent = EDRAgent()
-        agent.start_monitoring()
-        
-        # Start web interface in main thread
-        app.run(
-            host=CONFIG['WEB_INTERFACE']['HOST'],
-            port=CONFIG['WEB_INTERFACE']['PORT']
-        )
-    else:
-        # Handle Windows service commands
-        win32serviceutil.HandleCommandLine(EDRService)
+    # Start Suricata if enabled
+    if Config.SURICATA_ENABLED:
+        if start_suricata():
+            threading.Thread(target=monitor_suricata_logs, daemon=True).start()
+    
+    app.run(host='0.0.0.0', port=5000, debug=True)
