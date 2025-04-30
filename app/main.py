@@ -38,8 +38,8 @@ import config
 import json
 import signal
 import datetime
-
-
+import platform
+from datetime import timedelta
 
 
 now = datetime.datetime.now()
@@ -645,6 +645,73 @@ def configure_fail2ban():
         log_event("ERROR", "high", "Fail2Ban configuration failed", {'error': str(e)})
         return False
 
+
+
+
+import platform
+import psutil
+import socket
+from datetime import datetime, timedelta
+
+def get_system_info():
+    # Basic system info
+    boot_time = datetime.fromtimestamp(psutil.boot_time())
+    uptime = datetime.now() - boot_time
+    
+    info = {
+        'hostname': socket.gethostname(),
+        'os': platform.system(),
+        'os_version': platform.version(),
+        'system': platform.platform(),
+        'kernel': platform.release(),
+        'uptime': str(uptime),
+        'last_boot': boot_time.strftime('%Y-%m-%d %H:%M:%S'),
+        'cpu_model': platform.processor(),
+        'cpu_cores': psutil.cpu_count(logical=False),
+        'cpu_threads': psutil.cpu_count(logical=True),
+        'memory_total': round(psutil.virtual_memory().total / (1024**3), 2),  # in GB
+        'disk_total': round(psutil.disk_usage('/').total / (1024**3), 2),  # in GB
+    }
+    
+    # Network interfaces
+    info['network_interfaces'] = {}
+    for interface, addrs in psutil.net_if_addrs().items():
+        info['network_interfaces'][interface] = {
+            'is_up': interface in psutil.net_if_stats() and psutil.net_if_stats()[interface].isup,
+            'ip_address': addrs[0].address if addrs else 'N/A',
+            'netmask': addrs[0].netmask if addrs else 'N/A',
+            'broadcast': addrs[0].broadcast if addrs and addrs[0].broadcast else 'N/A',
+            'mac_address': addrs[-1].address if addrs and len(addrs) > 1 else 'N/A'
+        }
+    
+    # Disk partitions
+    info['disk_partitions'] = []
+    for partition in psutil.disk_partitions():
+        try:
+            usage = psutil.disk_usage(partition.mountpoint)
+            info['disk_partitions'].append({
+                'device': partition.device,
+                'mountpoint': partition.mountpoint,
+                'fstype': partition.fstype,
+                'size': f"{round(usage.total / (1024**3), 2)} GB"
+            })
+        except:
+            continue
+    
+    # System users
+    
+    return info
+
+
+
+
+
+@app.route("/info")
+def info():
+    # Get system information (you'll need to implement this)
+    system_info = get_system_info()  # This should return a dictionary with all the system info
+    return render_template("info.html", now=now, system_info=system_info)
+
 # =============================================
 # Firewall Management
 # =============================================
@@ -1119,11 +1186,7 @@ def dashboard():
     }
     return render_template('index.html', **context)
 
-@app.route('/scan/full', methods=['POST'])
-def run_full_scan():
-    """Run full system scan with all tools"""
-    scan_results = full_system_scan()
-    return jsonify(scan_results)
+
 
 @app.route('/suricata/status')
 def suricata_status():
@@ -1176,7 +1239,7 @@ def ids_dashboard():
     if config.SURICATA_ENABLED:
         # Check if Suricata is running and get mode
         for proc in psutil.process_iter(['name', 'cmdline']):
-            if proc.info['name'] == 'suricata':
+            if proc.info['name'] == 'suricata' or 'suricata' in ' '.join(proc.info['cmdline']).lower():
                 status['running'] = True
                 cmdline = ' '.join(proc.info['cmdline'])
                 if '--ips' in cmdline:
@@ -1228,7 +1291,7 @@ def manage_ids_rules():
             return jsonify({'status': 'error', 'message': 'No rule content provided'}), 400
             
         try:
-            rule_path = os.path.join(config.SURICATA_RULES_DIR, rule_name)  # Changed to SURICATA_RULES_DIR
+            rule_path = os.path.join(config.SURICATA_RULES_DIR , rule_name)  # Changed to SURICATA_RULES_DIR
             with open(rule_path, 'a') as f:
                 f.write(rule_content + '\n')
             
@@ -1502,10 +1565,31 @@ def firewall_management():
 @app.route('/firewall/add_port', methods=['POST'])
 def firewall_add_port():
     """Add a port to firewall rules"""
-    port = request.form.get('port')
-    protocol = request.form.get('protocol', 'tcp')
+    port = request.form.get('port', '').strip()
+    protocol = request.form.get('protocol', 'tcp').lower()
     
-    if not port or not port.isdigit():
+    # Validate protocol
+    if protocol not in ['tcp', 'udp', 'sctp', 'dccp']:
+        return jsonify({'status': 'error', 'message': 'Invalid protocol'}), 400
+    
+    # Validate port format (supports single port, range, and comma-separated list)
+    if not port:
+        return jsonify({'status': 'error', 'message': 'Port is required'}), 400
+    
+    # Check for port range (5000-5010)
+    if '-' in port:
+        start, end = port.split('-', 1)
+        if not (start.isdigit() and end.isdigit()):
+            return jsonify({'status': 'error', 'message': 'Invalid port range format'}), 400
+        if int(start) > int(end):
+            return jsonify({'status': 'error', 'message': 'Start port must be <= end port'}), 400
+    # Check for comma-separated ports (5000,5005,5010)
+    elif ',' in port:
+        ports = port.split(',')
+        if not all(p.strip().isdigit() for p in ports):
+            return jsonify({'status': 'error', 'message': 'Invalid port list format'}), 400
+    # Single port
+    elif not port.isdigit():
         return jsonify({'status': 'error', 'message': 'Invalid port number'}), 400
     
     full_port = f"{port}/{protocol}"
@@ -1514,18 +1598,23 @@ def firewall_add_port():
         # Add port temporarily
         subprocess.run(
             ['firewall-cmd', '--add-port', full_port],
-            check=True
+            check=True,
+            stderr=subprocess.PIPE,
+            text=True
         )
         # Make permanent
         subprocess.run(
             ['firewall-cmd', '--add-port', full_port, '--permanent'],
-            check=True
+            check=True,
+            stderr=subprocess.PIPE,
+            text=True
         )
         log_event("FIREWALL", "info", f"Added firewall port {full_port}")
         return jsonify({'status': 'success', 'message': f'Port {full_port} added'})
     except subprocess.CalledProcessError as e:
-        log_event("ERROR", "high", f"Failed to add port {full_port}", {'error': str(e)})
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+        error_msg = e.stderr.strip() if e.stderr else str(e)
+        log_event("ERROR", "high", f"Failed to add port {full_port}", {'error': error_msg})
+        return jsonify({'status': 'error', 'message': error_msg}), 500
 
 @app.route('/firewall/remove_port', methods=['POST'])
 def firewall_remove_port():

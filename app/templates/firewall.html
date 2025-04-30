@@ -175,9 +175,14 @@
                                             <div class="col me-2">
                                                 <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
                                                     Panic Mode</div>
-                                                <button id="panicBtn" class="btn btn-{{ 'danger panic-btn' if status.active else 'secondary' }} w-100">
-                                                    {{ 'Disable Panic Mode' if status.active else 'Enable Panic Mode' }}
-                                                </button>
+
+                                                    <form action="/firewall/panic" method="post">
+                                                        <input type="hidden" name="action" value="{{ 'off' if status.active else 'on' }}">
+                                                        <button type="submit" id="panicBtn" class="btn btn-{{ 'danger panic-btn' if status.active else 'secondary' }} w-100">
+                                                            {{ 'Disable Panic Mode' if status.active else 'Enable Panic Mode' }}
+                                                        </button>
+                                                    </form>
+                                                    
                                                 <div class="mt-1 text-xs text-muted">
                                                     Block all network traffic
                                                 </div>
@@ -193,7 +198,7 @@
                         
                         <!-- Port and Service Management -->
                         <div class="row">
-                            <div class="col-lg-6 mb-4">
+                            <div class="col-lg-12 mb-4">
                                 <div class="card shadow mb-4">
                                     <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
                                         <h6 class="m-0 font-weight-bold text-primary">
@@ -201,9 +206,9 @@
                                         </h6>
                                     </div>
                                     <div class="card-body">
-                                        <form id="addPortForm" class="mb-4">
+                                        <form id="addPortForm" class="mb-4" action="/firewall/add_port" method="post" enctype="multipart/form-data">
                                             <div class="input-group">
-                                                <input type="number" class="form-control" placeholder="Port number" id="portNumber" required>
+                                                <input type="number" class="form-control" name = "port" placeholder="Port number" id="portNumber" required>
                                                 <select class="form-select" style="max-width: 120px;" id="portProtocol">
                                                     <option value="tcp">TCP</option>
                                                     <option value="udp">UDP</option>
@@ -212,14 +217,8 @@
                                             </div>
                                         </form>
                                         
-                                        <form id="removePortForm" class="mb-4">
-                                            <div class="input-group">
-                                                <select class="form-select" id="portToRemove" required>
-                                                    <option value="">Select port to remove</option>
-                                                    {% for port in status.ports %}
-                                                    <option value="{{ port }}">{{ port }}</option>
-                                                    {% endfor %}
-                                                </select>
+                                        <form id="removePortForm" class="mb-4"  action="/firewall/remove_port" method="post" enctype="multipart/form-data">
+                                            <input type="number" class="form-control" name = "port" placeholder="Port number" required>
                                                 <button class="btn btn-danger" type="submit">Remove</button>
                                             </div>
                                         </form>
@@ -238,7 +237,11 @@
                                 </div>
                             </div>
                             
-                            <div class="col-lg-6 mb-4">
+
+
+
+                        <div class="row">
+                            <div class="col-lg-12 mb-4">
                                 <div class="card shadow mb-4">
                                     <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
                                         <h6 class="m-0 font-weight-bold text-primary">
@@ -246,9 +249,9 @@
                                         </h6>
                                     </div>
                                     <div class="card-body">
-                                        <form id="addServiceForm" class="mb-4">
+                                        <form id="addServiceForm" action="/firewall/add_service" method="post" class="mb-4">
                                             <div class="input-group">
-                                                <select class="form-select" id="serviceToAdd" required>
+                                                <select class="form-select" id="serviceToAdd" name="service" required>
                                                     <option value="">Select service to add</option>
                                                     {% for service in services %}
                                                     <option value="{{ service }}">{{ service }}</option>
@@ -258,9 +261,9 @@
                                             </div>
                                         </form>
                                         
-                                        <form id="removeServiceForm" class="mb-4">
+                                        <form id="removeServiceForm" class="mb-4"  action="/firewall/remove_service" method="post">
                                             <div class="input-group">
-                                                <select class="form-select" id="serviceToRemove" required>
+                                                <select class="form-select" id="serviceToRemove" name="service" required>
                                                     <option value="">Select service to remove</option>
                                                     {% for service in allowed_services %}
                                                     <option value="{{ service }}">{{ service }}</option>
@@ -288,6 +291,8 @@
                                     </div>
                                 </div>
                             </div>
+
+
                         </div>
                     </div>
                 </main>
