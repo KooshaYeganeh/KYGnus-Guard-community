@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+        <meta name="description" content="LinuxAV-Solutions EDR Process Monitoring" />
+        <meta name="author" content="LinuxAV-Solutions" />
+        <title>Process Monitoring - LinuxAV-Solutions EDR</title>
+        <link href="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/style.min.css" rel="stylesheet" />
+        <link href="{{ url_for('static', filename='css/styles.css') }}" rel="stylesheet" />
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+        <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
+        <style>
+            .security-card {
+                transition: transform 0.3s;
+            }
+            .security-card:hover {
+                transform: translateY(-5px);
+            }
+            .alert-badge {
+                font-size: 0.75rem;
+                padding: 0.35em 0.65em;
+            }
+            .system-health-card {
+                border-left: 4px solid;
+            }
+            .cpu-card {
+                border-left-color: #4e73df;
+            }
+            .memory-card {
+                border-left-color: #1cc88a;
+            }
+            .disk-card {
+                border-left-color: #f6c23e;
+            }
+            .network-card {
+                border-left-color: #e74a3b;
+            }
+            .process-pill {
+                font-size: 0.8rem;
+                padding: 0.2em 0.6em;
+            }
+            .tooltip-details {
+                max-width: 300px;
+                font-size: 0.8rem;
+            }
+            .suspicious-row {
+                background-color: rgba(220, 53, 69, 0.1);
+            }
+            .high-cpu-row {
+                background-color: rgba(255, 193, 7, 0.1);
+            }
+            .high-mem-row {
+                background-color: rgba(23, 162, 184, 0.1);
+            }
+            .privileged-row {
+                background-color: rgba(108, 117, 125, 0.1);
+            }
+        </style>
+    </head>
+    <body class="sb-nav-fixed">
+        <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
+            <a class="navbar-brand ps-3" href="/">
+                <i class="fas fa-shield-alt me-2"></i>myEDR
+            </a>
+            <button class="btn btn-link btn-sm order-1 order-lg-0 me-4 me-lg-0" id="sidebarToggle" href="#!">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="mx-auto text-white" id="system-time">
+                <i class="fas fa-clock me-2"></i>
+                <span id="current-time"></span>
+            </div>
+            <ul class="navbar-nav ms-auto ms-md-0 me-3 me-lg-4">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-user fa-fw"></i>
+                        <span class="d-none d-lg-inline">Admin</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                        <li><a class="dropdown-item" href="#!"><i class="fas fa-cog fa-fw me-2"></i>Settings</a></li>
+                        <li><a class="dropdown-item" href="#!"><i class="fas fa-list fa-fw me-2"></i>Activity Log</a></li>
+                        <li><hr class="dropdown-divider" /></li>
+                        <li><a class="dropdown-item" href="#!"><i class="fas fa-sign-out-alt fa-fw me-2"></i>Logout</a></li>
+                    </ul>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link" id="alertsDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-bell fa-fw"></i>
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                            {% if suspicious_processes %}{{ suspicious_processes|length }}{% else %}0{% endif %}
+                            <span class="visually-hidden">unread alerts</span>
+                        </span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end p-2" aria-labelledby="alertsDropdown" style="min-width: 300px;">
+                        <li><h6 class="dropdown-header">Security Alerts</h6></li>
+                        {% if suspicious_processes %}
+                            {% for proc in suspicious_processes[:3] %}
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center" href="#">
+                                    <div class="me-3">
+                                        <div class="bg-danger icon-circle"><i class="fas fa-exclamation-triangle text-white"></i></div>
+                                    </div>
+                                    <div>
+                                        <span class="small text-gray-500">PID: {{ proc.pid }}</span>
+                                        <p class="mb-0 small">{{ proc.reason }} - {{ proc.command|truncate(30) }}</p>
+                                    </div>
+                                </a>
+                            </li>
+                            {% endfor %}
+                        {% else %}
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center" href="#">
+                                    <div class="me-3">
+                                        <div class="bg-success icon-circle"><i class="fas fa-check text-white"></i></div>
+                                    </div>
+                                    <div>
+                                        <p class="mb-0 small">No suspicious processes detected</p>
+                                    </div>
+                                </a>
+                            </li>
+                        {% endif %}
+                        <li><hr class="dropdown-divider" /></li>
+                        <li><a class="dropdown-item text-center small" href="#">View All Alerts</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </nav>
+        <div id="layoutSidenav">
+            <div id="layoutSidenav_nav">
+                <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">
+                    <div class="sb-sidenav-menu">
+                        <div class="nav">
+                            <div class="sb-sidenav-menu-heading">Core</div>
+                            <a class="nav-link" href="/">
+                                <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
+                                Dashboard
+                            </a>
+                            <div class="sb-sidenav-menu-heading">Security Modules</div>
+                            <a class="nav-link" href="/network">
+                                <div class="sb-nav-link-icon"><i class="fas fa-network-wired"></i></div>
+                                Network Monitoring
+                            </a>
+                            <a class="nav-link" href="/scan">
+                                <div class="sb-nav-link-icon"><i class="fas fa-search"></i></div>
+                                Scan Management
+                            </a>
+                            <a class="nav-link" href="/ids">
+                                <div class="sb-nav-link-icon"><i class="fas fa-shield-virus"></i></div>
+                                IDS/IPS
+                            </a>
+                            <a class="nav-link" href="/firewall">
+                                <div class="sb-nav-link-icon"><i class="fas fa-fire"></i></div>
+                                Firewall
+                            </a>
+                            <a class="nav-link" href="/services">
+                                <div class="sb-nav-link-icon"><i class="fas fa-server"></i></div>
+                                Services
+                            </a>
+                            <a class="nav-link active" href="/processes">    
+                                <div class="sb-nav-link-icon"><i class="fas fa-microchip"></i></div>
+                                Process Monitoring
+                            </a>
+                            <a class="nav-link" href="/manage_users">
+                                <div class="sb-nav-link-icon"><i class="fas fa-users"></i></div>
+                                Manage Users
+                            </a>
+                            <a class="nav-link" href="/manage_kernel_modules">
+                                <div class="sb-nav-link-icon"><i class="fas fa-server"></i></div>
+                                Manage Kernel 
+                            </a>
+                        </div>
+                    </div>
+                    <div class="sb-sidenav-footer">
+                        <div class="small">Developer :</div>
+                            Koosha Yeganeh
+                        <div class="small mt-1">Version: 1.0.0</div>
+                    </div>
+                </nav>
+            </div>
+            <div id="layoutSidenav_content">
+                <main>
+                    <div class="container-fluid px-4">
+                        <h1 class="mt-4">Process Monitoring</h1>
+                        <ol class="breadcrumb mb-4">
+                            <li class="breadcrumb-item"><a href="/">Dashboard</a></li>
+                            <li class="breadcrumb-item active">
+                                <i class="fas fa-microchip me-1"></i> Process Monitoring
+                            </li>
+                        </ol>
+
+                        {% with messages = get_flashed_messages(with_categories=true) %}
+                            {% if messages %}
+                                {% for category, message in messages %}
+                                <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                                    <i class="fas fa-{{ 'exclamation-triangle' if category == 'error' else 'check-circle' }} me-2"></i>
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                                {% endfor %}
+                            {% endif %}
+                        {% endwith %}
+
+                        <!-- Suspicious Processes -->
+                        {% if suspicious_processes %}
+                        <div class="card shadow mb-4 border-danger">
+                            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between bg-danger text-white">
+                                <h6 class="m-0 font-weight-bold">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>Suspicious Processes ({{ suspicious_processes|length }})
+                                </h6>
+                                <div class="dropdown no-arrow">
+                                    <a class="dropdown-toggle text-white" href="#" role="button" id="suspiciousDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="fas fa-ellipsis-v fa-sm fa-fw"></i>
+                                    </a>
+                                    <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="suspiciousDropdown">
+                                        <li><a class="dropdown-item" href="#" onclick="refreshProcesses()"><i class="fas fa-sync-alt me-2"></i>Refresh</a></li>
+                                        <li><a class="dropdown-item" href="#"><i class="fas fa-download me-2"></i>Export Data</a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item" href="#" onclick="killAllSuspicious()"><i class="fas fa-skull me-2"></i>Kill All Suspicious</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-hover table-sm" id="suspiciousProcessesTable" width="100%" cellspacing="0">
+                                        <thead class="bg-light">
+                                            <tr>
+                                                <th>PID</th>
+                                                <th>User</th>
+                                                <th>CPU %</th>
+                                                <th>Memory %</th>
+                                                <th>Command</th>
+                                                <th>Reason</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for proc in suspicious_processes %}
+                                            <tr class="{% if 'Suspicious command' in proc.reason %}suspicious-row
+                                                      {% elif 'High CPU' in proc.reason %}high-cpu-row
+                                                      {% elif 'High memory' in proc.reason %}high-mem-row
+                                                      {% elif 'elevated privileges' in proc.reason %}privileged-row{% endif %}">
+                                                <td>{{ proc.pid }}</td>
+                                                <td>{{ proc.user }}</td>
+                                                <td>{{ proc.cpu }}</td>
+                                                <td>{{ proc.mem }}</td>
+                                                <td>
+                                                    <span class="d-inline-block text-truncate" style="max-width: 200px;">
+                                                        {{ proc.command }}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <span class="badge bg-{% if 'Suspicious command' in proc.reason %}danger
+                                                          {% elif 'High CPU' in proc.reason %}warning
+                                                          {% elif 'High memory' in proc.reason %}info
+                                                          {% elif 'elevated privileges' in proc.reason %}secondary{% endif %}">
+                                                        {{ proc.reason }}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <form action="{{ url_for('kill_process') }}" method="POST">
+                                                        <input type="hidden" name="pid" value="{{ proc.pid }}">
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                            <i class="fas fa-skull me-1"></i> Kill
+                                                        </button>
+                                                    </form>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- All Processes -->
+                        <div class="card shadow mb-4">
+                            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between bg-primary text-white">
+                                <h6 class="m-0 font-weight-bold">
+                                    <i class="fas fa-list me-2"></i>Running Processes (Top 20 by CPU)
+                                </h6>
+                                <div class="dropdown no-arrow">
+                                    <a class="dropdown-toggle text-white" href="#" role="button" id="processesDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="fas fa-ellipsis-v fa-sm fa-fw"></i>
+                                    </a>
+                                    <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="processesDropdown">
+                                        <li><a class="dropdown-item" href="#" onclick="refreshProcesses()"><i class="fas fa-sync-alt me-2"></i>Refresh</a></li>
+                                        <li><a class="dropdown-item" href="#"><i class="fas fa-download me-2"></i>Export Data</a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#processFilterModal"><i class="fas fa-filter me-2"></i>Filter Processes</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-hover table-sm" id="processesTable" width="100%" cellspacing="0">
+                                        <thead class="bg-light">
+                                            <tr>
+                                                <th>PID</th>
+                                                <th>User</th>
+                                                <th>CPU %</th>
+                                                <th>Memory %</th>
+                                                <th>Command</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% if processes %}
+                                                {% for proc in processes %}
+                                                <tr>
+                                                    <td>{{ proc.pid }}</td>
+                                                    <td>{{ proc.user }}</td>
+                                                    <td>{{ proc.cpu }}</td>
+                                                    <td>{{ proc.mem }}</td>
+                                                    <td>
+                                                        <span class="d-inline-block text-truncate" style="max-width: 200px;">
+                                                            {{ proc.command }}
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <form action="{{ url_for('kill_process') }}" method="POST" onsubmit="return confirm('Are you sure you want to kill process {{ proc.pid }}?');">
+                                                            <input type="hidden" name="pid" value="{{ proc.pid }}">
+                                                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                                <i class="fas fa-skull me-1"></i> Kill
+                                                            </button>
+                                                        </form>
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            {% else %}
+                                                <tr>
+                                                    <td colspan="6" class="text-center text-muted">No process data available</td>
+                                                </tr>
+                                            {% endif %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+                <footer class="py-4 bg-light mt-auto">
+                    <div class="container-fluid px-4">
+                        <div class="d-flex align-items-center justify-content-between small">
+                            <div class="text-muted">Copyright © LinuxAV-Solutions {{ current_year  }}</div>
+                            <div>
+                                <span class="me-2">EDR Version: 1.0.0</span>
+                            </div>
+                        </div>
+                    </div>
+                </footer>
+            </div>
+        </div>
+
+        <!-- Process Filter Modal -->
+        <div class="modal fade" id="processFilterModal" tabindex="-1" aria-labelledby="processFilterModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title" id="processFilterModalLabel">Filter Processes</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="processFilterForm">
+                            <div class="mb-3">
+                                <label for="filterUser" class="form-label">User</label>
+                                <input type="text" class="form-control" id="filterUser" placeholder="e.g. root, www-data">
+                            </div>
+                            <div class="mb-3">
+                                <label for="filterCommand" class="form-label">Command Contains</label>
+                                <input type="text" class="form-control" id="filterCommand" placeholder="e.g. python, bash">
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="filterMinCpu" class="form-label">Min CPU %</label>
+                                    <input type="number" class="form-control" id="filterMinCpu" min="0" max="100" placeholder="0">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="filterMinMem" class="form-label">Min Memory %</label>
+                                    <input type="number" class="form-control" id="filterMinMem" min="0" max="100" placeholder="0">
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" onclick="applyProcessFilters()">Apply Filters</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+        <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js" crossorigin="anonymous"></script>
+        <script src="{{ url_for('static', filename='assets/demo/chart-area-demo.js') }}"></script>
+        <script src="{{ url_for('static', filename='assets/demo/chart-bar-demo.js') }}"></script>
+        <script src="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/umd/simple-datatables.min.js" crossorigin="anonymous"></script>
+        <script src="{{ url_for('static', filename='js/datatables-simple-demo.js') }}"></script>
+        <script>
+            // Update system time every second
+            function updateSystemTime() {
+                const now = new Date();
+                const timeString = now.toLocaleString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: true
+                });
+                document.getElementById('current-time').textContent = timeString;
+            }
+            setInterval(updateSystemTime, 1000);
+            updateSystemTime(); // Initial call
+
+            // Initialize DataTables
+            document.addEventListener('DOMContentLoaded', function() {
+                // Initialize tooltips
+                const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+                tooltipTriggerList.map(function (tooltipTriggerEl) {
+                    return new bootstrap.Tooltip(tooltipTriggerEl);
+                });
+
+                // Initialize DataTables if tables exist
+                if (document.getElementById('suspiciousProcessesTable')) {
+                    new simpleDatatables.DataTable('#suspiciousProcessesTable', {
+                        searchable: true,
+                        sortable: true,
+                        perPage: 10,
+                        perPageSelect: [5, 10, 20, 50],
+                        labels: {
+                            placeholder: "Search suspicious processes...",
+                            noRows: "No suspicious processes found",
+                            info: "Showing {start} to {end} of {rows} processes",
+                        }
+                    });
+                }
+
+                if (document.getElementById('processesTable')) {
+                    new simpleDatatables.DataTable('#processesTable', {
+                        searchable: true,
+                        sortable: true,
+                        perPage: 10,
+                        perPageSelect: [5, 10, 20, 50],
+                        labels: {
+                            placeholder: "Search processes...",
+                            noRows: "No processes found",
+                            info: "Showing {start} to {end} of {rows} processes",
+                        }
+                    });
+                }
+            });
+
+            // Refresh processes table
+            function refreshProcesses() {
+                window.location.reload();
+            }
+
+            // Kill all suspicious processes
+            function killAllSuspicious() {
+                if (confirm('Are you sure you want to kill ALL suspicious processes? This action cannot be undone!')) {
+                    const pids = [];
+                    document.querySelectorAll('#suspiciousProcessesTable tbody tr').forEach(row => {
+                        pids.push(row.cells[0].textContent);
+                    });
+
+                    if (pids.length === 0) {
+                        alert('No suspicious processes to kill');
+                        return;
+                    }
+
+                    fetch("{{ url_for('kill_process') }}", {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: new URLSearchParams({
+                            'pid': pids.join(',')
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert(`Successfully killed ${data.killed} processes`);
+                            refreshProcesses();
+                        } else {
+                            alert('Error killing processes: ' + data.message);
+                        }
+                    })
+                    .catch(error => {
+                        alert('Error: ' + error);
+                    });
+                }
+            }
+
+            // Apply process filters
+            function applyProcessFilters() {
+                const userFilter = document.getElementById('filterUser').value.toLowerCase();
+                const commandFilter = document.getElementById('filterCommand').value.toLowerCase();
+                const minCpu = parseFloat(document.getElementById('filterMinCpu').value) || 0;
+                const minMem = parseFloat(document.getElementById('filterMinMem').value) || 0;
+
+                document.querySelectorAll('#processesTable tbody tr').forEach(row => {
+                    const user = row.cells[1].textContent.toLowerCase();
+                    const command = row.cells[4].textContent.toLowerCase();
+                    const cpu = parseFloat(row.cells[2].textContent);
+                    const mem = parseFloat(row.cells[3].textContent);
+
+                    const showRow = 
+                        (userFilter === '' || user.includes(userFilter)) &&
+                        (commandFilter === '' || command.includes(commandFilter)) &&
+                        cpu >= minCpu &&
+                        mem >= minMem;
+
+                    row.style.display = showRow ? '' : 'none';
+                });
+
+                // Close the modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('processFilterModal'));
+                modal.hide();
+            }
+        </script>
+    </body>
+</html>

@@ -8,47 +8,40 @@
     <meta name="author" content="LinuxAV-Solutions" />
     <title>Network Monitoring - LinuxAV-Solutions EDR</title>
     <link href="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/style.min.css" rel="stylesheet" />
-    <link href="../static/css/styles.css" rel="stylesheet" />
+    <link href="{{ url_for('static', filename='css/styles.css') }}" rel="stylesheet" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
     <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
     <style>
-        .network-interface {
-            border-left: 4px solid #0d6efd;
+        .suspicious-row {
+            background-color: rgba(220, 53, 69, 0.1) !important;
         }
-        .traffic-icon {
-            font-size: 1.2rem;
-            margin-right: 5px;
+        .malicious-port {
+            background-color: rgba(220, 53, 69, 0.2);
+            border-left: 3px solid #dc3545;
         }
-        .port-config-card {
-            max-height: 400px;
-            overflow-y: auto;
+        .malicious-ip {
+            background-color: rgba(253, 126, 20, 0.2);
+            border-left: 3px solid #fd7e14;
         }
-        .bandwidth-chart {
-            height: 300px;
+        .badge-malicious {
+            background-color: #dc3545;
+        }
+        .badge-suspicious {
+            background-color: #fd7e14;
         }
         .connection-action {
             margin: 2px;
             min-width: 90px;
         }
-        .status-card {
-            transition: all 0.3s ease;
+        .tooltip-inner {
+            max-width: 400px;
         }
-        .status-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-        }
-        .severity-critical { background-color: #dc3545; }
-        .severity-high { background-color: #fd7e14; }
-        .severity-medium { background-color: #ffc107; }
-        .severity-low { background-color: #28a745; }
     </style>
 </head>
-
 <body class="sb-nav-fixed">
     <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
         <!-- Navbar Brand-->
-        <a class="navbar-brand ps-3" href="index.html">
+        <a class="navbar-brand ps-3" href="{{ url_for('dashboard') }}">
             <i class="fas fa-shield-alt me-2"></i>myEDR
         </a>
         <!-- Sidebar Toggle-->
@@ -59,68 +52,20 @@
         <!-- System Time Display -->
         <div class="mx-auto text-white" id="system-time">
             <i class="fas fa-clock me-2"></i>
-            <span id="current-time">{{ now}}</span>
+            
         </div>
         
-        <!-- Navbar-->
+        <!-- Navbar User Menu -->
         <ul class="navbar-nav ms-auto ms-md-0 me-3 me-lg-4">
             <li class="nav-item dropdown">
                 <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="fas fa-user fa-fw"></i>
-                    <span class="d-none d-lg-inline">Admin</span>
+                    <i class="fas fa-user fa-fw"></i> {{ current_user.username }}
                 </a>
                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                    <li><a class="dropdown-item" href="#!"><i class="fas fa-cog fa-fw me-2"></i>Settings</a></li>
-                    <li><a class="dropdown-item" href="#!"><i class="fas fa-list fa-fw me-2"></i>Activity Log</a></li>
+                    <li><a class="dropdown-item" href="#!">Profile</a></li>
+                    <li><a class="dropdown-item" href="#!">Activity Log</a></li>
                     <li><hr class="dropdown-divider" /></li>
-                    <li><a class="dropdown-item" href="/logout"><i class="fas fa-sign-out-alt fa-fw me-2"></i>Logout</a></li>
-                </ul>
-            </li>
-            <li class="nav-item dropdown">
-                <a class="nav-link" id="alertsDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="fas fa-bell fa-fw"></i>
-                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                        3+
-                        <span class="visually-hidden">unread alerts</span>
-                    </span>
-                </a>
-                <ul class="dropdown-menu dropdown-menu-end p-2" aria-labelledby="alertsDropdown" style="min-width: 300px;">
-                    <li><h6 class="dropdown-header">Security Alerts</h6></li>
-                    <li>
-                        <a class="dropdown-item d-flex align-items-center" href="#">
-                            <div class="me-3">
-                                <div class="bg-danger icon-circle"><i class="fas fa-exclamation-triangle text-white"></i></div>
-                            </div>
-                            <div>
-                                <span class="small text-gray-500">Just now</span>
-                                <p class="mb-0 small">Malicious process detected</p>
-                            </div>
-                        </a>
-                    </li>
-                    <li>
-                        <a class="dropdown-item d-flex align-items-center" href="#">
-                            <div class="me-3">
-                                <div class="bg-warning icon-circle"><i class="fas fa-exclamation text-white"></i></div>
-                            </div>
-                            <div>
-                                <span class="small text-gray-500">5 min ago</span>
-                                <p class="mb-0 small">Suspicious network activity</p>
-                            </div>
-                        </a>
-                    </li>
-                    <li>
-                        <a class="dropdown-item d-flex align-items-center" href="#">
-                            <div class="me-3">
-                                <div class="bg-primary icon-circle"><i class="fas fa-info-circle text-white"></i></div>
-                            </div>
-                            <div>
-                                <span class="small text-gray-500">1 hour ago</span>
-                                <p class="mb-0 small">Firewall rule added</p>
-                            </div>
-                        </a>
-                    </li>
-                    <li><hr class="dropdown-divider" /></li>
-                    <li><a class="dropdown-item text-center small" href="#">View All Alerts</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('logout') }}">Logout</a></li>
                 </ul>
             </li>
         </ul>
@@ -131,44 +76,47 @@
                 <div class="sb-sidenav-menu">
                     <div class="nav">
                         <div class="sb-sidenav-menu-heading">Core</div>
-                        <a class="nav-link" href="index.html">
+                        <a class="nav-link active" href="{{ url_for('dashboard') }}">
                             <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
                             Dashboard
                         </a>
                         <div class="sb-sidenav-menu-heading">Security Modules</div>
-                        <a class="nav-link active" href="/network">
+                        <a class="nav-link" href="{{ url_for('network_monitoring') }}">
                             <div class="sb-nav-link-icon"><i class="fas fa-network-wired"></i></div>
                             Network Monitoring
                         </a>
-                        <a class="nav-link" href="/scan">
+                        <a class="nav-link" href="{{ url_for('scan') }}">
                             <div class="sb-nav-link-icon"><i class="fas fa-search"></i></div>
                             Scan Management
                         </a>
-                        <a class="nav-link" href="/ids">
+                        <a class="nav-link" href="{{ url_for('ids_dashboard') }}">
                             <div class="sb-nav-link-icon"><i class="fas fa-shield-virus"></i></div>
                             IDS/IPS
                         </a>
-                        <a class="nav-link" href="/firewall">
+                        <a class="nav-link" href="{{ url_for('firewall_management') }}">
                             <div class="sb-nav-link-icon"><i class="fas fa-fire"></i></div>
                             Firewall
                         </a>
-                        <a class="nav-link" href="/services">
+                        <a class="nav-link" href="{{ url_for('service_management') }}">
                             <div class="sb-nav-link-icon"><i class="fas fa-server"></i></div>
                             Services
                         </a>
-
-                        <a class="nav-link" href="/process">    
-                            <div class="sb-nav-link-icon"><i class="fas fa-server"></i></div>
-                            Process
+                        <a class="nav-link" href="{{ url_for('process_monitoring') }}">    
+                            <div class="sb-nav-link-icon"><i class="fas fa-tasks"></i></div>
+                            Process Monitoring
                         </a>
-                        
-                        <a class="nav-link" href="/manage_users">
-                            <div class="sb-nav-link-icon"><i class="fas fa-users"></i></div>
-                            Manage Users
+                        <a class="nav-link" href="{{ url_for('manage_kernel_modules') }}">
+                            <div class="sb-nav-link-icon"><i class="fas fa-cogs"></i></div>
+                            Kernel Modules
                         </a>
-                        <a class="nav-link" href="/manage_kernel_modules">
-                            <div class="sb-nav-link-icon"><i class="fas fa-server"></i></div>
-                            Manage Kernel 
+                        <div class="sb-sidenav-menu-heading">Administration</div>
+                        <a class="nav-link" href="{{ url_for('configure_ssh') }}">
+                            <div class="sb-nav-link-icon"><i class="fas fa-terminal"></i></div>
+                            SSH Configuration
+                        </a>
+                        <a class="nav-link" href="{{ url_for('configuration_backup') }}">
+                            <div class="sb-nav-link-icon"><i class="fas fa-database"></i></div>
+                            Backup & Restore
                         </a>
                     </div>
                 </div>
@@ -179,462 +127,412 @@
                 </div>
             </nav>
         </div>
-        <div id="layoutSidenav_content">
-            <main>
-                <div class="container-fluid px-4">
-                    <h1 class="mt-4">Network Monitoring</h1>
-                    <ol class="breadcrumb mb-4">
-                        <li class="breadcrumb-item"><a href="/">Dashboard</a></li>
-                        <li class="breadcrumb-item active">Network</li>
-                    </ol>
-                    
-                    {% if error %}
-                    <div class="alert alert-danger">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        Error: {{ error }}
-                    </div>
-                    {% else %}
-                    <div class="row">
-                        <div class="col-md-12">
-                            <div class="card mb-4">
-                                <div class="card-header">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <h5 class="mb-0">
-                                            <i class="fas fa-network-wired me-2"></i>Network Status
-                                        </h5>
-                                        <small class="text-muted">Last scanned: {{ scan_time }}</small>
-                                    </div>
-                                </div>
-                                <div class="card-body">
-                                    <div class="row">
-                                        <div class="col-md-8">
-                                            <div class="row">
-                                                {% for interface in network_interfaces %}
-                                                <div class="col-md-6 mb-3">
-                                                    <div class="card network-interface h-100">
-                                                        <div class="card-body">
-                                                            <h5 class="card-title">
-                                                                <i class="fas fa-network-wired me-2"></i>
-                                                                {{ interface.interface }}
-                                                            </h5>
-                                                            <ul class="list-unstyled">
-                                                                {% for addr in interface.addresses %}
-                                                                <li><small>{{ addr }}</small></li>
-                                                                {% endfor %}
-                                                            </ul>
-                                                            <div class="d-flex justify-content-between">
-                                                                <div>
-                                                                    <i class="fas fa-upload traffic-icon text-primary"></i>
-                                                                    {{ (interface.stats.bytes_sent/1024/1024)|round(2) }} MB
-                                                                </div>
-                                                                <div>
-                                                                    <i class="fas fa-download traffic-icon text-success"></i>
-                                                                    {{ (interface.stats.bytes_recv/1024/1024)|round(2) }} MB
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                {% endfor %}
-                                            </div>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <div class="card h-100">
-                                                <div class="card-body">
-                                                    <h5 class="card-title">
-                                                        <i class="fas fa-tachometer-alt me-2"></i>
-                                                        Bandwidth Usage
-                                                    </h5>
-                                                    <div class="bandwidth-chart" id="bandwidthChart">
-                                                        <!-- Chart will be rendered here -->
-                                                    </div>
-                                                    <div class="text-center mt-2">
-                                                        <small class="text-muted">
-                                                            {% if bandwidth_stats and bandwidth_stats.total %}
-                                                            Total: {{ (bandwidth_stats.total.bytes_sent + bandwidth_stats.total.bytes_recv)|filesizeformat }}
-                                                            {% else %}
-                                                            Bandwidth data not available
-                                                            {% endif %}
-                                                        </small>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+    
+    <div id="layoutSidenav_content">
+        <main>
+            <div class="container-fluid px-4">
+                <h1 class="mt-4">Network Monitoring</h1>
+                
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                            <i class="fas fa-{{ 'exclamation-triangle' if category == 'error' else 'check-circle' }} me-2"></i>
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                         </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-8">
-                            <div class="card mb-4">
-                                <div class="card-header">
-                                    <ul class="nav nav-tabs card-header-tabs" id="networkTabs" role="tablist">
-                                        <li class="nav-item" role="presentation">
-                                            <button class="nav-link active" id="connections-tab" data-bs-toggle="tab" 
-                                                data-bs-target="#connections" type="button" role="tab">
-                                                <i class="fas fa-plug me-2"></i>Connections
-                                            </button>
-                                        </li>
-                                        <li class="nav-item" role="presentation">
-                                            <button class="nav-link" id="listening-tab" data-bs-toggle="tab" 
-                                                data-bs-target="#listening" type="button" role="tab">
-                                                <i class="fas fa-list me-2"></i>Listening Ports
-                                            </button>
-                                        </li>
-                                    </ul>
-                                </div>
-                                <div class="card-body">
-                                    <div class="tab-content" id="networkTabsContent">
-                                        <div class="tab-pane fade show active" id="connections" role="tabpanel">
-                                            <div class="table-responsive">
-                                                <table class="table table-sm table-hover" id="connectionsTable">
-                                                    <thead>
-                                                        <tr>
-                                                            <th>Process</th>
-                                                            <th>PID</th>
-                                                            <th>Local</th>
-                                                            <th>Remote</th>
-                                                            <th>Port</th>
-                                                            <th>Threat</th>
-                                                            <th>Actions</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        {% for conn in malicious_connections %}
-                                                        <tr>
-                                                            <td>{{ conn.process.name }}</td>
-                                                            <td>{{ conn.process.pid }}</td>
-                                                            <td>{{ conn.local_address }}</td>
-                                                            <td>{{ conn.remote_address }}</td>
-                                                            <td><span class="badge bg-danger">{{ conn.port }}</span></td>
-                                                            <td><span class="badge bg-warning">{{ conn.threat_info }}</span></td>
-                                                            <td>
-                                                                <button class="btn btn-sm btn-outline-danger connection-action kill-connection" 
-                                                                        data-pid="{{ conn.process.pid }}">
-                                                                    <i class="fas fa-skull"></i> Kill
-                                                                </button>
-                                                                <button class="btn btn-sm btn-outline-warning connection-action block-ip" 
-                                                                        data-ip="{{ conn.remote_address.split(':')[0] }}">
-                                                                    <i class="fas fa-shield-alt"></i> Block
-                                                                </button>
-                                                            </td>
-                                                        </tr>
-                                                        {% else %}
-                                                        <tr>
-                                                            <td colspan="7" class="text-center text-muted">
-                                                                No malicious connections detected
-                                                            </td>
-                                                        </tr>
-                                                        {% endfor %}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        </div>
-                                        
-                                        <div class="tab-pane fade" id="listening" role="tabpanel">
-                                            <div class="table-responsive">
-                                                <table class="table table-sm table-hover" id="listeningTable">
-                                                    <thead>
-                                                        <tr>
-                                                            <th>Process</th>
-                                                            <th>PID</th>
-                                                            <th>Port</th>
-                                                            <th>Protocol</th>
-                                                            <th>Threat</th>
-                                                            <th>Actions</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        {% for port in malicious_listening_ports %}
-                                                        <tr>
-                                                            <td>{{ port.process.name }}</td>
-                                                            <td>{{ port.process.pid }}</td>
-                                                            <td><span class="badge bg-warning">{{ port.port }}</span></td>
-                                                            <td>{{ port.protocol }}</td>
-                                                            <td>{{ port.threat_info }}</td>
-                                                            <td>
-                                                                <button class="btn btn-sm btn-outline-danger connection-action kill-process" 
-                                                                        data-pid="{{ port.process.pid }}">
-                                                                    <i class="fas fa-skull"></i> Kill
-                                                                </button>
-                                                            </td>
-                                                        </tr>
-                                                        {% else %}
-                                                        <tr>
-                                                            <td colspan="6" class="text-center text-muted">
-                                                                No suspicious listening ports detected
-                                                            </td>
-                                                        </tr>
-                                                        {% endfor %}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-4">
-                            <div class="card mb-4 port-config-card">
-                                <div class="card-header">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <h5 class="mb-0">
-                                            <i class="fas fa-cogs me-2"></i>Port Configuration
-                                        </h5>
-                                        <button class="btn btn-sm btn-success" data-bs-toggle="modal" 
-                                                data-bs-target="#addPortModal">
-                                            <i class="fas fa-plus"></i> Add
-                                        </button>
-                                    </div>
-                                </div>
-                                <div class="card-body">
-                                    <div class="list-group">
-                                        {% for port, desc in malicious_ports_config.items() %}
-                                        <div class="list-group-item d-flex justify-content-between align-items-center">
-                                            <div>
-                                                <strong>Port {{ port }}</strong>
-                                                <div class="text-muted"><small>{{ desc }}</small></div>
-                                            </div>
-                                            <button class="btn btn-sm btn-outline-danger delete-port" 
-                                                    data-port="{{ port }}">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </div>
-                                        {% else %}
-                                        <div class="alert alert-info">
-                                            No malicious ports configured
-                                        </div>
-                                        {% endfor %}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                        {% endfor %}
                     {% endif %}
-                </div>
-            </main>
-            <footer class="py-4 bg-light mt-auto">
-                <div class="container-fluid px-4">
-                    <div class="d-flex align-items-center justify-content-between small">
-                        <div class="text-muted">Copyright &copy; LinuxAV-Solutions {{ year }}</div>
-                        <div>
-                            <span class="me-2">EDR Version: {{ version }}</span>
-                            <button class="btn btn-sm btn-primary ms-2" id="refreshNetwork">
-                                <i class="fas fa-sync-alt"></i> Refresh
-                            </button>
+                {% endwith %}
+
+                <!-- Suspicious Activity Summary -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="card bg-danger text-white mb-4">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h5 class="card-title">Malicious Ports Detected</h5>
+                                        <h2 class="mb-0">{{ suspicious_listening|length }}</h2>
+                                    </div>
+                                    <i class="fas fa-exclamation-triangle fa-3x"></i>
+                                </div>
+                            </div>
+                            <div class="card-footer d-flex align-items-center justify-content-between">
+                                <a class="small text-white stretched-link" href="#suspicious-ports">View Details</a>
+                                <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card bg-warning text-white mb-4">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h5 class="card-title">Malicious IP Connections</h5>
+                                        <h2 class="mb-0">{{ suspicious_established|length }}</h2>
+                                    </div>
+                                    <i class="fas fa-network-wired fa-3x"></i>
+                                </div>
+                            </div>
+                            <div class="card-footer d-flex align-items-center justify-content-between">
+                                <a class="small text-white stretched-link" href="#suspicious-connections">View Details</a>
+                                <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </footer>
+
+                <!-- Suspicious Listening Ports Section -->
+                <div class="card shadow mb-4" id="suspicious-ports">
+                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between bg-danger text-white">
+                        <h6 class="m-0 font-weight-bold">
+                            <i class="fas fa-exclamation-triangle me-2"></i>Malicious Listening Ports
+                        </h6>
+                        <div>
+                            <span class="badge bg-white text-danger">{{ suspicious_listening|length }} Detected</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        {% if suspicious_listening %}
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover" id="suspiciousPortsTable">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Protocol</th>
+                                        <th>Port</th>
+                                        <th>Process</th>
+                                        <th>Local Address</th>
+                                        <th>Reason</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for port in suspicious_listening %}
+                                    <tr class="malicious-port">
+                                        <td>{{ port.netid }}</td>
+                                        <td>
+                                            <span class="badge badge-malicious">{{ port.port }}</span>
+                                            <i class="fas fa-info-circle ms-2" 
+                                               data-bs-toggle="tooltip" 
+                                               data-bs-html="true"
+                                               title="<b>Known malicious port:</b><br>This port is commonly used by malware or for suspicious activities"></i>
+                                        </td>
+                                        <td>{{ port.process }}</td>
+                                        <td>{{ port.local }}</td>
+                                        <td>{{ port.reason }}</td>
+                                        <td>
+                                            <form action="{{ url_for('kill_process') }}" method="POST" class="d-inline">
+                                                {% for conn in established %}
+                                                        <input type="hidden" name="pid" value="{{ conn.pid }}">
+                                                        {% endfor %}
+
+                                                <button type="submit" class="btn btn-sm btn-outline-danger connection-action">
+                                                    <i class="fas fa-skull me-1"></i> Kill
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle me-2"></i> No malicious listening ports detected
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Suspicious Established Connections Section -->
+                <div class="card shadow mb-4" id="suspicious-connections">
+                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between bg-warning text-white">
+                        <h6 class="m-0 font-weight-bold">
+                            <i class="fas fa-network-wired me-2"></i>Suspicious Established Connections
+                        </h6>
+                        <div>
+                            <span class="badge bg-white text-warning">{{ suspicious_established|length }} Detected</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        {% if suspicious_established %}
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover" id="suspiciousConnectionsTable">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Protocol</th>
+                                        <th>Remote Address</th>
+                                        <th>Port</th>
+                                        <th>Process</th>
+                                        <th>Reason</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for conn in suspicious_established %}
+                                    <tr class="{% if 'malicious IP' in conn.reason %}malicious-ip{% else %}suspicious-row{% endif %}">
+                                        <td>{{ conn.netid }}</td>
+                                        <td>
+                                            {{ conn.remote }}
+                                            {% if 'malicious IP' in conn.reason %}
+                                            <i class="fas fa-info-circle ms-2" 
+                                               data-bs-toggle="tooltip" 
+                                               data-bs-html="true"
+                                               title="<b>Known malicious IP:</b><br>This IP address is listed in malware_ips.txt"></i>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="badge {% if 'malicious port' in conn.reason %}badge-malicious{% else %}badge-suspicious{% endif %}">
+                                                {{ conn.port }}
+                                            </span>
+                                        </td>
+                                        <td>{{ conn.process }}</td>
+                                        <td>{{ conn.reason }}</td>
+                                        <td>
+                                            <form action="{{ url_for('kill_process') }}" method="POST" class="d-inline">
+                                                <input type="hidden" name="pid" value="{{ conn.pid }}">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger connection-action">
+                                                    <i class="fas fa-skull me-1"></i> Kill
+                                                </button>
+                                            </form>
+                                            <button class="btn btn-sm btn-outline-warning connection-action block-ip" 
+                                                    data-ip="{{ conn.remote.split(':')[0] }}">
+                                                <i class="fas fa-shield-alt me-1"></i> Block
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle me-2"></i> No suspicious established connections detected
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- All Listening Ports Section -->
+<!-- All Listening Ports Section -->
+<div class="card shadow mb-4">
+    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between bg-primary text-white">
+        <h6 class="m-0 font-weight-bold">
+            <i class="fas fa-list me-2"></i>All Listening Ports
+        </h6>
+        <div>
+            <span class="badge bg-white text-primary">{{ listening|length }} Total</span>
         </div>
     </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover" id="allPortsTable">
+                <thead class="table-light">
+                    <tr>
+                        <th>Protocol</th>
+                        <th>Port</th>
+                        <th>Process</th>
+                        <th>Local Address</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for port in listening %}
+                    <tr class="{% if port.port in malicious_ports %}malicious-port{% endif %}">
+                        <td>{{ port.netid }}</td>
+                        <td>
+                            {% if port.port in malicious_ports %}
+                            <span class="badge badge-malicious">{{ port.port }}</span>
+                            <i class="fas fa-exclamation-triangle text-danger ms-2"></i>
+                            {% else %}
+                            {{ port.port }}
+                            {% endif %}
+                        </td>
+                        <td>{{ port.process.split(',')[0] }}</td>
+                        <td>{{ port.local }}</td>
+                        <td>
+                            {% if port.port in malicious_ports %}
+                            <span class="badge badge-malicious">Malicious</span>
+                            {% else %}
+                            <span class="badge bg-success">Normal</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if port.pid %}
+                            <form action="{{ url_for('kill_process') }}" method="POST" class="d-inline">
+                                <input type="hidden" name="pid" value="{{ conn.pid }}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger connection-action">
+                                    <i class="fas fa-skull me-1"></i> Kill
+                                </button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
 
-    <!-- Add Port Modal -->
-    <div class="modal fade" id="addPortModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Add Malicious Port</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="addPortForm">
-                        <div class="mb-3">
-                            <label class="form-label">Port Number</label>
-                            <input type="number" class="form-control" name="port" required min="1" max="65535">
+                <!-- All Established Connections Section -->
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between bg-success text-white">
+                        <h6 class="m-0 font-weight-bold">
+                            <i class="fas fa-plug me-2"></i>All Established Connections
+                        </h6>
+                        <div>
+                            <span class="badge bg-white text-success">{{ established|length }} Total</span>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label">Description</label>
-                            <input type="text" class="form-control" name="description" 
-                                   placeholder="e.g., Common malware port">
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover" id="allConnectionsTable">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Protocol</th>
+                                        <th>Remote Address</th>
+                                        <th>Port</th>
+                                        <th>Process</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for conn in established %}
+                                    <tr class="{% if conn in suspicious_established %}{% if 'malicious IP' in conn.reason %}malicious-ip{% else %}suspicious-row{% endif %}{% endif %}">
+                                        <td>{{ conn.netid }}</td>
+                                        <td>
+                                            {{ conn.remote }}
+                                            {% if conn in suspicious_established and 'malicious IP' in conn.reason %}
+                                            <i class="fas fa-exclamation-triangle text-warning ms-2"></i>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if conn.port in malicious_ports %}
+                                            <span class="badge badge-malicious">{{ conn.port }}</span>
+                                            {% else %}
+                                            {{ conn.port }}
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ conn.process }}</td>
+                                        <td>
+                                            {% if conn in suspicious_established %}
+                                                {% if 'malicious IP' in conn.reason %}
+                                                <span class="badge badge-malicious">Malicious IP</span>
+                                                {% else %}
+                                                <span class="badge badge-suspicious">Suspicious Port</span>
+                                                {% endif %}
+                                            {% else %}
+                                            <span class="badge bg-success">Normal</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <form action="{{ url_for('kill_process') }}" method="POST" class="d-inline">
+                                                {% for conn in established %}
+                                                <input type="hidden" name="pid" value="{{ conn.pid }}">
+                                                {% endfor %}
+
+                                                <button type="submit" class="btn btn-sm btn-outline-danger connection-action">
+                                                    <i class="fas fa-skull me-1"></i> Kill
+                                                </button>
+                                            </form>
+                                            {% if conn.remote.split(':')[0] in malicious_ips %}
+                                            <button class="btn btn-sm btn-outline-warning connection-action block-ip" 
+                                                    data-ip="{{ conn.remote.split(':')[0] }}">
+                                                <i class="fas fa-shield-alt me-1"></i> Block
+                                            </button>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
                         </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="savePort">Save</button>
+                    </div>
                 </div>
             </div>
-        </div>
+        </main>
+        <footer class="py-4 bg-light mt-auto">
+            <div class="container-fluid px-4">
+                <div class="d-flex align-items-center justify-content-between small">
+                    <div class="text-muted">Copyright &copy; LinuxAV-Solutions {{ current_year }}</div>
+                    <div>
+                        <button class="btn btn-sm btn-primary" onclick="location.reload()">
+                            <i class="fas fa-sync-alt me-1"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </footer>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
-    <script src="../static/js/scripts.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js" crossorigin="anonymous"></script>
+    <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
     <script src="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/umd/simple-datatables.min.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Initialize bandwidth chart
-        const ctx = document.getElementById('bandwidthChart').getContext('2d');
-        const bandwidthChart = new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: ['Sent', 'Received'],
-                datasets: [{
-                    data: [
-                        {{ bandwidth_stats.total.bytes_sent if bandwidth_stats and bandwidth_stats.total else 0 }},
-                        {{ bandwidth_stats.total.bytes_recv if bandwidth_stats and bandwidth_stats.total else 0 }}
-                    ],
-                    backgroundColor: [
-                        'rgba(54, 162, 235, 0.7)',
-                        'rgba(75, 192, 192, 0.7)'
-                    ],
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom'
-                    }
-                }
-            }
-        });
-
-        // Update system time every second
-        function updateSystemTime() {
-            const now = new Date();
-            const timeString = now.toISOString().replace('T', ' ').substr(0, 19);
-            document.getElementById('current-time').textContent = timeString;
-        }
-        setInterval(updateSystemTime, 1000);
-
-        // Refresh button
-        $('#refreshNetwork').click(function() {
-            $(this).find('i').addClass('fa-spin');
-            location.reload();
-        });
-
-        // Add port configuration
-        $('#savePort').click(function() {
-            const formData = $('#addPortForm').serialize();
+        // Initialize tooltips
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize DataTables
+            new simpleDatatables.DataTable('#suspiciousPortsTable');
+            new simpleDatatables.DataTable('#suspiciousConnectionsTable');
+            new simpleDatatables.DataTable('#allPortsTable');
+            new simpleDatatables.DataTable('#allConnectionsTable');
             
-            $.ajax({
-                url: '/network/ports',
-                method: 'POST',
-                data: formData,
-                success: function(response) {
-                    if (response.error) {
-                        Swal.fire('Error', response.error, 'error');
-                    } else {
-                        $('#addPortModal').modal('hide');
-                        location.reload();
-                    }
-                },
-                error: function(xhr) {
-                    Swal.fire('Error', 'Failed to add port', 'error');
-                }
+            // Initialize Bootstrap tooltips
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl, {
+                    html: true
+                });
             });
         });
 
-        // Delete port configuration
-        $('.delete-port').click(function() {
-            const port = $(this).data('port');
-            
-            Swal.fire({
-                title: 'Delete Port?',
-                text: `Are you sure you want to remove port ${port} from monitoring?`,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonText: 'Delete',
-                cancelButtonText: 'Cancel'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    $.ajax({
-                        url: '/network/ports?port=' + port,
-                        method: 'DELETE',
-                        success: function(response) {
-                            if (response.error) {
-                                Swal.fire('Error', response.error, 'error');
+        // Block IP functionality
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('block-ip') || e.target.closest('.block-ip')) {
+                const button = e.target.classList.contains('block-ip') ? e.target : e.target.closest('.block-ip');
+                const ip = button.dataset.ip;
+                
+                Swal.fire({
+                    title: 'Block IP Address?',
+                    text: `Are you sure you want to block all traffic from ${ip}?`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Block',
+                    cancelButtonText: 'Cancel'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        fetch('/firewall/block_ip', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                            },
+                            body: `ip=${ip}`
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                Swal.fire('Success', `IP ${ip} has been blocked`, 'success');
                             } else {
-                                location.reload();
+                                Swal.fire('Error', data.error || 'Failed to block IP', 'error');
                             }
-                        },
-                        error: function(xhr) {
-                            Swal.fire('Error', 'Failed to delete port', 'error');
-                        }
-                    });
-                }
-            });
-        });
-
-        // Kill process/connection
-        $(document).on('click', '.kill-connection, .kill-process', function() {
-            const pid = $(this).data('pid');
-            
-            Swal.fire({
-                title: 'Kill Process?',
-                text: `Are you sure you want to kill process ID ${pid}?`,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonText: 'Kill',
-                cancelButtonText: 'Cancel'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    $.ajax({
-                        url: '/process/kill',
-                        method: 'POST',
-                        data: { pid: pid },
-                        success: function(response) {
-                            if (response.error) {
-                                Swal.fire('Error', response.error, 'error');
-                            } else {
-                                Swal.fire('Success', `Process ${pid} killed`, 'success');
-                                setTimeout(() => location.reload(), 1500);
-                            }
-                        },
-                        error: function(xhr) {
-                            Swal.fire('Error', 'Failed to kill process', 'error');
-                        }
-                    });
-                }
-            });
-        });
-
-        // Block IP
-        $(document).on('click', '.block-ip', function() {
-            const ip = $(this).data('ip');
-            
-            Swal.fire({
-                title: 'Block IP Address?',
-                text: `Are you sure you want to block all traffic from ${ip}?`,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonText: 'Block',
-                cancelButtonText: 'Cancel'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    $.ajax({
-                        url: '/firewall/block_ip',
-                        method: 'POST',
-                        data: { ip: ip },
-                        success: function(response) {
-                            if (response.error) {
-                                Swal.fire('Error', response.error, 'error');
-                            } else {
-                                Swal.fire('Success', `IP ${ip} blocked`, 'success');
-                                setTimeout(() => location.reload(), 1500);
-                            }
-                        },
-                        error: function(xhr) {
+                        })
+                        .catch(error => {
                             Swal.fire('Error', 'Failed to block IP', 'error');
-                        }
-                    });
-                }
-            });
+                        });
+                    }
+                });
+            }
         });
 
         // Auto-refresh every 60 seconds
         setTimeout(function() {
             location.reload();
         }, 60000);
-    });
     </script>
 </body>
 </html>

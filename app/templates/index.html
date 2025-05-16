@@ -41,12 +41,34 @@
                 font-size: 0.8rem;
                 padding: 0.2em 0.6em;
             }
+            .service-status {
+                width: 12px;
+                height: 12px;
+                border-radius: 50%;
+                display: inline-block;
+                margin-right: 5px;
+            }
+            .service-active {
+                background-color: #1cc88a;
+            }
+            .service-inactive {
+                background-color: #e74a3b;
+            }
+            .event-critical {
+                border-left: 4px solid #e74a3b;
+            }
+            .event-warning {
+                border-left: 4px solid #f6c23e;
+            }
+            .event-info {
+                border-left: 4px solid #36b9cc;
+            }
         </style>
     </head>
     <body class="sb-nav-fixed">
         <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
             <!-- Navbar Brand-->
-            <a class="navbar-brand ps-3" href="index.html">
+            <a class="navbar-brand ps-3" href="{{ url_for('dashboard') }}">
                 <i class="fas fa-shield-alt me-2"></i>myEDR
             </a>
             <!-- Sidebar Toggle-->
@@ -57,10 +79,22 @@
             <!-- System Time Display -->
             <div class="mx-auto text-white" id="system-time">
                 <i class="fas fa-clock me-2"></i>
-                <span id="current-time">{{ now.strftime('%Y-%m-%d %H:%M:%S') }}</span>
+                
             </div>
             
-            <!-- Navbar-->
+            <!-- Navbar User Menu -->
+            <ul class="navbar-nav ms-auto ms-md-0 me-3 me-lg-4">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-user fa-fw"></i> {{ current_user.username }}
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                        <li><a class="dropdown-item" href="#!">Profile</a></li>
+                        <li><a class="dropdown-item" href="#!">Activity Log</a></li>
+                        <li><hr class="dropdown-divider" /></li>
+                        <li><a class="dropdown-item" href="{{ url_for('logout') }}">Logout</a></li>
+                    </ul>
+                </li>
             </ul>
         </nav>
         <div id="layoutSidenav">
@@ -69,49 +103,43 @@
                     <div class="sb-sidenav-menu">
                         <div class="nav">
                             <div class="sb-sidenav-menu-heading">Core</div>
-                            <a class="nav-link active" href="index.html">
+                            <a class="nav-link active" href="{{ url_for('dashboard') }}">
                                 <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
                                 Dashboard
                             </a>
                             <div class="sb-sidenav-menu-heading">Security Modules</div>
-                            <a class="nav-link" href="/network">
+                            <a class="nav-link" href="{{ url_for('monitoring') }}">
                                 <div class="sb-nav-link-icon"><i class="fas fa-network-wired"></i></div>
                                 Network Monitoring
                             </a>
-                            <a class="nav-link" href="/scan">
+                            <a class="nav-link" href="{{ url_for('antivirus') }}">
                                 <div class="sb-nav-link-icon"><i class="fas fa-search"></i></div>
                                 Scan Management
                             </a>
-                            <a class="nav-link" href="/ids">
+                            <a class="nav-link" href="{{ url_for('ids_dashboard') }}">
                                 <div class="sb-nav-link-icon"><i class="fas fa-shield-virus"></i></div>
                                 IDS/IPS
                             </a>
-                            <a class="nav-link" href="/firewall">
+                            <a class="nav-link" href="{{ url_for('firewall') }}">
                                 <div class="sb-nav-link-icon"><i class="fas fa-fire"></i></div>
                                 Firewall
                             </a>
-                            <a class="nav-link" href="/services">
+                            <a class="nav-link" href="{{ url_for('service_management') }}">
                                 <div class="sb-nav-link-icon"><i class="fas fa-server"></i></div>
                                 Services
                             </a>
-
-                            <a class="nav-link" href="/process">    
-                                <div class="sb-nav-link-icon"><i class="fas fa-server"></i></div>
-                                Process
+                            <a class="nav-link" href="{{ url_for('process_monitoring') }}">    
+                                <div class="sb-nav-link-icon"><i class="fas fa-tasks"></i></div>
+                                Process Monitoring
                             </a>
-                            
-                            <a class="nav-link" href="/manage_users">
-                                <div class="sb-nav-link-icon"><i class="fas fa-users"></i></div>
-                                Manage Users
+                            <a class="nav-link" href="{{ url_for('manage_kernel_modules') }}">
+                                <div class="sb-nav-link-icon"><i class="fas fa-cogs"></i></div>
+                                Kernel Modules
                             </a>
-                            <a class="nav-link" href="/manage_kernel_modules">
-                                <div class="sb-nav-link-icon"><i class="fas fa-server"></i></div>
-                                Manage Kernel 
-                            </a>
-
-                            <a class="nav-link" href="/info">
-                                <div class="sb-nav-link-icon"><i class="fas fa-server"></i></div>
-                                INFO
+                            <div class="sb-sidenav-menu-heading">Administration</div>
+                            <a class="nav-link" href="{{ url_for('configure_ssh') }}">
+                                <div class="sb-nav-link-icon"><i class="fas fa-terminal"></i></div>
+                                SSH Configuration
                             </a>
                         </div>
                     </div>
@@ -132,276 +160,293 @@
                             </li>
                         </ol>
                         
+                        <!-- System Status Alerts -->
+                        
                         <!-- Security Status Cards -->
-<!-- Security Status Cards -->
-<div class="row">
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card security-card border-left-primary shadow h-100 py-2">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col me-2">
-                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                            Threats Detected</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="threats-count">
-                            {{ security_stats.threats_count }}
+                        <div class="row">
+                            <!-- System Health Card -->
+                            <div class="col-xl-3 col-md-6 mb-4">
+                                <div class="card security-card border-left-primary shadow h-100 py-2">
+                                    <div class="card-body">
+                                        <div class="row no-gutters align-items-center">
+                                            <div class="col me-2">
+                                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                                    System Health</div>
+                                                <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                                    {% if system_info.load %}
+                                                        {{ system_info.load.split()[0]|float < 1.0 and 'Healthy' or 'Under Load' }}
+                                                    {% else %}
+                                                        Unknown
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            <div class="col-auto">
+                                                <i class="fas fa-heartbeat fa-2x text-gray-300"></i>
+                                            </div>
+                                        </div>
+                                        <div class="mt-2 text-xs text-muted">
+                                            Uptime: {{ system_info.uptime or 'N/A' }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Threats Detected Card -->
+                            <div class="col-xl-3 col-md-6 mb-4">
+                                <div class="card security-card border-left-danger shadow h-100 py-2">
+                                    <div class="card-body">
+                                        <div class="row no-gutters align-items-center">
+                                            <div class="col me-2">
+                                                <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                                                    Threats Detected</div>
+                                                <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                                    {{ recent_events|selectattr('event_type', 'equalto', 'alert')|list|length }}
+                                                </div>
+                                            </div>
+                                            <div class="col-auto">
+                                                <i class="fas fa-bug fa-2x text-gray-300"></i>
+                                            </div>
+                                        </div>
+                                        <div class="mt-2 text-xs text-muted">
+                                            Last 24 hours
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Security Services Card -->
+                            <div class="col-xl-3 col-md-6 mb-4">
+                                <div class="card security-card border-left-success shadow h-100 py-2">
+                                    <div class="card-body">
+                                        <div class="row no-gutters align-items-center">
+                                            <div class="col me-2">
+                                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                                    Active Services</div>
+                                                <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                                    {{ services|selectattr('status', 'equalto', 'active')|list|length }}/{{ services|length }}
+                                                </div>
+                                            </div>
+                                            <div class="col-auto">
+                                                <i class="fas fa-shield-alt fa-2x text-gray-300"></i>
+                                            </div>
+                                        </div>
+                                        <div class="mt-2 text-xs text-muted">
+                                            Protection Level: 
+                                            {% set active_services = services|selectattr('status', 'equalto', 'active')|list|length %}
+                                            {% if active_services == services|length %}
+                                                <span class="text-success">Full</span>
+                                            {% elif active_services > services|length / 2 %}
+                                                <span class="text-warning">Partial</span>
+                                            {% else %}
+                                                <span class="text-danger">Low</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Updates Available Card -->
+                            <div class="col-xl-3 col-md-6 mb-4">
+                                <div class="card security-card border-left-warning shadow h-100 py-2">
+                                    <div class="card-body">
+                                        <div class="row no-gutters align-items-center">
+                                            <div class="col me-2">
+                                                <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                                    Updates Available</div>
+                                                <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                                    {{ updates_info.available or '0' }}
+                                                </div>
+                                            </div>
+                                            <div class="col-auto">
+                                                <i class="fas fa-sync-alt fa-2x text-gray-300"></i>
+                                            </div>
+                                        </div>
+                                        <div class="mt-2 text-xs text-muted">
+                                            Last checked: {{ updates_info.last_update or 'Never' }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="col-auto">
-                        <i class="fas fa-bug fa-2x text-gray-300"></i>
-                    </div>
-                </div>
-                <div class="mt-2 text-xs text-muted">
-                    <span class="text-danger me-2">
-                        <i class="fas fa-arrow-up"></i> {{ security_stats.malicious_processes }} processes
-                    </span>
-                    {{ security_stats.malicious_connections }} connections
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card security-card border-left-success shadow h-100 py-2">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col me-2">
-                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                            Protected Ports</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="ports-secured">
-                            {{ security_stats.ports_secured }}/{{ security_stats.total_ports }}
-                        </div>
-                    </div>
-                    <div class="col-auto">
-                        <i class="fas fa-lock fa-2x text-gray-300"></i>
-                    </div>
-                </div>
-                <div class="mt-2 text-xs text-muted">
-                    {% if security_stats.ports_secured < security_stats.total_ports %}
-                    <span class="text-warning me-2">
-                        <i class="fas fa-exclamation-circle"></i> 
-                        {{ security_stats.total_ports - security_stats.ports_secured }} unsecured
-                    </span>
-                    {% else %}
-                    <span class="text-success me-2">
-                        <i class="fas fa-check-circle"></i> All secured
-                    </span>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card security-card border-left-warning shadow h-100 py-2">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col me-2">
-                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                            Active Scans</div>
-                        <!-- <div class="h5 mb-0 font-weight-bold text-gray-800" id="active-scans">
-                            {{ security_stats.active_scans }}
-                        </div> -->
-                    </div>
-                    <div class="col-auto">
-                        <i class="fas fa-search fa-2x text-gray-300"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card security-card border-left-danger shadow h-100 py-2">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col me-2">
-                        <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
-                            Malicious Processes</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="malicious-processes">
-                            {{ security_stats.malicious_processes }}
-                        </div>
-                    </div>
-                    <div class="col-auto">
-                        <i class="fas fa-skull fa-2x text-gray-300"></i>
-                    </div>
-                </div>
-                <div class="mt-2 text-xs text-muted">
-                    {% if security_stats.malicious_processes > 0 %}
-                    <span class="text-danger me-2">
-                        <i class="fas fa-circle"></i> Active
-                    </span>
-                    {% else %}
-                    <span class="text-success me-2">
-                        <i class="fas fa-check-circle"></i> None detected
-                    </span>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
                         
-                        <!-- System Health and Security Overview -->
-<!-- System Health -->
-<div class="row">
-    <div class="col-lg-12 mb-4">
-        <div class="card shadow mb-4">
-            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                <h6 class="m-0 font-weight-bold text-primary">
-                    <i class="fas fa-heartbeat me-2"></i>System Health
-                </h6>
-                <div class="dropdown no-arrow">
-                    <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
-                    </a>
-                    <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="dropdownMenuLink">
-                        <li><a class="dropdown-item" href="#" onclick="refreshSystemStats()">Refresh</a></li>
-                    </ul>
-                </div>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6 mb-4">
-                        <div class="card system-health-card cpu-card h-100">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <h6 class="mb-0">CPU Usage</h6>
-                                    <span class="badge bg-primary">{{ "%.1f"|format(system_stats.cpu) }}%</span>
+                        <!-- System Information and Security Alerts -->
+                        <div class="row">
+                            <!-- System Information -->
+                            <div class="col-lg-12 mb-4">
+                                <div class="card shadow mb-4">
+                                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                                        <h6 class="m-0 font-weight-bold text-primary">
+                                            <i class="fas fa-info-circle me-2"></i>System Information
+                                        </h6>
+                                        <div class="dropdown no-arrow">
+                                            <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-expanded="false">
+                                                <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                                            </a>
+                                            <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="dropdownMenuLink">
+                                                <li><a class="dropdown-item" href="#" onclick="refreshSystemInfo()">Refresh</a></li>
+                                                <li><a class="dropdown-item" href="{{ url_for('configure_ssh') }}">SSH Settings</a></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="table-responsive">
+                                            <table class="table table-borderless table-sm">
+                                                <tbody>
+                                                    <tr>
+                                                        <th>Hostname:</th>
+                                                        <td>{{ system_info.hostname or 'N/A' }}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>OS:</th>
+                                                        <td>{{ system_info.os or 'N/A' }}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>Kernel:</th>
+                                                        <td>{{ system_info.kernel or 'N/A' }}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>CPU:</th>
+                                                        <td>{{ system_info.cpu or 'N/A' }} ({{ system_info.cpu_cores or '?' }} cores)</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>Memory:</th>
+                                                        <td>{{ system_info.memory or 'N/A' }}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>Disk:</th>
+                                                        <td>{{ system_info.disk or 'N/A' }}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>Last Boot:</th>
+                                                        <td>{{ system_info.last_boot or 'N/A' }}</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="progress mt-2" style="height: 10px;">
-                                    <div class="progress-bar bg-primary" role="progressbar" 
-                                         style="width: {{ system_stats.cpu }}%" 
-                                         aria-valuenow="{{ system_stats.cpu }}" 
-                                         aria-valuemin="0" aria-valuemax="100"></div>
-                                </div>
-                                <small class="text-muted">
-                                    {% if system_stats.net_if %}
-                                        {{ system_stats.net_if.keys()|list|first }}: 
-                                        {{ system_stats.net_if[system_stats.net_if.keys()|list|first][0].address }}
-                                    {% else %}
-                                        Network interface not detected
-                                    {% endif %}
-                                </small>
                             </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6 mb-4">
-                        <div class="card system-health-card memory-card h-100">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <h6 class="mb-0">Memory Usage</h6>
-                                    <span class="badge bg-success">{{ "%.1f"|format(system_stats.mem_percent) }}%</span>
-                                </div>
-                                <div class="progress mt-2" style="height: 10px;">
-                                    <div class="progress-bar bg-success" role="progressbar" 
-                                         style="width: {{ system_stats.mem_percent }}%" 
-                                         aria-valuenow="{{ system_stats.mem_percent }}" 
-                                         aria-valuemin="0" aria-valuemax="100"></div>
-                                </div>
-                                <small class="text-muted">
-                                    {{ "%.1f"|format(system_stats.mem_used) }}GB / {{ "%.1f"|format(system_stats.mem_total) }}GB used
-                                </small>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6 mb-4">
-                        <div class="card system-health-card disk-card h-100">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <h6 class="mb-0">Disk Usage</h6>
-                                    <span class="badge bg-warning">{{ "%.1f"|format(system_stats.disk_percent) }}%</span>
-                                </div>
-                                <div class="progress mt-2" style="height: 10px;">
-                                    <div class="progress-bar bg-warning" role="progressbar" 
-                                         style="width: {{ system_stats.disk_percent }}%" 
-                                         aria-valuenow="{{ system_stats.disk_percent }}" 
-                                         aria-valuemin="0" aria-valuemax="100"></div>
-                                </div>
-                                <small class="text-muted">
-                                    {{ "%.1f"|format(system_stats.disk_used) }}GB / {{ "%.1f"|format(system_stats.disk_total) }}GB used
-                                </small>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6 mb-4">
-                        <div class="card system-health-card network-card h-100">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <h6 class="mb-0">Network Activity</h6>
-                                    <span class="badge bg-danger">{{ "%.1f"|format((system_stats.net_sent + system_stats.net_recv)/2) }}MB/s</span>
-                                </div>
-                                <div class="progress mt-2" style="height: 10px;">
-                                    <div class="progress-bar bg-danger" role="progressbar" 
-                                         style="width: {{ ((system_stats.net_sent + system_stats.net_recv)/2) }}%" 
-                                         aria-valuenow="{{ ((system_stats.net_sent + system_stats.net_recv)/2) }}" 
-                                         aria-valuemin="0" aria-valuemax="100"></div>
-                                </div>
-                                <small class="text-muted">
-                                    {% if system_stats.net_if %}
-                                        {% set first_if = system_stats.net_if.keys()|list|first %}
-                                        {{ first_if }}: {{ system_stats.net_if[first_if][0].address }}
-                                    {% else %}
-                                        Network interface not detected
-                                    {% endif %}
-                                </small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-                        
+                            
+                            <!-- Security Alerts -->
 
-<!-- Security Services Status -->
-<div class="row">
-    <div class="col-lg-12 mb-4">
-        <div class="card shadow mb-4">
-            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                <h6 class="m-0 font-weight-bold text-primary">
-                    <i class="fas fa-shield-alt me-2"></i>Security Services
-                </h6>
-                <div class="dropdown no-arrow">
-                    <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
-                    </a>
-                    <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="dropdownMenuLink">
-                        <li><a class="dropdown-item" href="#" onclick="refreshServices()">Refresh</a></li>
-                        <li><a class="dropdown-item" href="/services">Manage Services</a></li>
-                    </ul>
-                </div>
-            </div>
-            <div class="card-body">
-                {% for service, status in security_stats.services_status.items() %}
-                <div class="mb-3">
-                    <div class="d-flex justify-content-between align-items-center mb-1">
-                        <span>{{ service|title }}</span>
-                        {% if status %}
-                        <span class="badge bg-success">Active</span>
-                        {% else %}
-                        <span class="badge bg-danger">Inactive</span>
-                        {% endif %}
-                    </div>
-                    <div class="progress" style="height: 5px;">
-                        <div class="progress-bar {% if status %}bg-success{% else %}bg-danger{% endif %}" 
-                             role="progressbar" style="width: 100%" 
-                             aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
-                    </div>
-                </div>
-                {% endfor %}
-                <button class="btn btn-sm btn-outline-primary w-100 mt-2" onclick="refreshServices()">
-                    <i class="fas fa-sync-alt me-1"></i> Refresh All
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
+                        </div>
                         
-                        <!-- Malicious Processes and System Users -->
+                        <!-- Security Services Status -->
+                        <div class="row">
+                            <div class="col-lg-12 mb-4">
+                                <div class="card shadow mb-4">
+                                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                                        <h6 class="m-0 font-weight-bold text-primary">
+                                            <i class="fas fa-shield-alt me-2"></i>Security Services Status
+                                        </h6>
+                                        <div class="dropdown no-arrow">
+                                            <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-expanded="false">
+                                                <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                                            </a>
+                                            <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="dropdownMenuLink">
+                                                <li><a class="dropdown-item" href="#" onclick="refreshServices()">Refresh</a></li>
+                                                <li><a class="dropdown-item" href="{{ url_for('service_management') }}">Manage Services</a></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            {% for service, info in services.items() %}
+                                            <div class="col-md-6 col-lg-3 mb-3">
+                                                <div class="card h-100">
+                                                    <div class="card-body">
+                                                        <div class="d-flex align-items-center mb-2">
+                                                            <span class="service-status {% if info.status == 'active' %}service-active{% else %}service-inactive{% endif %}"></span>
+                                                            <h6 class="mb-0">{{ service|title }}</h6>
+                                                        </div>
+                                                        <div class="d-flex justify-content-between">
+                                                            <small class="text-muted">Status:</small>
+                                                            <span class="badge bg-{% if info.status == 'active' %}success{% else %}danger{% endif %}">
+                                                                {{ info.status|title }}
+                                                            </span>
+                                                        </div>
+                                                        {% if info.version %}
+                                                        <div class="d-flex justify-content-between mt-1">
+                                                            <small class="text-muted">Version:</small>
+                                                            <small>{{ info.version }}</small>
+                                                        </div>
+                                                        {% endif %}
+                                                        {% if service == 'fail2ban' and info.jails %}
+                                                        <div class="d-flex justify-content-between mt-1">
+                                                            <small class="text-muted">Jails:</small>
+                                                            <small>{{ info.jails }}</small>
+                                                        </div>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Recent Events Timeline -->
+                        <div class="row">
+                            <div class="col-lg-12">
+                                <div class="card shadow mb-4">
+                                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                                        <h6 class="m-0 font-weight-bold text-primary">
+                                            <i class="fas fa-history me-2"></i>Recent Events Timeline
+                                        </h6>
+                                        <a href="{{ url_for('log_management') }}" class="btn btn-sm btn-primary">View Full Logs</a>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="timeline">
+                                            {% for event in recent_events[:10] %}
+                                            {% set event_class = 'event-info' %}
+                                            {% if 'error' in event.lower() or 'failed' in event.lower() %}
+                                                {% set event_class = 'event-critical' %}
+                                            {% elif 'warning' in event.lower() %}
+                                                {% set event_class = 'event-warning' %}
+                                            {% endif %}
+                                            
+                                            <div class="timeline-item {{ event_class }} mb-3 p-2">
+                                                <div class="d-flex justify-content-between small">
+                                                    <span class="fw-bold">
+                                                        {% if '|' in event %}
+                                                            {{ event.split('|')[1].strip() }}
+                                                        {% else %}
+                                                            {{ event[:50] }}...
+                                                        {% endif %}
+                                                    </span>
+                                                    <span>
+                                                        {% if '|' in event %}
+                                                            {{ event.split('|')[0].strip() }}
+                                                        {% else %}
+                                                            
+                                                        {% endif %}
+                                                    </span>
+                                                </div>
+                                                {% if '|' in event and event.split('|')|length > 2 %}
+                                                <div class="small text-muted mt-1">
+                                                    {{ event.split('|')[2].strip() }}
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                            {% else %}
+                                            <div class="text-center py-4">
+                                                <i class="fas fa-info-circle fa-3x text-secondary mb-3"></i>
+                                                <p class="mb-0">No recent events found</p>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </main>
                 <footer class="py-4 bg-light mt-auto">
                     <div class="container-fluid px-4">
                         <div class="d-flex align-items-center justify-content-between small">
-                            <div class="text-muted">Copyright &copy; myEDR {{ year }}</div>
+                            
                             <div>
                                 <span class="me-2">EDR Version: 1.0.0</span>
                             </div>
@@ -413,10 +458,7 @@
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
         <script src="../static/js/scripts.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js" crossorigin="anonymous"></script>
-        <script src="../static/assets/demo/chart-area-demo.js"></script>
-        <script src="../static/assets/demo/chart-bar-demo.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/umd/simple-datatables.min.js" crossorigin="anonymous"></script>
-        <script src="../static/js/datatables-simple-demo.js"></script>
         <script>
             // Update system time every second
             function updateSystemTime() {
@@ -426,57 +468,52 @@
             }
             setInterval(updateSystemTime, 1000);
             
-            // Refresh system stats
-            function refreshSystemStats() {
-                fetch('/api/system/stats')
-                    .then(response => response.json())
-                    .then(data => {
-                        // Update CPU
-                        document.querySelector('.cpu-card .badge').textContent = `${data.cpu_usage.toFixed(1)}%`;
-                        document.querySelector('.cpu-card .progress-bar').style.width = `${data.cpu_usage}%`;
-                        document.querySelector('.cpu-card .progress-bar').setAttribute('aria-valuenow', data.cpu_usage);
+            // Refresh system information
+            function refreshSystemInfo() {
+                fetch('{{ url_for("dashboard") }}')
+                    .then(response => response.text())
+                    .then(html => {
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(html, 'text/html');
                         
-                        // Update Memory
-                        document.querySelector('.memory-card .badge').textContent = `${data.memory_usage.toFixed(1)}%`;
-                        document.querySelector('.memory-card .progress-bar').style.width = `${data.memory_usage}%`;
-                        document.querySelector('.memory-card .progress-bar').setAttribute('aria-valuenow', data.memory_usage);
+                        // Update system info table
+                        const newTable = doc.querySelector('.card-body .table-responsive');
+                        if (newTable) {
+                            document.querySelector('.card-body .table-responsive').innerHTML = newTable.innerHTML;
+                        }
                         
-                        // Update Disk
-                        document.querySelector('.disk-card .badge').textContent = `${data.disk_usage.toFixed(1)}%`;
-                        document.querySelector('.disk-card .progress-bar').style.width = `${data.disk_usage}%`;
-                        document.querySelector('.disk-card .progress-bar').setAttribute('aria-valuenow', data.disk_usage);
+                        // Update status cards
+                        const statusCards = doc.querySelectorAll('.security-card .card-body');
+                        if (statusCards.length === 4) {
+                            document.querySelectorAll('.security-card .card-body').forEach((card, index) => {
+                                card.innerHTML = statusCards[index].innerHTML;
+                            });
+                        }
                         
-                        // Update Network
-                        const netActivity = parseFloat(data.network_activity.split(' ')[0]);
-                        document.querySelector('.network-card .badge').textContent = `${netActivity.toFixed(1)}MB/s`;
-                        document.querySelector('.network-card .progress-bar').style.width = `${data.network_percent}%`;
-                        document.querySelector('.network-card .progress-bar').setAttribute('aria-valuenow', data.network_percent);
+                        // Show refresh success
+                        const toast = new bootstrap.Toast(document.getElementById('refreshToast'));
+                        toast.show();
                     })
-                    .catch(error => console.error('Error refreshing system stats:', error));
+                    .catch(error => console.error('Error refreshing system info:', error));
             }
             
             // Refresh security services
             function refreshServices() {
-                fetch('/api/services/status')
-                    .then(response => response.json())
-                    .then(data => {
-                        for (const [service, status] of Object.entries(data)) {
-                            const serviceElement = document.querySelector(`.card-body div:has(span:contains('${service.charAt(0).toUpperCase() + service.slice(1)}')`);
-                            if (serviceElement) {
-                                const badge = serviceElement.querySelector('.badge');
-                                const progressBar = serviceElement.querySelector('.progress-bar');
-                                
-                                if (status) {
-                                    badge.className = 'badge bg-success';
-                                    badge.textContent = 'Active';
-                                    progressBar.className = 'progress-bar bg-success';
-                                } else {
-                                    badge.className = 'badge bg-danger';
-                                    badge.textContent = 'Inactive';
-                                    progressBar.className = 'progress-bar bg-danger';
-                                }
-                            }
+                fetch('{{ url_for("dashboard") }}')
+                    .then(response => response.text())
+                    .then(html => {
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(html, 'text/html');
+                        
+                        // Update services status
+                        const newServices = doc.querySelector('.card-body .row');
+                        if (newServices) {
+                            document.querySelector('.card-body .row').innerHTML = newServices.innerHTML;
                         }
+                        
+                        // Show refresh success
+                        const toast = new bootstrap.Toast(document.getElementById('refreshToast'));
+                        toast.show();
                     })
                     .catch(error => console.error('Error refreshing services:', error));
             }
@@ -488,9 +525,23 @@
                     return new bootstrap.Tooltip(tooltipTriggerEl);
                 });
                 
-                // Auto-refresh stats every 30 seconds
-                setInterval(refreshSystemStats, 30000);
+                // Auto-refresh dashboard every 60 seconds
+                setInterval(refreshSystemInfo, 60000);
             });
         </script>
+        
+        <!-- Refresh Toast Notification -->
+        <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+            <div id="refreshToast" class="toast hide" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="toast-header bg-success text-white">
+                    <strong class="me-auto">System Updated</strong>
+                    <small>Just now</small>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+                <div class="toast-body">
+                    Dashboard information has been refreshed successfully.
+                </div>
+            </div>
+        </div>
     </body>
 </html>

@@ -4,63 +4,72 @@
         <meta charset="utf-8" />
         <meta http-equiv="X-UA-Compatible" content="IE=edge" />
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-        <meta name="description" content="LinuxAV-Solutions EDR Firewall Management" />
-        <meta name="author" content="LinuxAV-Solutions" />
-        <title>Firewall Management - LinuxAV-Solutions EDR</title>
+        <meta name="description" content="" />
+        <meta name="author" content="" />
+        <title>Firewall Management - myNAS</title>
         <link href="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/style.min.css" rel="stylesheet" />
         <link href="../static/css/styles.css" rel="stylesheet" />
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
         <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
         <style>
-            .status-card {
-                transition: transform 0.3s;
-                border-left: 4px solid;
+            .firewall-card {
+                transition: all 0.3s ease;
+                border-left: 5px solid #dc3545;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             }
-            .status-card:hover {
+            .firewall-card:hover {
                 transform: translateY(-5px);
+                box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
             }
-            .firewall-status-card {
-                border-left-color: #4e73df;
+            .status-card {
+                background-color: #f8f9fa;
+                padding: 1.5rem;
+                border-radius: 0.5rem;
+                margin-bottom: 1.5rem;
             }
-            .ports-card {
-                border-left-color: #1cc88a;
+            .pre-formatted {
+                white-space: pre-wrap;
+                font-family: monospace;
+                background-color: #f8f9fa;
+                padding: 1rem;
+                border-radius: 0.25rem;
+                overflow-x: auto;
             }
-            .panic-card {
-                border-left-color: #e74a3b;
+            .nav-tabs .nav-link.active {
+                font-weight: bold;
+                border-bottom: 3px solid #dc3545;
             }
-            .port-badge {
-                font-size: 0.85rem;
-                margin-right: 5px;
-                margin-bottom: 5px;
-            }
-            .panic-btn {
-                animation: pulse 2s infinite;
-            }
-            @keyframes pulse {
-                0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
-                70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
-                100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+            .rule-form {
+                background-color: #f8f9fa;
+                padding: 1.5rem;
+                border-radius: 0.5rem;
             }
         </style>
     </head>
+
     <body class="sb-nav-fixed">
-        <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
+        <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">myNAS
             <!-- Navbar Brand-->
-            <a class="navbar-brand ps-3" href="index.html">
-                <i class="fas fa-shield-alt me-2"></i>myEDR
-            </a>
+            <a class="navbar-brand ps-3" href="index.html"></a>
             <!-- Sidebar Toggle-->
-            <button class="btn btn-link btn-sm order-1 order-lg-0 me-4 me-lg-0" id="sidebarToggle" href="#!">
-                <i class="fas fa-bars"></i>
-            </button>
-            
-            <!-- System Time Display -->
-            <div class="mx-auto text-white" id="system-time">
-                <i class="fas fa-clock me-2"></i>
-                <span id="current-time">{{ now.strftime('%Y-%m-%d %H:%M:%S') }}</span>
-            </div>
-            
+            <button class="btn btn-link btn-sm order-1 order-lg-0 me-4 me-lg-0" id="sidebarToggle" href="#!"><i class="fas fa-bars"></i></button>
+            <!-- Navbar Search-->
+            <form class="d-none d-md-inline-block form-inline ms-auto me-0 me-md-3 my-2 my-md-0">
+                <div class="input-group">
+                    <input class="form-control" type="text" placeholder="Search for..." aria-label="Search for..." aria-describedby="btnNavbarSearch" />
+                    <button class="btn btn-primary" id="btnNavbarSearch" type="button"><i class="fas fa-search"></i></button>
+                </div>
+            </form>
             <!-- Navbar-->
+            <ul class="navbar-nav ms-auto ms-md-0 me-3 me-lg-4">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="fas fa-user fa-fw"></i></a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                        <li><a class="dropdown-item" href="#!">Settings</a></li>
+                        <li><a class="dropdown-item" href="#!">Activity Log</a></li>
+                        <li><hr class="dropdown-divider" /></li>
+                        <li><a class="dropdown-item" href="#!">Logout</a></li>
+                    </ul>
+                </li>
             </ul>
         </nav>
         <div id="layoutSidenav">
@@ -69,51 +78,24 @@
                     <div class="sb-sidenav-menu">
                         <div class="nav">
                             <div class="sb-sidenav-menu-heading">Core</div>
-                            <a class="nav-link" href="index.html">
+                            <a class="nav-link" href="/">
                                 <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
                                 Dashboard
                             </a>
-                            <div class="sb-sidenav-menu-heading">Security Modules</div>
-                            <a class="nav-link" href="/network">
-                                <div class="sb-nav-link-icon"><i class="fas fa-network-wired"></i></div>
-                                Network Monitoring
-                            </a>
-                            <a class="nav-link" href="/scan">
-                                <div class="sb-nav-link-icon"><i class="fas fa-search"></i></div>
-                                Scan Management
-                            </a>
-                            <a class="nav-link" href="/ids">
-                                <div class="sb-nav-link-icon"><i class="fas fa-shield-virus"></i></div>
-                                IDS/IPS
-                            </a>
+                            <div class="sb-sidenav-menu-heading">Security</div>
                             <a class="nav-link active" href="/firewall">
                                 <div class="sb-nav-link-icon"><i class="fas fa-fire"></i></div>
                                 Firewall
                             </a>
-                            <a class="nav-link" href="/services">
-                                <div class="sb-nav-link-icon"><i class="fas fa-server"></i></div>
-                                Services
-                            </a>
-
-                            <a class="nav-link" href="/process">    
-                                <div class="sb-nav-link-icon"><i class="fas fa-server"></i></div>
-                                Process
-                            </a>
-                            
-                            <a class="nav-link" href="/manage_users">
-                                <div class="sb-nav-link-icon"><i class="fas fa-users"></i></div>
-                                Manage Users
-                            </a>
-                            <a class="nav-link" href="/manage_kernel_modules">
-                                <div class="sb-nav-link-icon"><i class="fas fa-server"></i></div>
-                                Manage Kernel 
+                            <a class="nav-link" href="/firewall/fail2ban">
+                                <div class="sb-nav-link-icon"><i class="fas fa-shield-alt"></i></div>
+                                Fail2Ban
                             </a>
                         </div>
                     </div>
                     <div class="sb-sidenav-footer">
-                        <div class="small">Developer :</div>
-                            Koosha Yeganeh
-                        <div class="small mt-1">Version: 1.0.0</div>
+                        <div class="small">Logged in as:</div>
+                        myNAS
                     </div>
                 </nav>
             </div>
@@ -122,186 +104,134 @@
                     <div class="container-fluid px-4">
                         <h1 class="mt-4">Firewall Management</h1>
                         <ol class="breadcrumb mb-4">
-                            <li class="breadcrumb-item"><a href="/">Dashboard</a></li>
+                            <li class="breadcrumb-item"><a href="index.html">Dashboard</a></li>
                             <li class="breadcrumb-item active">Firewall</li>
                         </ol>
                         
-                        <!-- Firewall Status Cards -->
-                        <div class="row">
-                            <div class="col-xl-4 col-md-6 mb-4">
-                                <div class="card status-card firewall-status-card shadow h-100 py-2">
-                                    <div class="card-body">
-                                        <div class="row no-gutters align-items-center">
-                                            <div class="col me-2">
-                                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                                    Firewalld Status</div>
-                                                <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                                    <span class="badge bg-{{ 'success' if status.active else 'danger' }}">
-                                                        <i class="fas fa-{{ 'check-circle' if status.active else 'times-circle' }} me-2"></i>
-                                                        {{ 'Active' if status.active else 'Inactive' }}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            <div class="col-auto">
-                                                <i class="fas fa-fire fa-2x text-gray-300"></i>
-                                            </div>
-                                        </div>
+                        <!-- Flash Messages -->
+                        {% with messages = get_flashed_messages(with_categories=true) %}
+                            {% if messages %}
+                                {% for category, message in messages %}
+                                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                        {{ message }}
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                                     </div>
-                                </div>
-                            </div>
-                            <div class="col-xl-4 col-md-6 mb-4">
-                                <div class="card status-card ports-card shadow h-100 py-2">
-                                    <div class="card-body">
-                                        <div class="row no-gutters align-items-center">
-                                            <div class="col me-2">
-                                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                                    Allowed Ports</div>
-                                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ status.ports|length }}</div>
-                                                <div class="mt-1 text-xs text-muted">
-                                                    Currently open
-                                                </div>
-                                            </div>
-                                            <div class="col-auto">
-                                                <i class="fas fa-network-wired fa-2x text-gray-300"></i>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-xl-4 col-md-6 mb-4">
-                                <div class="card status-card panic-card shadow h-100 py-2">
-                                    <div class="card-body">
-                                        <div class="row no-gutters align-items-center">
-                                            <div class="col me-2">
-                                                <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
-                                                    Panic Mode</div>
+                                {% endfor %}
+                            {% endif %}
+                        {% endwith %}
 
-                                                    <form action="/firewall/panic" method="post">
-                                                        <input type="hidden" name="action" value="{{ 'off' if status.active else 'on' }}">
-                                                        <button type="submit" id="panicBtn" class="btn btn-{{ 'danger panic-btn' if status.active else 'secondary' }} w-100">
-                                                            {{ 'Disable Panic Mode' if status.active else 'Enable Panic Mode' }}
-                                                        </button>
-                                                    </form>
-                                                    
-                                                <div class="mt-1 text-xs text-muted">
-                                                    Block all network traffic
-                                                </div>
-                                            </div>
-                                            <div class="col-auto">
-                                                <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
-                                            </div>
-                                        </div>
-                                    </div>
+                        <div class="card mb-4 firewall-card">
+                            <div class="card-header bg-danger text-white">
+                                <i class="fas fa-fire me-1"></i>
+                                Firewall Status
+                            </div>
+                            <div class="card-body">
+                                <div class="status-card">
+                                    <h5 class="card-title">Current Firewall Configuration</h5>
+                                    <div class="pre-formatted">{{ firewall_status }}</div>
                                 </div>
                             </div>
                         </div>
-                        
-                        <!-- Port and Service Management -->
-                        <div class="row">
-                            <div class="col-lg-12 mb-4">
-                                <div class="card shadow mb-4">
-                                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                                        <h6 class="m-0 font-weight-bold text-primary">
-                                            <i class="fas fa-network-wired me-2"></i>Port Management
-                                        </h6>
+
+                        <div class="card mb-4">
+                            <div class="card-header bg-white">
+                                <ul class="nav nav-tabs card-header-tabs">
+                                    <li class="nav-item">
+                                        <a class="nav-link active" data-bs-toggle="tab" href="#portRules">Port Rules</a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link" data-bs-toggle="tab" href="#serviceRules">Service Rules</a>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="card-body">
+                                <div class="tab-content">
+                                    <!-- Port Rules Tab -->
+                                    <div class="tab-pane active" id="portRules">
+                                        <form method="POST" action="/firewall" class="rule-form">
+                                            <input type="hidden" name="action" value="allow">
+                                            <h5 class="mb-3"><i class="fas fa-plug me-2"></i>Manage Port Rules</h5>
+                                            <div class="row">
+                                                <div class="col-md-4 mb-3">
+                                                    <label for="port" class="form-label">Port Number</label>
+                                                    <input type="text" class="form-control" id="port" name="port" placeholder="e.g., 80 or 80-90">
+                                                </div>
+                                                <div class="col-md-4 mb-3">
+                                                    <label for="zone_port" class="form-label">Zone</label>
+                                                    <select class="form-select" id="zone_port" name="zone">
+                                                        <option value="public">Public</option>
+                                                        <option value="home">Home</option>
+                                                        <option value="internal">Internal</option>
+                                                        <option value="work">Work</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-4 mb-3 d-flex align-items-end">
+                                                    <div class="btn-group w-100">
+                                                        <button type="submit" class="btn btn-success" name="action" value="allow">
+                                                            <i class="fas fa-check-circle me-1"></i>Allow Port
+                                                        </button>
+                                                        <button type="submit" class="btn btn-danger" name="action" value="deny">
+                                                            <i class="fas fa-times-circle me-1"></i>Remove Port
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </form>
                                     </div>
-                                    <div class="card-body">
-                                        <form id="addPortForm" class="mb-4" action="/firewall/add_port" method="post" enctype="multipart/form-data">
-                                            <div class="input-group">
-                                                <input type="number" class="form-control" name = "port" placeholder="Port number" id="portNumber" required>
-                                                <select class="form-select" style="max-width: 120px;" id="portProtocol">
-                                                    <option value="tcp">TCP</option>
-                                                    <option value="udp">UDP</option>
-                                                </select>
-                                                <button class="btn btn-primary" type="submit">Add</button>
+                                    
+                                    <!-- Service Rules Tab -->
+                                    <div class="tab-pane" id="serviceRules">
+                                        <form method="POST" action="/firewall" class="rule-form">
+                                            <input type="hidden" name="action" value="allow">
+                                            <h5 class="mb-3"><i class="fas fa-cogs me-2"></i>Manage Service Rules</h5>
+                                            <div class="row">
+                                                <div class="col-md-4 mb-3">
+                                                    <label for="service" class="form-label">Service Name</label>
+                                                    <select class="form-select" id="service" name="service">
+                                                        <option value="">Select Service</option>
+                                                        <option value="http">HTTP (80/tcp)</option>
+                                                        <option value="https">HTTPS (443/tcp)</option>
+                                                        <option value="ssh">SSH (22/tcp)</option>
+                                                        <option value="samba">Samba</option>
+                                                        <option value="nfs">NFS</option>
+                                                        <option value="ftp">FTP</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-4 mb-3">
+                                                    <label for="zone_service" class="form-label">Zone</label>
+                                                    <select class="form-select" id="zone_service" name="zone">
+                                                        <option value="public">Public</option>
+                                                        <option value="home">Home</option>
+                                                        <option value="internal">Internal</option>
+                                                        <option value="work">Work</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-4 mb-3 d-flex align-items-end">
+                                                    <div class="btn-group w-100">
+                                                        <button type="submit" class="btn btn-success" name="action" value="allow">
+                                                            <i class="fas fa-check-circle me-1"></i>Allow Service
+                                                        </button>
+                                                        <button type="submit" class="btn btn-danger" name="action" value="deny">
+                                                            <i class="fas fa-times-circle me-1"></i>Deny Service
+                                                        </button>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </form>
-                                        
-                                        <form id="removePortForm" class="mb-4"  action="/firewall/remove_port" method="post" enctype="multipart/form-data">
-                                            <input type="number" class="form-control" name = "port" placeholder="Port number" required>
-                                                <button class="btn btn-danger" type="submit">Remove</button>
-                                            </div>
-                                        </form>
-                                        
-                                        <h6 class="font-weight-bold mb-3">Allowed Ports</h6>
-                                        <div class="mb-3">
-                                            {% if status.ports %}
-                                                {% for port in status.ports %}
-                                                <span class="badge bg-primary port-badge">{{ port }}</span>
-                                                {% endfor %}
-                                            {% else %}
-                                                <div class="alert alert-warning py-2">No ports currently allowed</div>
-                                            {% endif %}
-                                        </div>
                                     </div>
                                 </div>
                             </div>
-                            
-
-
-
-                        <div class="row">
-                            <div class="col-lg-12 mb-4">
-                                <div class="card shadow mb-4">
-                                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                                        <h6 class="m-0 font-weight-bold text-primary">
-                                            <i class="fas fa-server me-2"></i>Service Management
-                                        </h6>
-                                    </div>
-                                    <div class="card-body">
-                                        <form id="addServiceForm" action="/firewall/add_service" method="post" class="mb-4">
-                                            <div class="input-group">
-                                                <select class="form-select" id="serviceToAdd" name="service" required>
-                                                    <option value="">Select service to add</option>
-                                                    {% for service in services %}
-                                                    <option value="{{ service }}">{{ service }}</option>
-                                                    {% endfor %}
-                                                </select>
-                                                <button class="btn btn-primary" type="submit">Add</button>
-                                            </div>
-                                        </form>
-                                        
-                                        <form id="removeServiceForm" class="mb-4"  action="/firewall/remove_service" method="post">
-                                            <div class="input-group">
-                                                <select class="form-select" id="serviceToRemove" name="service" required>
-                                                    <option value="">Select service to remove</option>
-                                                    {% for service in allowed_services %}
-                                                    <option value="{{ service }}">{{ service }}</option>
-                                                    {% endfor %}
-                                                </select>
-                                                <button class="btn btn-danger" type="submit">Remove</button>
-                                            </div>
-                                        </form>
-                                        
-                                        <h6 class="font-weight-bold mb-2">Allowed Services</h6>
-                                        <div class="mb-3">
-                                            {% if allowed_services %}
-                                                <ul class="list-group list-group-flush">
-                                                    {% for service in allowed_services %}
-                                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                        {{ service }}
-                                                        <span class="badge bg-primary rounded-pill">Allowed</span>
-                                                    </li>
-                                                    {% endfor %}
-                                                </ul>
-                                            {% else %}
-                                                <div class="alert alert-warning py-2">No services currently allowed</div>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-
                         </div>
                     </div>
                 </main>
                 <footer class="py-4 bg-light mt-auto">
                     <div class="container-fluid px-4">
                         <div class="d-flex align-items-center justify-content-between small">
-                            <div class="text-muted">Copyright &copy; LinuxAV-Solutions {{ year }}</div>
+                            <div class="text-muted">Copyright &copy; Your Website 2023</div>
                             <div>
-                                <span class="me-2">EDR Version: {{ version }}</span>
+                                <a href="#">Privacy Policy</a>
+                                &middot;
+                                <a href="#">Terms &amp; Conditions</a>
                             </div>
                         </div>
                     </div>
@@ -310,193 +240,5 @@
         </div>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
         <script src="../static/js/scripts.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js" crossorigin="anonymous"></script>
-        <script src="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/umd/simple-datatables.min.js" crossorigin="anonymous"></script>
-        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-        <script>
-            // Update system time every second
-            function updateSystemTime() {
-                const now = new Date();
-                const timeString = now.toISOString().replace('T', ' ').substr(0, 19);
-                document.getElementById('current-time').textContent = timeString;
-            }
-            setInterval(updateSystemTime, 1000);
-            
-            // Handle panic mode toggle
-            $('#panicBtn').click(function() {
-                const action = $(this).text().includes('Enable') ? 'on' : 'off';
-                
-                Swal.fire({
-                    title: 'Are you sure?',
-                    text: `This will ${action === 'on' ? 'block ALL network traffic' : 'restore normal firewall rules'}`,
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#d33',
-                    confirmButtonText: `Yes, ${action === 'on' ? 'enable' : 'disable'} panic mode`
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        $.ajax({
-                            url: '/firewall/panic',
-                            method: 'POST',
-                            data: { action: action },
-                            success: function(response) {
-                                Swal.fire({
-                                    title: 'Success',
-                                    text: response.message,
-                                    icon: 'success'
-                                }).then(() => {
-                                    location.reload();
-                                });
-                            },
-                            error: function(xhr) {
-                                Swal.fire({
-                                    title: 'Error',
-                                    text: xhr.responseJSON.message,
-                                    icon: 'error'
-                                });
-                            }
-                        });
-                    }
-                });
-            });
-
-            // Handle port forms
-            $('#addPortForm').submit(function(e) {
-                e.preventDefault();
-                const port = $('#portNumber').val();
-                const protocol = $('#portProtocol').val();
-                
-                $.ajax({
-                    url: '/firewall/add_port',
-                    method: 'POST',
-                    data: { port: port, protocol: protocol },
-                    success: function(response) {
-                        Swal.fire({
-                            title: 'Success',
-                            text: response.message,
-                            icon: 'success'
-                        }).then(() => {
-                            location.reload();
-                        });
-                    },
-                    error: function(xhr) {
-                        Swal.fire({
-                            title: 'Error',
-                            text: xhr.responseJSON.message,
-                            icon: 'error'
-                        });
-                    }
-                });
-            });
-
-            $('#removePortForm').submit(function(e) {
-                e.preventDefault();
-                const port = $('#portToRemove').val();
-                
-                if (!port) {
-                    Swal.fire({
-                        title: 'Error',
-                        text: 'Please select a port to remove',
-                        icon: 'error'
-                    });
-                    return;
-                }
-                
-                $.ajax({
-                    url: '/firewall/remove_port',
-                    method: 'POST',
-                    data: { port: port },
-                    success: function(response) {
-                        Swal.fire({
-                            title: 'Success',
-                            text: response.message,
-                            icon: 'success'
-                        }).then(() => {
-                            location.reload();
-                        });
-                    },
-                    error: function(xhr) {
-                        Swal.fire({
-                            title: 'Error',
-                            text: xhr.responseJSON.message,
-                            icon: 'error'
-                        });
-                    }
-                });
-            });
-
-            // Handle service forms
-            $('#addServiceForm').submit(function(e) {
-                e.preventDefault();
-                const service = $('#serviceToAdd').val();
-                
-                if (!service) {
-                    Swal.fire({
-                        title: 'Error',
-                        text: 'Please select a service to add',
-                        icon: 'error'
-                    });
-                    return;
-                }
-                
-                $.ajax({
-                    url: '/firewall/add_service',
-                    method: 'POST',
-                    data: { service: service },
-                    success: function(response) {
-                        Swal.fire({
-                            title: 'Success',
-                            text: response.message,
-                            icon: 'success'
-                        }).then(() => {
-                            location.reload();
-                        });
-                    },
-                    error: function(xhr) {
-                        Swal.fire({
-                            title: 'Error',
-                            text: xhr.responseJSON.message,
-                            icon: 'error'
-                        });
-                    }
-                });
-            });
-
-            $('#removeServiceForm').submit(function(e) {
-                e.preventDefault();
-                const service = $('#serviceToRemove').val();
-                
-                if (!service) {
-                    Swal.fire({
-                        title: 'Error',
-                        text: 'Please select a service to remove',
-                        icon: 'error'
-                    });
-                    return;
-                }
-                
-                $.ajax({
-                    url: '/firewall/remove_service',
-                    method: 'POST',
-                    data: { service: service },
-                    success: function(response) {
-                        Swal.fire({
-                            title: 'Success',
-                            text: response.message,
-                            icon: 'success'
-                        }).then(() => {
-                            location.reload();
-                        });
-                    },
-                    error: function(xhr) {
-                        Swal.fire({
-                            title: 'Error',
-                            text: xhr.responseJSON.message,
-                            icon: 'error'
-                        });
-                    }
-                });
-            });
-        </script>
     </body>
 </html>
