@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta name="description" content="Windows Firewall Management" />
+    <meta name="author" content="LinuxAV-Solutions" />
+    <title>Firewall Management - myEDR</title>
+    <link href="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/style.min.css" rel="stylesheet" />
+    <link href="../static/css/styles.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
+    <style>
+        .firewall-rule {
+            transition: all 0.2s;
+        }
+        .firewall-rule:hover {
+            background-color: rgba(0, 0, 0, 0.02);
+        }
+        .rule-enabled {
+            border-left: 3px solid #1cc88a;
+        }
+        .rule-disabled {
+            border-left: 3px solid #e74a3b;
+        }
+        .rule-action-allow {
+            color: #1cc88a;
+        }
+        .rule-action-block {
+            color: #e74a3b;
+        }
+        .rule-direction-in {
+            color: #4e73df;
+        }
+        .rule-direction-out {
+            color: #36b9cc;
+        }
+        .rule-port {
+            font-family: 'Courier New', monospace;
+        }
+        .firewall-status-card {
+            border-left: 4px solid;
+        }
+        .status-active {
+            border-left-color: #1cc88a;
+        }
+        .status-inactive {
+            border-left-color: #e74a3b;
+        }
+    </style>
+</head>
+<body class="sb-nav-fixed">
+    <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
+        <a class="navbar-brand ps-3" href="{{ url_for('dashboard') }}">
+            <i class="fas fa-shield-alt me-2"></i>myEDR - Firewall
+        </a>
+        <button class="btn btn-link btn-sm order-1 order-lg-0 me-4 me-lg-0" id="sidebarToggle" href="#!">
+            <i class="fas fa-bars"></i>
+        </button>
+        <div class="mx-auto text-white" id="system-time">
+            <i class="fas fa-clock me-2"></i>
+            <span id="current-time">{{ now.strftime('%Y-%m-%d %H:%M:%S') }}</span>
+        </div>
+        <ul class="navbar-nav ms-auto ms-md-0 me-3 me-lg-4">
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-user fa-fw"></i> {{ current_user.username }}
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                    <li><a class="dropdown-item" href="#!">Profile</a></li>
+                    <li><hr class="dropdown-divider" /></li>
+                    <li><a class="dropdown-item" href="{{ url_for('logout') }}">Logout</a></li>
+                </ul>
+            </li>
+        </ul>
+    </nav>
+    <div id="layoutSidenav">
+        <div id="layoutSidenav_nav">
+            <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">
+                <div class="sb-sidenav-menu">
+                    <div class="nav">
+                        <div class="sb-sidenav-menu-heading">Windows Management</div>
+                        <a class="nav-link" href="{{ url_for('windows_dashboard') }}">
+                            <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
+                            Dashboard
+                        </a>
+                        <a class="nav-link" href="{{ url_for('windows_registry') }}">
+                            <div class="sb-nav-link-icon"><i class="fas fa-registered"></i></div>
+                            Registry
+                        </a>
+                        <a class="nav-link" href="{{ url_for('windows_processes') }}">
+                            <div class="sb-nav-link-icon"><i class="fas fa-tasks"></i></div>
+                            Processes
+                        </a>
+                        <a class="nav-link" href="{{ url_for('windows_services') }}">
+                            <div class="sb-nav-link-icon"><i class="fas fa-cogs"></i></div>
+                            Services
+                        </a>
+                        <a class="nav-link" href="{{ url_for('windows_antivirus') }}">
+                            <div class="sb-nav-link-icon"><i class="fas fa-shield-virus"></i></div>
+                            Antivirus
+                        </a>
+                        <a class="nav-link active" href="{{ url_for('windows_firewall') }}">
+                            <div class="sb-nav-link-icon"><i class="fas fa-fire"></i></div>
+                            Firewall
+                        </a>
+                        <div class="sb-sidenav-menu-heading">Navigation</div>
+                        <a class="nav-link" href="{{ url_for('dashboard') }}">
+                            <div class="sb-nav-link-icon"><i class="fas fa-arrow-left"></i></div>
+                            Back to Main Dashboard
+                        </a>
+                    </div>
+                </div>
+                <div class="sb-sidenav-footer">
+                    <div class="small">Windows Module v1.0</div>
+                </div>
+            </nav>
+        </div>
+        <div id="layoutSidenav_content">
+            <main>
+                <div class="container-fluid px-4">
+                    <h1 class="mt-4">Windows Firewall Management</h1>
+                    <ol class="breadcrumb mb-4">
+                        <li class="breadcrumb-item"><a href="{{ url_for('windows_dashboard') }}">Windows Dashboard</a></li>
+                        <li class="breadcrumb-item active">Firewall</li>
+                    </ol>
+                    
+                    <div class="row">
+                        <div class="col-lg-4">
+                            <div class="card mb-4 firewall-status-card status-{% if firewall_status.enabled %}active{% else %}inactive{% endif %}">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-0">Firewall Status</h6>
+                                            <span class="text-muted small">Current protection status</span>
+                                        </div>
+                                        <div class="display-4 text-{% if firewall_status.enabled %}success{% else %}danger{% endif %}">
+                                            <i class="fas fa-{% if firewall_status.enabled %}check-circle{% else %}times-circle{% endif %}"></i>
+                                        </div>
+                                    </div>
+                                    <hr>
+                                    <div class="d-flex justify-content-between small">
+                                        <span>Default Profile:</span>
+                                        <span class="fw-bold">{{ firewall_status.default_profile|title }}</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between small">
+                                        <span>Inbound Policy:</span>
+                                        <span class="fw-bold text-{% if firewall_status.inbound == 'block' %}danger{% else %}success{% endif %}">
+                                            {{ firewall_status.inbound|title }}
+                                        </span>
+                                    </div>
+                                    <div class="d-flex justify-content-between small">
+                                        <span>Outbound Policy:</span>
+                                        <span class="fw-bold text-{% if firewall_status.outbound == 'block' %}danger{% else %}success{% endif %}">
+                                            {{ firewall_status.outbound|title }}
+                                        </span>
+                                    </div>
+                                    <div class="mt-3 d-grid gap-2">
+                                        <button class="btn btn-{% if firewall_status.enabled %}danger{% else %}success{% endif %}" 
+                                            onclick="toggleFirewall()">
+                                            <i class="fas fa-power-off me-2"></i>
+                                            {% if firewall_status.enabled %}Disable{% else %}Enable{% endif %} Firewall
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <i class="fas fa-chart-pie me-1"></i>
+                                    Firewall Rules Summary
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <h6 class="small fw-bold">Enabled Rules <span class="float-end">65%</span></h6>
+                                        <div class="progress">
+                                            <div class="progress-bar" role="progressbar" style="width: 65%"></div>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <h6 class="small fw-bold">Inbound Rules <span class="float-end">42</span></h6>
+                                        <div class="progress">
+                                            <div class="progress-bar bg-primary" role="progressbar" style="width: 70%"></div>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <h6 class="small fw-bold">Outbound Rules <span class="float-end">38</span></h6>
+                                        <div class="progress">
+                                            <div class="progress-bar bg-info" role="progressbar" style="width: 60%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-lg-8">
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <i class="fas fa-list me-1"></i>
+                                            Firewall Rules ({{ rules|length }})
+                                        </div>
+                                        <div>
+                                            <button class="btn btn-primary btn-sm me-2" onclick="refreshRules()">
+                                                <i class="fas fa-sync-alt me-1"></i> Refresh
+                                            </button>
+                                            <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#newRuleModal">
+                                                <i class="fas fa-plus me-1"></i> New Rule
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-striped table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th>Name</th>
+                                                    <th>Enabled</th>
+                                                    <th>Direction</th>
+                                                    <th>Action</th>
+                                                    <th>Protocol/Port</th>
+                                                    <th>Program</th>
+                                                    <th>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for rule in rules %}
+                                                <tr class="firewall-rule {% if rule.enabled %}rule-enabled{% else %}rule-disabled{% endif %}">
+                                                    <td>{{ rule.name }}</td>
+                                                    <td>
+                                                        {% if rule.enabled %}
+                                                        <span class="badge bg-success">Enabled</span>
+                                                        {% else %}
+                                                        <span class="badge bg-secondary">Disabled</span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        <i class="fas fa-{% if rule.direction == 'in' %}arrow-down rule-direction-in{% else %}arrow-up rule-direction-out{% endif %}"></i>
+                                                        {{ rule.direction|title }}
+                                                    </td>
+                                                    <td>
+                                                        <i class="fas fa-{% if rule.action == 'allow' %}check-circle rule-action-allow{% else %}times-circle rule-action-block{% endif %}"></i>
+                                                        {{ rule.action|title }}
+                                                    </td>
+                                                    <td class="rule-port">
+                                                        {{ rule.protocol }}:{{ rule.port }}
+                                                    </td>
+                                                    <td>
+                                                        {% if rule.program %}
+                                                        {{ rule.program|truncate(20) }}
+                                                        {% else %}
+                                                        Any
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        <div class="btn-group btn-group-sm">
+                                                            <button class="btn btn-outline-{% if rule.enabled %}danger{% else %}success{% endif %}" 
+                                                                onclick="toggleRule('{{ rule.name }}', {% if rule.enabled %}false{% else %}true{% endif %})">
+                                                                <i class="fas fa-power-off"></i>
+                                                            </button>
+                                                            <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editRuleModal{{ loop.index }}">
+                                                                <i class="fas fa-edit"></i>
+                                                            </button>
+                                                            <button class="btn btn-outline-danger" onclick="deleteRule('{{ rule.name }}')">
+                                                                <i class="fas fa-trash-alt"></i>
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                
+                                                <!-- Edit Rule Modal -->
+                                                <div class="modal fade" id="editRuleModal{{ loop.index }}" tabindex="-1" aria-labelledby="editRuleModalLabel{{ loop.index }}" aria-hidden="true">
+                                                    <div class="modal-dialog">
+                                                        <div class="modal-content">
+                                                            <div class="modal-header">
+                                                                <h5 class="modal-title" id="editRuleModalLabel{{ loop.index }}">Edit Rule - {{ rule.name }}</h5>
+                                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                            </div>
+                                                            <div class="modal-body">
+                                                                <form id="editRuleForm{{ loop.index }}">
+                                                                    <div class="mb-3">
+                                                                        <label for="ruleName{{ loop.index }}" class="form-label">Rule Name</label>
+                                                                        <input type="text" class="form-control" id="ruleName{{ loop.index }}" value="{{ rule.name }}">
+                                                                    </div>
+                                                                    <div class="mb-3">
+                                                                        <label for="ruleDirection{{ loop.index }}" class="form-label">Direction</label>
+                                                                        <select class="form-select" id="ruleDirection{{ loop.index }}">
+                                                                            <option value="in" {% if rule.direction == 'in' %}selected{% endif %}>Inbound</option>
+                                                                            <option value="out" {% if rule.direction == 'out' %}selected{% endif %}>Outbound</option>
+                                                                        </select>
+                                                                    </div>
+                                                                    <div class="mb-3">
+                                                                        <label for="ruleAction{{ loop.index }}" class="form-label">Action</label>
+                                                                        <select class="form-select" id="ruleAction{{ loop.index }}">
+                                                                            <option value="allow" {% if rule.action == 'allow' %}selected{% endif %}>Allow</option>
+                                                                            <option value="block" {% if rule.action == 'block' %}selected{% endif %}>Block</option>
+                                                                        </select>
+                                                                    </div>
+                                                                    <div class="mb-3">
+                                                                        <label for="ruleProtocol{{ loop.index }}" class="form-label">Protocol</label>
+                                                                        <select class="form-select" id="ruleProtocol{{ loop.index }}">
+                                                                            <option value="TCP" {% if rule.protocol == 'TCP' %}selected{% endif %}>TCP</option>
+                                                                            <option value="UDP" {% if rule.protocol == 'UDP' %}selected{% endif %}>UDP</option>
+                                                                            <option value="Any">Any</option>
+                                                                        </select>
+                                                                    </div>
+                                                                    <div class="mb-3">
+                                                                        <label for="rulePort{{ loop.index }}" class="form-label">Port</label>
+                                                                        <input type="text" class="form-control" id="rulePort{{ loop.index }}" value="{{ rule.port }}">
+                                                                    </div>
+                                                                    <div class="form-check mb-3">
+                                                                        <input class="form-check-input" type="checkbox" id="ruleEnabled{{ loop.index }}" {% if rule.enabled %}checked{% endif %}>
+                                                                        <label class="form-check-label" for="ruleEnabled{{ loop.index }}">
+                                                                            Rule Enabled
+                                                                        </label>
+                                                                    </div>
+                                                                </form>
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                                <button type="button" class="btn btn-primary" onclick="updateRule('{{ rule.name }}', {{ loop.index }})">
+                                                                    <i class="fas fa-save me-1"></i> Save Changes
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+            <footer class="py-4 bg-light mt-auto">
+                <div class="container-fluid px-4">
+                    <div class="d-flex align-items-center justify-content-between small">
+                        <div class="text-muted">Copyright &copy; LinuxAV-Solutions 2023</div>
+                        <div>
+                            <span class="me-2">Windows Module v1.0</span>
+                        </div>
+                    </div>
+                </div>
+            </footer>
+        </div>
+    </div>
+    
+    <!-- New Rule Modal -->
+    <div class="modal fade" id="newRuleModal" tabindex="-1" aria-labelledby="newRuleModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="newRuleModalLabel">Create New Firewall Rule</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="newRuleForm">
+                        <div class="mb-3">
+                            <label for="newRuleName" class="form-label">Rule Name</label>
+                            <input type="text" class="form-control" id="newRuleName" placeholder="e.g., Allow Web Server">
+                        </div>
+                        <div class="mb-3">
+                            <label for="newRuleDirection" class="form-label">Direction</label>
+                            <select class="form-select" id="newRuleDirection">
+                                <option value="in">Inbound</option>
+                                <option value="out">Outbound</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="newRuleAction" class="form-label">Action</label>
+                            <select class="form-select" id="newRuleAction">
+                                <option value="allow">Allow</option>
+                                <option value="block">Block</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="newRuleProtocol" class="form-label">Protocol</label>
+                            <select class="form-select" id="newRuleProtocol">
+                                <option value="TCP">TCP</option>
+                                <option value="UDP">UDP</option>
+                                <option value="Any">Any</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="newRulePort" class="form-label">Port</label>
+                            <input type="text" class="form-control" id="newRulePort" placeholder="e.g., 80 or 80,443 or 8000-9000">
+                        </div>
+                        <div class="mb-3">
+                            <label for="newRuleProgram" class="form-label">Program (optional)</label>
+                            <input type="text" class="form-control" id="newRuleProgram" placeholder="Path to executable">
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="newRuleEnabled" checked>
+                            <label class="form-check-label" for="newRuleEnabled">
+                                Enable Rule Immediately
+                            </label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="createRule()">
+                        <i class="fas fa-plus me-1"></i> Create Rule
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+    <script src="../static/js/scripts.js"></script>
+    <script>
+        // Update system time every second
+        function updateSystemTime() {
+            const now = new Date();
+            const timeString = now.toISOString().replace('T', ' ').substr(0, 19);
+            document.getElementById('current-time').textContent = timeString;
+        }
+        setInterval(updateSystemTime, 1000);
+        
+        // Toggle firewall status
+        function toggleFirewall() {
+            const action = {% if firewall_status.enabled %}'disable'{% else %}'enable'{% endif %};
+            if (confirm(`Are you sure you want to ${action} the Windows Firewall?`)) {
+                fetch(`/mswindows/firewall_control?action=${action}`, {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(`Firewall ${action}d successfully`);
+                        window.location.reload();
+                    } else {
+                        alert(`Failed to ${action} firewall: ${data.message}`);
+                    }
+                })
+                .catch(error => {
+                    alert('Error controlling firewall: ' + error);
+                });
+            }
+        }
+        
+        // Toggle rule status
+        function toggleRule(name, enable) {
+            const action = enable ? 'enable' : 'disable';
+            fetch(`/mswindows/firewall_rule?name=${encodeURIComponent(name)}&action=${action}`, {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`Rule "${name}" ${action}d successfully`);
+                    window.location.reload();
+                } else {
+                    alert(`Failed to ${action} rule: ${data.message}`);
+                }
+            })
+            .catch(error => {
+                alert('Error controlling rule: ' + error);
+            });
+        }
+        
+        // Delete rule
+        function deleteRule(name) {
+            if (confirm(`Are you sure you want to delete the rule "${name}"?`)) {
+                fetch(`/mswindows/firewall_rule?name=${encodeURIComponent(name)}&action=delete`, {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(`Rule "${name}" deleted successfully`);
+                        window.location.reload();
+                    } else {
+                        alert(`Failed to delete rule: ${data.message}`);
+                    }
+                })
+                .catch(error => {
+                    alert('Error deleting rule: ' + error);
+                });
+            }
+        }
+        
+        // Create new rule
+        function createRule() {
+            const rule = {
+                name: document.getElementById('newRuleName').value,
+                direction: document.getElementById('newRuleDirection').value,
+                action: document.getElementById('newRuleAction').value,
+                protocol: document.getElementById('newRuleProtocol').value,
+                port: document.getElementById('newRulePort').value,
+                program: document.getElementById('newRuleProgram').value,
+                enabled: document.getElementById('newRuleEnabled').checked
+            };
+            
+            if (!rule.name || !rule.port) {
+                alert('Rule name and port are required');
+                return;
+            }
+            
+            fetch('/mswindows/firewall_rule', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(rule)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Rule created successfully');
+                    $('#newRuleModal').modal('hide');
+                    window.location.reload();
+                } else {
+                    alert(`Failed to create rule: ${data.message}`);
+                }
+            })
+            .catch(error => {
+                alert('Error creating rule: ' + error);
+            });
+        }
+        
+        // Update existing rule
+        function updateRule(oldName, index) {
+            const rule = {
+                oldName: oldName,
+                name: document.getElementById(`ruleName${index}`).value,
+                direction: document.getElementById(`ruleDirection${index}`).value,
+                action: document.getElementById(`ruleAction${index}`).value,
+                protocol: document.getElementById(`ruleProtocol${index}`).value,
+                port: document.getElementById(`rulePort${index}`).value,
+                enabled: document.getElementById(`ruleEnabled${index}`).checked
+            };
+            
+            if (!rule.name || !rule.port) {
+                alert('Rule name and port are required');
+                return;
+            }
+            
+            fetch('/mswindows/firewall_rule', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(rule)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Rule updated successfully');
+                    $(`#editRuleModal${index}`).modal('hide');
+                    window.location.reload();
+                } else {
+                    alert(`Failed to update rule: ${data.message}`);
+                }
+            })
+            .catch(error => {
+                alert('Error updating rule: ' + error);
+            });
+        }
+        
+        // Refresh rules
+        function refreshRules() {
+            window.location.reload();
+        }
+    </script>
+</body>
+</html>

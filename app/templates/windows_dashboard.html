@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta name="description" content="Windows Management Dashboard" />
+    <meta name="author" content="LinuxAV-Solutions" />
+    <title>Windows Dashboard - myEDR</title>
+    <link href="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/style.min.css" rel="stylesheet" />
+    <link href="../static/css/styles.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
+    <style>
+        .windows-card {
+            transition: all 0.3s ease;
+            border-left: 4px solid #0078D7;
+        }
+        .windows-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 8px rgba(0, 120, 215, 0.2);
+        }
+        .feature-icon {
+            font-size: 2rem;
+            color: #0078D7;
+        }
+        .windows-bg {
+            background-color: #f8f9fa;
+        }
+    </style>
+</head>
+<body class="sb-nav-fixed">
+    <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
+        <a class="navbar-brand ps-3" href="{{ url_for('dashboard') }}">
+            <i class="fas fa-shield-alt me-2"></i>myEDR - Windows
+        </a>
+        <button class="btn btn-link btn-sm order-1 order-lg-0 me-4 me-lg-0" id="sidebarToggle" href="#!">
+            <i class="fas fa-bars"></i>
+        </button>
+        <div class="mx-auto text-white" id="system-time">
+            <i class="fas fa-clock me-2"></i>
+            <span id="current-time">{{ now.strftime('%Y-%m-%d %H:%M:%S') }}</span>
+        </div>
+        <ul class="navbar-nav ms-auto ms-md-0 me-3 me-lg-4">
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-user fa-fw"></i> {{ current_user.username }}
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                    <li><a class="dropdown-item" href="#!">Profile</a></li>
+                    <li><hr class="dropdown-divider" /></li>
+                    <li><a class="dropdown-item" href="{{ url_for('logout') }}">Logout</a></li>
+                </ul>
+            </li>
+        </ul>
+    </nav>
+    <div id="layoutSidenav">
+        <div id="layoutSidenav_nav">
+            <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">
+                <div class="sb-sidenav-menu">
+                    <div class="nav">
+                        <div class="sb-sidenav-menu-heading">Windows Management</div>
+                        <a class="nav-link active" href="{{ url_for('windows_dashboard') }}">
+                            <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
+                            Dashboard
+                        </a>
+                        <a class="nav-link" href="{{ url_for('windows_registry') }}">
+                            <div class="sb-nav-link-icon"><i class="fas fa-registered"></i></div>
+                            Registry
+                        </a>
+                        <a class="nav-link" href="{{ url_for('windows_processes') }}">
+                            <div class="sb-nav-link-icon"><i class="fas fa-tasks"></i></div>
+                            Processes
+                        </a>
+                        <a class="nav-link" href="{{ url_for('windows_services') }}">
+                            <div class="sb-nav-link-icon"><i class="fas fa-cogs"></i></div>
+                            Services
+                        </a>
+                        <a class="nav-link" href="{{ url_for('windows_antivirus') }}">
+                            <div class="sb-nav-link-icon"><i class="fas fa-shield-virus"></i></div>
+                            Antivirus
+                        </a>
+                        <a class="nav-link" href="{{ url_for('windows_firewall') }}">
+                            <div class="sb-nav-link-icon"><i class="fas fa-fire"></i></div>
+                            Firewall
+                        </a>
+                        <div class="sb-sidenav-menu-heading">Navigation</div>
+                        <a class="nav-link" href="{{ url_for('dashboard') }}">
+                            <div class="sb-nav-link-icon"><i class="fas fa-arrow-left"></i></div>
+                            Back to Main Dashboard
+                        </a>
+                    </div>
+                </div>
+                <div class="sb-sidenav-footer">
+                    <div class="small">Windows Module v1.0</div>
+                </div>
+            </nav>
+        </div>
+        <div id="layoutSidenav_content">
+            <main>
+                <div class="container-fluid px-4">
+                    <h1 class="mt-4">Windows Management Dashboard</h1>
+                    <ol class="breadcrumb mb-4">
+                        <li class="breadcrumb-item active">
+                            <i class="fas fa-windows me-1"></i> Overview
+                        </li>
+                    </ol>
+                    
+                    <!-- Windows Management Cards -->
+                    <div class="row">
+                        <div class="col-xl-3 col-md-6 mb-4">
+                            <div class="card windows-card shadow h-100 py-3">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-registered feature-icon mb-3"></i>
+                                    <h5 class="card-title">Registry Inspection</h5>
+                                    <p class="card-text">Analyze Windows registry for malicious entries and persistence mechanisms</p>
+                                    <a href="{{ url_for('windows_registry') }}" class="btn btn-primary">Manage Registry</a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-xl-3 col-md-6 mb-4">
+                            <div class="card windows-card shadow h-100 py-3">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-tasks feature-icon mb-3"></i>
+                                    <h5 class="card-title">Process Monitoring</h5>
+                                    <p class="card-text">View and manage running processes with threat detection</p>
+                                    <a href="{{ url_for('windows_processes') }}" class="btn btn-primary">View Processes</a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-xl-3 col-md-6 mb-4">
+                            <div class="card windows-card shadow h-100 py-3">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-cogs feature-icon mb-3"></i>
+                                    <h5 class="card-title">Service Management</h5>
+                                    <p class="card-text">Control Windows services and detect suspicious ones</p>
+                                    <a href="{{ url_for('windows_services') }}" class="btn btn-primary">Manage Services</a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-xl-3 col-md-6 mb-4">
+                            <div class="card windows-card shadow h-100 py-3">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-shield-virus feature-icon mb-3"></i>
+                                    <h5 class="card-title">Antivirus Scanning</h5>
+                                    <p class="card-text">Run ClamAV scans on Windows systems</p>
+                                    <a href="{{ url_for('windows_antivirus') }}" class="btn btn-primary">Run Scans</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Recent Activity Section -->
+                    <div class="row">
+                        <div class="col-lg-6 mb-4">
+                            <div class="card shadow mb-4">
+                                <div class="card-header py-3">
+                                    <h6 class="m-0 font-weight-bold text-primary">
+                                        <i class="fas fa-history me-2"></i>Recent Windows Events
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="list-group list-group-flush">
+                                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <i class="fas fa-check-circle text-success me-2"></i>
+                                                Windows Defender scan completed
+                                            </div>
+                                            <small class="text-muted">2 minutes ago</small>
+                                        </div>
+                                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                                                Suspicious registry key detected
+                                            </div>
+                                            <small class="text-muted">15 minutes ago</small>
+                                        </div>
+                                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <i class="fas fa-info-circle text-primary me-2"></i>
+                                                System reboot detected
+                                            </div>
+                                            <small class="text-muted">1 hour ago</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-lg-6 mb-4">
+                            <div class="card shadow mb-4">
+                                <div class="card-header py-3">
+                                    <h6 class="m-0 font-weight-bold text-primary">
+                                        <i class="fas fa-chart-bar me-2"></i>Windows Security Status
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <h6 class="small font-weight-bold">Defender Status <span class="float-end">Active</span></h6>
+                                        <div class="progress">
+                                            <div class="progress-bar bg-success" role="progressbar" style="width: 100%"></div>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <h6 class="small font-weight-bold">Firewall Status <span class="float-end">Enabled</span></h6>
+                                        <div class="progress">
+                                            <div class="progress-bar bg-success" role="progressbar" style="width: 100%"></div>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <h6 class="small font-weight-bold">Patch Level <span class="float-end">85%</span></h6>
+                                        <div class="progress">
+                                            <div class="progress-bar bg-warning" role="progressbar" style="width: 85%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+            <footer class="py-4 bg-light mt-auto">
+                <div class="container-fluid px-4">
+                    <div class="d-flex align-items-center justify-content-between small">
+                        <div class="text-muted">Copyright &copy; LinuxAV-Solutions 2023</div>
+                        <div>
+                            <span class="me-2">Windows Module v1.0</span>
+                        </div>
+                    </div>
+                </div>
+            </footer>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+    <script src="../static/js/scripts.js"></script>
+    <script>
+        // Update system time every second
+        function updateSystemTime() {
+            const now = new Date();
+            const timeString = now.toISOString().replace('T', ' ').substr(0, 19);
+            document.getElementById('current-time').textContent = timeString;
+        }
+        setInterval(updateSystemTime, 1000);
+    </script>
+</body>
+</html>

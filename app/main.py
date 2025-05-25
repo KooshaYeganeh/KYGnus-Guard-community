@@ -39,50 +39,72 @@ app = Flask(__name__)
 app.secret_key = 'myEDR'
 
 # Configuration
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, Response
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from flask_bcrypt import Bcrypt
+from flask_session import Session
+import paramiko
+from io import StringIO
+import os
+import json
+import re
+from datetime import datetime
+import tempfile
+import config  # Import the config file
+import logging
+from logging.handlers import RotatingFileHandler
+import yara
+import threading
+import time
+import glob
+import subprocess
+import psutil
+import signal
+import datetime as mydate
+import shlex
+import traceback
+from functools import lru_cache
+
+app = Flask(__name__)
+app.secret_key = 'myEDR'
+
+# Load configuration from config.py
 app.config.update(
-    SESSION_TYPE='filesystem',
-    SESSION_FILE_DIR=tempfile.mkdtemp(),
-    SESSION_PERMANENT=False,
-    PERMANENT_SESSION_LIFETIME=3600,
-    MAX_CONTENT_LENGTH=16 * 1024 * 1024,
-    SSH_HOST=None,
-    SSH_PORT=22,
-    SSH_USERNAME=None,
-    SSH_PASSWORD=None,
-    SSH_KEY=None,
-    EDR_SCAN_PATHS=['/bin', '/sbin', '/usr/bin', '/usr/sbin', '/etc', '/tmp' , '/' , '/home'],
-    YARA_RULES_DIR='.',
-    QUARANTINE_DIR='/tmp/quarantine',
-    LOG_DIR='/tmp/edr',
-    SURICATA_ENABLED=False,
-    SURICATA_INTERFACE='eth0',
-    SURICATA_RULES_DIR='/etc/suricata/rules',
-    SURICATA_LOGS='/var/log/suricata',
-    SURICATA_DIR='/etc/suricata',
-    FAIL2BAN_ENABLED=False,
-    FAIL2BAN_JAILS=['sshd', 'apache', 'nginx']
+    SESSION_TYPE=config.SESSION_TYPE,
+    SESSION_FILE_DIR=config.SESSION_FILE_DIR,
+    SESSION_PERMANENT=config.SESSION_PERMANENT,
+    PERMANENT_SESSION_LIFETIME=config.PERMANENT_SESSION_LIFETIME,
+    MAX_CONTENT_LENGTH=config.MAX_CONTENT_LENGTH,
+    SSH_HOST=config.SSH_HOST,
+    SSH_PORT=config.SSH_PORT,
+    SSH_USERNAME=config.SSH_USERNAME,
+    SSH_PASSWORD=config.SSH_PASSWORD,
+    SSH_KEY=config.SSH_KEY,
+    EDR_SCAN_PATHS=config.EDR_SCAN_PATHS,
+    YARA_RULES_DIR=config.YARA_RULES_DIR,
+    QUARANTINE_DIR=config.QUARANTINE_DIR,
+    LOG_DIR=config.LOG_DIR,
+    SURICATA_ENABLED=config.SURICATA_ENABLED,
+    SURICATA_INTERFACE=config.SURICATA_INTERFACE,
+    SURICATA_RULES_DIR=config.SURICATA_RULES_DIR,
+    SURICATA_LOGS=config.SURICATA_LOGS,
+    SURICATA_DIR=config.SURICATA_DIR,
+    FAIL2BAN_ENABLED=config.FAIL2BAN_ENABLED,
+    FAIL2BAN_JAILS=config.FAIL2BAN_JAILS
 )
 
-
-
 def log_event(event_type, level, message, details=None):
-    """Log an event to the system log (for auditing purposes)"""
-    # Add additional logging, event timestamp, and event details
+    """Log an event to the system log"""
     event_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     log_message = f"{event_time} | {event_type} | {level} | {message} | {details if details else ''}"
-    # Assuming log is a file-based log for simplicity, but could be integrated with a more advanced logging system.
     with open("/tmp/EDR.log", "a") as log_file:
         log_file.write(log_message + "\n")
 
-
-
 def log_action(action, user_id):
     """Log an action performed by a user"""
-    # Log the user's action (e.g., service added to firewall)
     log_message = f"User {user_id} performed action: {action}"
     with open("/var/log/action_logs.log", "a") as log_file:
         log_file.write(log_message + "\n")
-
 
 # Initialize extensions
 login_manager = LoginManager()
@@ -90,6 +112,8 @@ login_manager.init_app(app)
 login_manager.login_view = 'login'
 bcrypt = Bcrypt(app)
 Session(app)
+
+
 
 class User(UserMixin):
     """User model for authentication"""
@@ -105,65 +129,153 @@ users = {
 }
 
 class SSHManager:
-    """Manages SSH connections to remote NAS"""
+    """Manages SSH connections with improved connection handling"""
     def __init__(self):
-        self.connections = {}
+        self.connections = {}  # Initialize the connections dictionary
     
-    def get_connection(self, host, username, password=None, key=None, port=22):
+    def get_connection(self, host=None, username=None, password=None, key=None, port=None, force_new=False):
         """Get or create an SSH connection"""
+        # Use config values if parameters are not provided
+        host = host or app.config['SSH_HOST']
+        username = username or app.config['SSH_USERNAME']
+        password = password or app.config['SSH_PASSWORD']
+        key = key or app.config['SSH_KEY']
+        port = port or app.config['SSH_PORT']
+        
         conn_key = f"{username}@{host}:{port}"
         
-        if conn_key not in self.connections:
+        if force_new and conn_key in self.connections:
+            self.connections[conn_key].close()
+            del self.connections[conn_key]
+        
+        if conn_key not in self.connections or force_new:
             ssh = paramiko.SSHClient()
             ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             
             try:
+                # Disable SSH agent and look for keys to prevent local interference
+                ssh.load_system_host_keys = False
+                
                 if password:
-                    ssh.connect(host, port=port, username=username, password=password)
+                    ssh.connect(
+                        hostname=host,
+                        port=port,
+                        username=username,
+                        password=password,
+                        allow_agent=False,
+                        look_for_keys=False,
+                        timeout=10  # Added timeout
+                    )
                 elif key:
                     if os.path.exists(key):
                         pkey = paramiko.RSAKey.from_private_key_file(key)
                     else:
                         pkey = paramiko.RSAKey.from_private_key(StringIO(key))
-                    ssh.connect(host, port=port, username=username, pkey=pkey)
+                    ssh.connect(
+                        hostname=host,
+                        port=port,
+                        username=username,
+                        pkey=pkey,
+                        allow_agent=False,
+                        look_for_keys=False,
+                        timeout=10  # Added timeout
+                    )
                 else:
                     raise ValueError("Either password or key must be provided")
                 
                 self.connections[conn_key] = ssh
             except Exception as e:
-                flash(f"SSH Connection Error: {str(e)}", "error")
+                error_msg = f"SSH Connection failed to {host}: {str(e)}"
+                app.logger.error(error_msg)
+                if hasattr(app, 'logger'):
+                    app.logger.error(f"SSH Connection details - Host: {host}, User: {username}, Port: {port}")
+                    print(f"SSH Connection details - Host: {host}, User: {username}, Port: {port}")
                 return None
         
         return self.connections[conn_key]
     
     def close_all(self):
         """Close all SSH connections"""
-        for conn in self.connections.values():
-            conn.close()
-        self.connections.clear()
+        for conn_key, conn in list(self.connections.items()):
+            try:
+                conn.close()
+            except:
+                pass
+            del self.connections[conn_key]
 
 ssh_manager = SSHManager()
 
-def run_command(cmd, timeout=60, get_pty=False):
-    """Execute command on remote NAS via SSH with sudo password handling"""
-    if not all([app.config['SSH_HOST'], app.config['SSH_USERNAME']]):
-        return "ERROR: SSH connection not configured"
+def test_initial_connection():
+    try:
+        conn = ssh_manager.get_connection()
+        if conn:
+            print("Initial SSH connection test successful")
+        else:
+            print("Initial SSH connection test failed")
+    except Exception as e:
+        print(f"Initial SSH connection test error: {str(e)}")
+
+test_initial_connection()
+
+
+def is_connection_alive(ssh):
+    try:
+        transport = ssh.get_transport()
+        return transport and transport.is_active()
+    except:
+        return False
+
+@app.route('/test_ssh')
+@login_required
+def test_ssh():
+    """Test SSH connection and return debug info"""
+    ssh = ssh_manager.get_connection()
+    if not ssh:
+        return jsonify({
+            'status': 'error',
+            'message': 'SSH connection failed',
+            'config': {
+                'host': app.config['SSH_HOST'],
+                'port': app.config['SSH_PORT'],
+                'username': app.config['SSH_USERNAME'],
+                'password_set': bool(app.config['SSH_PASSWORD']),
+                'key_set': bool(app.config['SSH_KEY'])
+            }
+        }), 400
     
-    ssh = ssh_manager.get_connection(
-        host=app.config['SSH_HOST'],
-        port=app.config['SSH_PORT'],
-        username=app.config['SSH_USERNAME'],
-        password=app.config['SSH_PASSWORD'],
-        key=app.config['SSH_KEY']
-    )
+    # Test a simple command
+    try:
+        stdin, stdout, stderr = ssh.exec_command('echo "SSH Connection Successful"')
+        output = stdout.read().decode().strip()
+        error = stderr.read().decode().strip()
+        
+        return jsonify({
+            'status': 'success',
+            'message': output or error,
+            'connection': str(ssh.get_transport()) if ssh.get_transport() else 'No transport'
+        })
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': f"Command execution failed: {str(e)}"
+        }), 500
+
+def run_command(cmd, timeout=60, get_pty=False):
+    """Execute command on remote host via SSH with timeout support"""
+    ssh = ssh_manager.get_connection()
     
     if not ssh:
         return "ERROR: Could not establish SSH connection"
     
     try:
-        # For sudo commands, we need to use get_pty=True and handle password input
+        # For sudo commands, use get_pty=True and handle password input
         if 'sudo' in cmd and app.config['SSH_PASSWORD']:
             get_pty = True
+        
+        # Set the channel timeout
+        transport = ssh.get_transport()
+        if transport:
+            transport.set_keepalive(30)  # Optional: keep connection alive
         
         stdin, stdout, stderr = ssh.exec_command(cmd, timeout=timeout, get_pty=get_pty)
         
@@ -182,6 +294,8 @@ def run_command(cmd, timeout=60, get_pty=False):
         return f"SSH ERROR: {str(e)}"
     except Exception as e:
         return f"EXCEPTION: {str(e)}"
+    
+
 
 def log_action(action, user_id=None):
     """Log actions with timestamp and user info"""
@@ -265,6 +379,9 @@ def configure_ssh():
         flash('You do not have permission to access this page', 'error')
         return redirect(url_for('dashboard'))
     
+    # Clear existing connections before configuring new ones
+    ssh_manager.close_all()
+
     if request.method == 'POST':
         # Validate inputs
         ssh_host = request.form.get('ssh_host')
@@ -1501,14 +1618,6 @@ def fail2ban_logs():
 # Cache expiration time (5 minutes)
 CACHE_EXPIRATION = 300
 
-def run_command(cmd):
-    """Optimized command runner with error handling"""
-    try:
-        return subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT).decode('utf-8').strip()
-    except subprocess.CalledProcessError as e:
-        return f"ERROR: {e.output.decode('utf-8').strip()}"
-    except Exception as e:
-        return f"ERROR: {str(e)}"
 
 @lru_cache(maxsize=1)
 def get_kernel_release():
@@ -2400,7 +2509,451 @@ def monitoring():
         return "Server IP could not be determined.", 500  
     
 
+
+
+class WinRMManager:
+    """Manages Windows Remote Management connections"""
+    def __init__(self):
+        self.sessions = {}
     
+    def get_session(self, host=None, username=None, password=None, transport=None, force_new=False):
+        """Get or create a WinRM session"""
+        host = host or app.config['WINRM_HOST']
+        username = username or app.config['WINRM_USERNAME']
+        password = password or app.config['WINRM_PASSWORD']
+        transport = transport or app.config['WINRM_TRANSPORT']
+        
+        conn_key = f"{username}@{host}"
+        
+        if force_new and conn_key in self.sessions:
+            self.sessions[conn_key].close()
+            del self.sessions[conn_key]
+        
+        if conn_key not in self.sessions or force_new:
+            try:
+                session = winrm.Session(
+                    host,
+                    auth=(username, password),
+                    transport=transport,
+                    server_cert_validation=app.config['WINRM_SERVER_CERT_VALIDATION']
+                )
+                self.sessions[conn_key] = session
+            except Exception as e:
+                error_msg = f"WinRM Connection failed to {host}: {str(e)}"
+                app.logger.error(error_msg)
+                return None
+        
+        return self.sessions[conn_key]
+    
+    def close_all(self):
+        """Close all WinRM sessions"""
+        for conn_key, session in list(self.sessions.items()):
+            try:
+                session.close()
+            except:
+                pass
+            del self.sessions[conn_key]
+
+winrm_manager = WinRMManager()
+
+
+
+
+@app.route('/mswindows')
+@login_required
+def windows_dashboard():
+    """Windows Remote Management Dashboard"""
+    return render_template('windows_dashboard.html')
+
+@app.route('/mswindows/registry', methods=['GET', 'POST'])
+@login_required
+def windows_registry():
+    """Check Windows registry for malicious entries"""
+    if request.method == 'POST':
+        registry_path = request.form.get('registry_path', 'HKLM\\Software').strip()
+        depth = request.form.get('depth', '1').strip()
+        
+        try:
+            depth = int(depth)
+            if depth < 1 or depth > 5:
+                raise ValueError("Depth must be between 1 and 5")
+        except ValueError:
+            flash("Invalid depth value", "error")
+            return redirect(url_for('windows_registry'))
+        
+        # PowerShell command to get registry keys
+        ps_script = f"""
+        $regPath = '{registry_path}'
+        $depth = {depth}
+        function Get-RegistryKeys($path, $currentDepth) {{
+            if ($currentDepth -gt $depth) {{ return }}
+            
+            try {{
+                $keys = Get-ChildItem -Path "Registry::$path" -ErrorAction Stop
+                foreach ($key in $keys) {{
+                    [PSCustomObject]@{{
+                        Path = $key.Name
+                        SubkeyCount = $key.SubKeyCount
+                        ValueCount = $key.ValueCount
+                        LastWriteTime = $key.LastWriteTime
+                    }}
+                    Get-RegistryKeys $key.Name ($currentDepth + 1)
+                }}
+            }} catch {{
+                Write-Output "Error accessing $path : $_"
+            }}
+        }}
+        Get-RegistryKeys $regPath 1 | ConvertTo-Json -Depth 5
+        """
+        
+        result = run_windows_command(ps_script)
+        
+        if "ERROR" in result:
+            flash(f"Failed to query registry: {result}", "error")
+            return redirect(url_for('windows_registry'))
+        
+        try:
+            registry_data = json.loads(result)
+            suspicious_entries = check_malicious_registry(registry_data)
+            return render_template('windows_registry.html',
+                                registry_data=registry_data,
+                                suspicious_entries=suspicious_entries,
+                                registry_path=registry_path,
+                                depth=depth)
+        except json.JSONDecodeError:
+            flash("Invalid response from remote system", "error")
+            return redirect(url_for('windows_registry'))
+    
+    return render_template('windows_registry.html')
+
+def check_malicious_registry(registry_data):
+    """Check registry entries for known malicious patterns"""
+    suspicious = []
+    malicious_patterns = [
+        # Persistence mechanisms
+        r'\\Run(Once)?\\',
+        r'\\Winlogon\\',
+        r'\\Policies\\Explorer\\Run\\',
+        r'\\Image File Execution Options\\',
+        
+        # Known malware locations
+        r'\\CurrentVersion\\Uninstall\\FakeApp',
+        r'\\Classes\\CLSID\\\{.*\}',
+        r'\\Microsoft\\Windows NT\\CurrentVersion\\Svchost',
+        
+        # Suspicious names
+        r'\\[a-f0-9]{32}\\',
+        r'\\[A-Z0-9]{8}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{12}\\',
+        r'\\temp\\',
+        r'\\cache\\',
+    ]
+    
+    if isinstance(registry_data, dict):
+        registry_data = [registry_data]
+    
+    for entry in registry_data:
+        if isinstance(entry, dict):
+            path = entry.get('Path', '')
+            for pattern in malicious_patterns:
+                if re.search(pattern, path, re.IGNORECASE):
+                    suspicious.append({
+                        'path': path,
+                        'reason': f"Matches malicious pattern: {pattern}",
+                        'severity': 'high'
+                    })
+    
+    return suspicious
+
+@app.route('/mswindows/processes')
+@login_required
+def windows_processes():
+    """List Windows processes with malicious detection"""
+    ps_script = """
+    Get-Process | Select-Object Id, ProcessName, CPU, PM, WS, Path, 
+        @{Name="StartTime";Expression={$_.StartTime.ToString("yyyy-MM-dd HH:mm:ss")}},
+        @{Name="Modules";Expression={$_.Modules.Count}} | 
+        ConvertTo-Json -Depth 2
+    """
+    
+    result = run_windows_command(ps_script)
+    
+    if "ERROR" in result:
+        flash(f"Failed to get processes: {result}", "error")
+        return render_template('windows_processes.html')
+    
+    try:
+        processes = json.loads(result)
+        suspicious_processes = check_malicious_processes(processes)
+        return render_template('windows_processes.html',
+                            processes=processes,
+                            suspicious_processes=suspicious_processes)
+    except json.JSONDecodeError:
+        flash("Invalid response from remote system", "error")
+        return render_template('windows_processes.html')
+
+def check_malicious_processes(processes):
+    """Check processes for known malicious patterns"""
+    suspicious = []
+    malicious_patterns = [
+        # Process names
+        r'lsass\.exe$',  # Often mimicked
+        r'svchost\.exe$',  # Often injected into
+        r'powershell\.exe$',  # Often used maliciously
+        r'wscript\.exe$',
+        r'cscript\.exe$',
+        r'mshta\.exe$',
+        r'rundll32\.exe$',
+        r'regsvr32\.exe$',
+        
+        # Path patterns
+        r'\\temp\\',
+        r'\\appdata\\',
+        r'\\programdata\\',
+        r'\\users\\[^\\]+\\appdata\\local\\temp\\',
+        
+        # Known malware names
+        r'mimikatz',
+        r'cobaltstrike',
+        r'metasploit',
+        r'empire',
+        r'powersploit',
+    ]
+    
+    if isinstance(processes, dict):
+        processes = [processes]
+    
+    for proc in processes:
+        if isinstance(proc, dict):
+            name = proc.get('ProcessName', '').lower()
+            path = (proc.get('Path', '') or '').lower()
+            
+            for pattern in malicious_patterns:
+                if (re.search(pattern, name, re.IGNORECASE) or 
+                    (path and re.search(pattern, path, re.IGNORECASE))):
+                    suspicious.append({
+                        'id': proc.get('Id'),
+                        'name': proc.get('ProcessName'),
+                        'path': proc.get('Path'),
+                        'reason': f"Matches malicious pattern: {pattern}",
+                        'severity': 'high'
+                    })
+    
+    return suspicious
+
+@app.route('/mswindows/services')
+@login_required
+def windows_services():
+    """List Windows services with malicious detection"""
+    ps_script = """
+    Get-Service | Select-Object Name, DisplayName, Status, StartType, 
+        @{Name="BinaryPath";Expression={(Get-WmiObject Win32_Service -Filter "Name='$($_.Name)'").PathName}} |
+        ConvertTo-Json -Depth 2
+    """
+    
+    result = run_windows_command(ps_script)
+    
+    if "ERROR" in result:
+        flash(f"Failed to get services: {result}", "error")
+        return render_template('windows_services.html')
+    
+    try:
+        services = json.loads(result)
+        suspicious_services = check_malicious_services(services)
+        return render_template('windows_services.html',
+                            services=services,
+                            suspicious_services=suspicious_services)
+    except json.JSONDecodeError:
+        flash("Invalid response from remote system", "error")
+        return render_template('windows_services.html')
+
+def check_malicious_services(services):
+    """Check services for known malicious patterns"""
+    suspicious = []
+    malicious_patterns = [
+        # Service names
+        r'update(_|-)service',
+        r'windows(_|-)defender',
+        r'security(_|-)center',
+        r'^[a-f0-9]{32}$',
+        
+        # Binary path patterns
+        r'\\temp\\',
+        r'\\appdata\\',
+        r'\\programdata\\',
+        r'\\users\\[^\\]+\\appdata\\local\\temp\\',
+        r'rundll32\.exe',
+        r'powershell\.exe',
+    ]
+    
+    if isinstance(services, dict):
+        services = [services]
+    
+    for svc in services:
+        if isinstance(svc, dict):
+            name = svc.get('Name', '').lower()
+            display_name = svc.get('DisplayName', '').lower()
+            path = (svc.get('BinaryPath', '') or '').lower()
+            
+            for pattern in malicious_patterns:
+                if (re.search(pattern, name, re.IGNORECASE) or 
+                    re.search(pattern, display_name, re.IGNORECASE) or
+                    (path and re.search(pattern, path, re.IGNORECASE))):
+                    suspicious.append({
+                        'name': svc.get('Name'),
+                        'display_name': svc.get('DisplayName'),
+                        'path': svc.get('BinaryPath'),
+                        'status': svc.get('Status'),
+                        'reason': f"Matches malicious pattern: {pattern}",
+                        'severity': 'high'
+                    })
+    
+    return suspicious
+
+@app.route('/mswindows/antivirus', methods=['GET', 'POST'])
+@login_required
+def windows_antivirus():
+    """Run antivirus scans on Windows"""
+    if request.method == 'POST':
+        scan_path = request.form.get('scan_path', 'C:').strip()
+        scan_type = request.form.get('scan_type', 'quick')
+        
+        # Validate scan path
+        if not re.match(r'^[A-Za-z]:[\\/]?', scan_path):
+            flash("Invalid scan path - must be a drive letter like C:", "error")
+            return redirect(url_for('windows_antivirus'))
+        
+        # Build ClamAV command
+        clamav_path = "C:\\clamAV\\clamscan.exe"  # Default path
+        cmd = f'"{clamav_path}" --remove --recursive --infected --verbose {scan_path}'
+        
+        result = run_windows_command(cmd, timeout=3600)  # 1 hour timeout
+        
+        if "ERROR" in result:
+            flash(f"Scan failed: {result}", "error")
+        else:
+            # Parse results
+            infected_files = []
+            for line in result.split('\n'):
+                if "FOUND" in line:
+                    parts = line.split(':', 1)
+                    if len(parts) == 2:
+                        infected_files.append({
+                            'file': parts[0].strip(),
+                            'detection': parts[1].strip()
+                        })
+            
+            return render_template('windows_antivirus.html',
+                                scan_path=scan_path,
+                                scan_type=scan_type,
+                                result=result,
+                                infected_files=infected_files)
+    
+    return render_template('windows_antivirus.html')
+
+@app.route('/mswindows/firewall', methods=['GET', 'POST'])
+@login_required
+def windows_firewall():
+    """Manage Windows Firewall"""
+    if request.method == 'POST':
+        action = request.form.get('action')
+        rule_name = request.form.get('rule_name')
+        port = request.form.get('port')
+        protocol = request.form.get('protocol', 'TCP')
+        direction = request.form.get('direction', 'Inbound')
+        profile = request.form.get('profile', 'Any')
+        
+        if not action or not rule_name:
+            flash("Action and rule name are required", "error")
+            return redirect(url_for('windows_firewall'))
+        
+        # Validate port if provided
+        if port:
+            try:
+                port = int(port)
+                if port < 1 or port > 65535:
+                    raise ValueError
+            except ValueError:
+                flash("Invalid port number", "error")
+                return redirect(url_for('windows_firewall'))
+        
+        # Build PowerShell command
+        ps_script = ""
+        if action == "add":
+            if not port:
+                flash("Port is required for adding a rule", "error")
+                return redirect(url_for('windows_firewall'))
+            
+            ps_script = f"""
+            $rule = New-NetFirewallRule -DisplayName "{rule_name}" -Direction {direction} `
+                -LocalPort {port} -Protocol {protocol} -Action Allow -Profile {profile}
+            if ($?) {{ "Rule added successfully" }} else {{ "ERROR: Failed to add rule" }}
+            """
+        elif action == "remove":
+            ps_script = f"""
+            Remove-NetFirewallRule -DisplayName "{rule_name}"
+            if ($?) {{ "Rule removed successfully" }} else {{ "ERROR: Failed to remove rule" }}
+            """
+        elif action == "enable":
+            ps_script = f"""
+            Enable-NetFirewallRule -DisplayName "{rule_name}"
+            if ($?) {{ "Rule enabled successfully" }} else {{ "ERROR: Failed to enable rule" }}
+            """
+        elif action == "disable":
+            ps_script = f"""
+            Disable-NetFirewallRule -DisplayName "{rule_name}"
+            if ($?) {{ "Rule disabled successfully" }} else {{ "ERROR: Failed to disable rule" }}
+            """
+        
+        result = run_windows_command(ps_script)
+        
+        if "ERROR" in result:
+            flash(f"Failed to {action} rule: {result}", "error")
+        else:
+            flash(result, "success")
+        
+        return redirect(url_for('windows_firewall'))
+    
+    # Get current firewall rules
+    ps_script = """
+    Get-NetFirewallRule | Select-Object DisplayName, Enabled, Direction, Action, Profile | 
+    ConvertTo-Json -Depth 2
+    """
+    result = run_windows_command(ps_script)
+    
+    rules = []
+    if not result.startswith("ERROR"):
+        try:
+            rules = json.loads(result)
+        except json.JSONDecodeError:
+            flash("Failed to parse firewall rules", "error")
+    
+    return render_template('windows_firewall.html', rules=rules)
+
+def run_windows_command(command, timeout=60):
+    """Execute a command on Windows via WinRM"""
+    session = winrm_manager.get_session()
+    if not session:
+        return "ERROR: Could not establish WinRM connection"
+    
+    try:
+        # For PowerShell commands
+        if command.strip().lower().startswith(('get-', 'new-', 'remove-', 'enable-', 'disable-')):
+            result = session.run_ps(command)
+        else:
+            result = session.run_cmd(command)
+        
+        if result.status_code != 0:
+            error_msg = result.std_err.decode('utf-8', errors='ignore') or "Unknown error"
+            return f"ERROR: {error_msg}"
+        
+        return result.std_out.decode('utf-8', errors='ignore')
+    except Exception as e:
+        return f"ERROR: {str(e)}"
+
+
+
+
+
 
 # Main
 if __name__ == '__main__':
