@@ -26,7 +26,7 @@ share/python-wheels/
 *.egg
 MANIFEST
 MSwindows/
-app/templates/windows*
+/app/templates/windows*.
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
