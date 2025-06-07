@@ -24,9 +24,16 @@ import datetime as mydate
 import shlex
 import traceback
 from functools import lru_cache
+import platform
+
+
+
 
 app = Flask(__name__)
 app.secret_key = 'myEDR'
+
+
+
 
 # Load configuration from config.py
 app.config.update(
@@ -1575,14 +1582,77 @@ def fail2ban_logs():
 
 
 
+
+
+
+## Kernel Management System
+## Find Malicious Modules and All loaded Modules
+
+
+# Kernel Management System - Remote SSH Version
+
 # Cache expiration time (5 minutes)
 CACHE_EXPIRATION = 300
 
+def remote_file_exists(path):
+    """Check if file exists on remote system"""
+    cmd = f"[ -f '{path}' ] && echo 'exists' || echo 'not found'"
+    result = run_command(cmd)
+    return result == 'exists'
+
+def remote_dir_exists(path):
+    """Check if directory exists on remote system"""
+    cmd = f"[ -d '{path}' ] && echo 'exists' || echo 'not found'"
+    result = run_command(cmd)
+    return result == 'exists'
+
+def remote_walk(path):
+    """Simulate os.walk for remote system"""
+    try:
+        cmd = f"find '{path}' -type d -printf '%p\\n' 2>/dev/null"
+        dirs = run_command(cmd).split('\n')
+        
+        result = []
+        for d in dirs:
+            if not d:
+                continue
+            # Get files in directory
+            files_cmd = f"find '{d}' -maxdepth 1 -type f -printf '%f\\n' 2>/dev/null"
+            files = run_command(files_cmd).split('\n')
+            # Get subdirectories
+            subdirs_cmd = f"find '{d}' -maxdepth 1 -type d -printf '%f\\n' 2>/dev/null | tail -n +2"
+            subdirs = run_command(subdirs_cmd).split('\n')
+            result.append((d, [sd for sd in subdirs if sd], [f for f in files if f]))
+        return result
+    except Exception as e:
+        log_event("REMOTE", "error", "Remote walk failed", {
+            'path': path,
+            'error': str(e)
+        })
+        return []
+
+def remote_stat(path):
+    """Get file stats from remote system"""
+    cmd = f"stat -c '%a %u %g %s' '{path}' 2>/dev/null"
+    result = run_command(cmd)
+    if result.startswith("ERROR"):
+        return None
+    try:
+        mode, uid, gid, size = result.split()
+        return {
+            'mode': int(mode, 8),
+            'uid': int(uid),
+            'gid': int(gid),
+            'size': int(size)
+        }
+    except:
+        return None
 
 @lru_cache(maxsize=1)
 def get_kernel_release():
-    """Get kernel release with caching"""
-    return os.uname().release
+    """Get kernel release from remote system with caching"""
+    result = run_command("uname -r").strip()
+    return result if not result.startswith("ERROR") else "unknown"
 
 def cache_with_expiration(seconds):
     """Decorator for time-based cache invalidation"""
@@ -1602,10 +1672,10 @@ def cache_with_expiration(seconds):
 
 @cache_with_expiration(CACHE_EXPIRATION)
 def check_module_signing_cached():
-    """Cached version of module signing check"""
+    """Cached version of module signing check for remote system"""
     try:
         # Single command to get all signing info
-        cmd = """cat /proc/sys/kernel/module_sig_enforce /proc/sys/kernel/module_sig_all /proc/sys/kernel/modules_disabled"""
+        cmd = """cat /proc/sys/kernel/module_sig_enforce /proc/sys/kernel/module_sig_all /proc/sys/kernel/modules_disabled 2>/dev/null"""
         output = run_command(cmd)
         
         if output.startswith("ERROR"):
@@ -1638,7 +1708,7 @@ def check_module_signing_cached():
 
 @cache_with_expiration(CACHE_EXPIRATION)
 def check_module_hijacking_cached():
-    """Optimized module hijacking check with caching"""
+    """Optimized module hijacking check with caching for remote system"""
     vulns = []
     paths_to_check = [
         '/lib/modules',
@@ -1653,15 +1723,18 @@ def check_module_hijacking_cached():
     try:
         # Check world-writable directories
         for path in paths_to_check:
-            if os.path.exists(path):
-                for root, dirs, files in os.walk(path):
+            if remote_dir_exists(path):
+                for root, dirs, files in remote_walk(path):
                     for name in dirs:
                         full_path = os.path.join(root, name)
-                        if os.stat(full_path).st_mode & 0o002:
+                        stat = remote_stat(full_path)
+                        if stat and stat['mode'] & 0o002:
                             vulns.append({
                                 'path': full_path,
                                 'issue': 'World-writable module directory',
-                                'severity': 'high'
+                                'severity': 'high',
+                                'mode': oct(stat['mode']),
+                                'owner': f"{stat['uid']}:{stat['gid']}"
                             })
         
         # Check world-writable files
@@ -1673,15 +1746,18 @@ def check_module_hijacking_cached():
         ]
         
         for path in config_paths:
-            if os.path.exists(path):
-                for root, _, files in os.walk(path):
+            if remote_dir_exists(path):
+                for root, _, files in remote_walk(path):
                     for name in files:
                         full_path = os.path.join(root, name)
-                        if os.stat(full_path).st_mode & 0o002:
+                        stat = remote_stat(full_path)
+                        if stat and stat['mode'] & 0o002:
                             vulns.append({
                                 'path': full_path,
                                 'issue': 'World-writable modprobe configuration',
-                                'severity': 'critical'
+                                'severity': 'critical',
+                                'mode': oct(stat['mode']),
+                                'owner': f"{stat['uid']}:{stat['gid']}"
                             })
         
         return vulns
@@ -1691,17 +1767,18 @@ def check_module_hijacking_cached():
 
 @cache_with_expiration(CACHE_EXPIRATION)
 def get_kernel_config_cached():
-    """Cached kernel config reader"""
+    """Cached kernel config reader for remote system"""
     config = {}
+    kernel_release = get_kernel_release()
     config_paths = [
         '/proc/config.gz',
-        f'/boot/config-{get_kernel_release()}',
-        f'/lib/modules/{get_kernel_release()}/build/.config'
+        f'/boot/config-{kernel_release}',
+        f'/lib/modules/{kernel_release}/build/.config'
     ]
     
     try:
         for path in config_paths:
-            if os.path.exists(path):
+            if remote_file_exists(path):
                 if path.endswith('.gz'):
                     cmd = f"zcat {path}"
                 else:
@@ -1743,25 +1820,43 @@ def get_kernel_config_cached():
 
 @cache_with_expiration(CACHE_EXPIRATION)
 def get_all_kernel_modules_cached():
-    """Optimized version with directory caching"""
-    module_dir = f"/lib/modules/{os.uname().release}"
-    modules = []
-    
-    for root, _, files in os.walk(module_dir):
-        for file in files:
-            if file.endswith('.ko') or file.endswith('.ko.xz'):
-                module_name = os.path.splitext(os.path.splitext(file)[0])[0]
-                modules.append({
-                    'name': module_name,
-                    'path': os.path.join(root, file),
-                    'size': os.path.getsize(os.path.join(root, file))
-                })
-    
-    return modules
+    """Get all kernel modules from remote system"""
+    try:
+        kernel_release = get_kernel_release()
+        module_dir = f"/lib/modules/{kernel_release}"
+        
+        # Get all modules in one command for efficiency
+        cmd = f"find {module_dir} -type f \( -name '*.ko' -o -name '*.ko.xz' \) -printf '%p %s\\n' 2>/dev/null"
+        output = run_command(cmd)
+        
+        modules = []
+        for line in output.split('\n'):
+            if line.strip():
+                try:
+                    path, size = line.rsplit(' ', 1)
+                    # Extract module name from filename (remove .ko or .ko.xz)
+                    base = os.path.basename(path)
+                    module_name = os.path.splitext(os.path.splitext(base)[0])[0]
+                    modules.append({
+                        'name': module_name,
+                        'path': path,
+                        'size': int(size)
+                    })
+                except ValueError:
+                    continue  # Skip malformed lines
+        
+        return modules
+        
+    except Exception as e:
+        log_event("KERNEL", "error", "Failed to get all kernel modules", {
+            'error': str(e),
+            'traceback': traceback.format_exc()
+        })
+        return []
 
 @cache_with_expiration(CACHE_EXPIRATION)
 def get_loaded_kernel_modules_cached():
-    """Optimized and cached version of loaded kernel module detection"""
+    """Get loaded kernel modules from remote system"""
     try:
         # Get basic module info in one command
         cmd = "lsmod | awk 'NR>1 {print $1,$2,$3}'"
@@ -1792,12 +1887,12 @@ def get_loaded_kernel_modules_cached():
         # Batch process module info (more efficient than one-by-one)
         if module_names:
             # Get paths for all modules in one call
-            paths_cmd = f"modinfo -F filename {' '.join(module_names)}"
+            paths_cmd = f"modinfo -F filename {' '.join(module_names)} 2>/dev/null"
             paths_output = run_command(paths_cmd)
             paths = paths_output.split('\n') if paths_output else []
             
             # Get signature status for all modules in one call
-            sig_cmd = f"for m in {' '.join(module_names)}; do modinfo $m | grep -q 'signer:' && echo 'signed' || echo 'unsigned'; done"
+            sig_cmd = f"for m in {' '.join(module_names)}; do modinfo $m | grep -q '^sig_id:' && echo 'signed' || echo 'unsigned'; done 2>/dev/null"
             sig_output = run_command(sig_cmd)
             signatures = sig_output.split('\n') if sig_output else []
             
@@ -1821,33 +1916,25 @@ def get_loaded_kernel_modules_cached():
         return []
 
 def check_if_tainted(module_name):
-    """Check if a specific module contributes to kernel tainting"""
+    """Check if a specific module contributes to kernel tainting on remote system"""
     try:
-        taint_output = run_command("cat /proc/sys/kernel/tainted")
+        taint_output = run_command("cat /proc/sys/kernel/tainted 2>/dev/null")
         if taint_output.isdigit():
             taint_flags = int(taint_output)
             # Flag 11 is for externally-built module (P)
             # Flag 12 is for unsigned module (F)
             if taint_flags & (1 << 11) or taint_flags & (1 << 12):
-                mod_output = run_command(f"grep -l {module_name} /sys/module/*/taint")
+                mod_output = run_command(f"grep -l {module_name} /sys/module/*/taint 2>/dev/null")
                 return "Yes" if mod_output and not mod_output.startswith("ERROR") else "No"
         return "No"
     except:
         return "Unknown"
 
-
-
-
 @cache_with_expiration(CACHE_EXPIRATION)
 def detect_suspicious_modules_cached():
-    modules = get_loaded_kernel_modules_cached()
-    """
-    Optimized suspicious module detection with caching
-    Returns list of suspicious modules with detection reasons
-    """
+    """Detect suspicious kernel modules on remote system"""
     try:
-        if modules is None:
-            modules = get_loaded_kernel_modules_cached()
+        modules = get_loaded_kernel_modules_cached()
         
         # Pre-compiled patterns for better performance
         MALICIOUS_PATTERNS = [
@@ -1912,55 +1999,37 @@ def detect_suspicious_modules_cached():
     except Exception as e:
         log_event("KERNEL", "error", "Suspicious module detection failed", {
             'error': str(e),
-            'traceback': traceback.format_exc()  # Using traceback here
+            'traceback': traceback.format_exc()
         })
         return []
 
 def is_module_in_proc_modules(module_name):
-    """Check if module appears in /proc/modules"""
+    """Check if module appears in /proc/modules on remote system"""
     try:
-        with open('/proc/modules', 'r') as f:
-            return any(module_name == line.split()[0] for line in f)
+        cmd = f"grep -q '^{module_name} ' /proc/modules && echo 'yes' || echo 'no'"
+        result = run_command(cmd)
+        return result == 'yes'
     except:
         return True  # If we can't check, assume it's visible
-
-
 
 @app.route('/kernel_modules')
 @login_required
 def manage_kernel_modules():
-    now = mydate.datetime.now()
     """Kernel module management dashboard with all required data"""
+    now = datetime.now()
 
-    # Get all essential data
+    # Load fast components
+    kernel_config = get_kernel_config_cached()
     loaded_modules = get_loaded_kernel_modules_cached()
     signing_status = check_module_signing_cached()
-    
-    # Get additional data only if not AJAX request
-    if not request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        all_modules = get_all_kernel_modules_cached()
-        suspicious_modules = detect_suspicious_modules_cached()
-        hijacking_vulns = check_module_hijacking_cached()
-        kernel_config = get_kernel_config_cached()  # This was missing
-        
-        return render_template('kernel_modules.html',
-                            loaded_modules=loaded_modules,
-                            all_modules=all_modules,
-                            suspicious_modules=suspicious_modules,
-                            signing_status=signing_status,
-                            hijacking_vulns=hijacking_vulns,
-                            kernel_config=kernel_config,
-                            now = now ,   # Now included
-                            initial_load=True)
-    else:
-        return jsonify({
-            'loaded_modules': loaded_modules,
-            'signing_status': signing_status
-            })
-            
 
-    
-
+    # Don't load heavy data here
+    return render_template('kernel_modules.html',
+        loaded_modules=loaded_modules,
+        signing_status=signing_status,
+        kernel_config=kernel_config ,
+        now=now,
+        initial_load=True)
 
 
 @app.route('/api/kernel_modules/full_data')
@@ -1971,15 +2040,22 @@ def get_full_kernel_data():
         loaded_modules = get_loaded_kernel_modules_cached()
         return jsonify({
             'all_modules': get_all_kernel_modules_cached(),
-            'suspicious_modules': detect_suspicious_modules_cached(loaded_modules),
+            'suspicious_modules': detect_suspicious_modules_cached(),
             'hijacking_vulns': check_module_hijacking_cached(),
-            'kernel_config': get_kernel_config_cached()  # Ensure this is included
+            'kernel_config': get_kernel_config_cached()
         })
     except Exception as e:
         return jsonify({
             'error': str(e),
             'traceback': traceback.format_exc()
         }), 500
+
+
+
+
+
+
+
 
 
 
