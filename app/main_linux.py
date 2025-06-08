@@ -30,7 +30,7 @@ import platform
 
 
 app = Flask(__name__)
-app.secret_key = 'myEDR'
+app.secret_key = 'Hermes'
 
 
 
@@ -47,7 +47,7 @@ app.config.update(
     SSH_USERNAME=config.SSH_USERNAME,
     SSH_PASSWORD=config.SSH_PASSWORD,
     SSH_KEY=config.SSH_KEY,
-    EDR_SCAN_PATHS=config.EDR_SCAN_PATHS,
+    Hermes_SCAN_PATHS=config.Hermes_SCAN_PATHS,
     YARA_RULES_DIR=config.YARA_RULES_DIR,
     QUARANTINE_DIR=config.QUARANTINE_DIR,
     LOG_DIR=config.LOG_DIR,
@@ -64,7 +64,7 @@ def log_event(event_type, level, message, details=None):
     """Log an event to the system log"""
     event_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     log_message = f"{event_time} | {event_type} | {level} | {message} | {details if details else ''}"
-    with open("/tmp/EDR.log", "a") as log_file:
+    with open("/tmp/Hermes.log", "a") as log_file:
         log_file.write(log_message + "\n")
 
 def log_action(action, user_id):
@@ -411,12 +411,12 @@ def configure_ssh():
 
 
 
-# EDR Dashboard
+# Hermes Dashboard
 @app.route('/')
 @login_required
 def dashboard():
     now = mydate.datetime.now()
-    """Enhanced EDR Dashboard with more system information"""
+    """Enhanced Hermes Dashboard with more system information"""
     if not app.config['SSH_HOST']:
         flash("Please configure SSH connection first", "error")
         return redirect(url_for('configure_ssh'))
@@ -469,10 +469,10 @@ def dashboard():
     if failed_logins and not failed_logins.startswith("ERROR"):
         security_alerts.extend([f"Failed login: {line}" for line in failed_logins.split('\n') if line.strip()])
     
-    # Get recent security events from EDR log
+    # Get recent security events from Hermes log
     recent_events = []
     try:
-        events_output = run_command(f"tail -n 10 {os.path.join(app.config['LOG_DIR'], 'edr_events.log')}")
+        events_output = run_command(f"tail -n 10 {os.path.join(app.config['LOG_DIR'], 'Hermes_events.log')}")
         recent_events = [line.strip() for line in events_output.split('\n') if line.strip()]
     except Exception as e:
         log_event("DASHBOARD", "error", "Failed to read recent events", {"error": str(e)})
@@ -1152,11 +1152,11 @@ def log_management():
     log_files = {
         'auth': '/var/log/auth.log',
         'syslog': '/var/log/syslog',
-        'edr_events': os.path.join(app.config['LOG_DIR'], 'edr_events.log'),
+        'Hermes_events': os.path.join(app.config['LOG_DIR'], 'Hermes_events.log'),
         'admin_actions': os.path.join(app.config['LOG_DIR'], 'admin_actions.log')
     }
     
-    selected_log = request.args.get('log', 'edr_events')
+    selected_log = request.args.get('log', 'Hermes_events')
     log_content = []
     
     if selected_log in log_files:
@@ -2609,7 +2609,7 @@ if __name__ == '__main__':
     os.makedirs(app.config['QUARANTINE_DIR'], exist_ok=True)
     
     handler = RotatingFileHandler(
-        os.path.join(app.config['LOG_DIR'], 'edr.log'),
+        os.path.join(app.config['LOG_DIR'], 'Hermes.log'),
         maxBytes=1000000,
         backupCount=5
     )
